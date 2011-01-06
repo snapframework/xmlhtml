@@ -10,9 +10,9 @@ import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
 
--------------------------------------------------------------------------------
--- Metadata used for HTML5 quirks mode.                                      --
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Metadata used for HTML5 quirks mode.                                     --
+------------------------------------------------------------------------------
 
 voidTags :: Set Text
 voidTags = S.fromAscList [
@@ -26,25 +26,23 @@ rawTextTags = S.fromAscList [ "script", "style" ]
 rcdataTags :: Set Text
 rcdataTags = S.fromAscList [ "textarea", "title" ]
 
-{-
-    Tags which can be implicitly ended in case they are the last element in
-    their parent.  This list actually includes all of the elements that have
-    any kind of omittable end tag, since in general when an element with an
-    omittable end tag isn't specified to be omittable in this way, it's just
-    because in a complete document it isn't expected to ever be the last thing
-    in its parent.  We aren't interested in enforcing element structure rules,
-    so we'll allow it anyway.
--}
+------------------------------------------------------------------------------
+-- | Tags which can be implicitly ended in case they are the last element in
+-- their parent.  This list actually includes all of the elements that have
+-- any kind of omittable end tag, since in general when an element with an
+-- omittable end tag isn't specified to be omittable in this way, it's just
+-- because in a complete document it isn't expected to ever be the last thing
+-- in its parent.  We aren't interested in enforcing element structure rules,
+-- so we'll allow it anyway.
 endOmittableLast :: Set Text
 endOmittableLast = S.fromAscList [
-    "body", "colgroup", "dd", "dt", "head", "html", "li", "optgroup", "option",
-    "p", "rp", "rt", "tbody", "td", "tfoot", "th", "thead", "tr"
+    "body", "colgroup", "dd", "dt", "head", "html", "li", "optgroup",
+    "option", "p", "rp", "rt", "tbody", "td", "tfoot", "th", "thead", "tr"
     ]
 
-{-
-    Tags which should be considered automatically ended in case one of a
-    certain set of tags pops up.
--}
+------------------------------------------------------------------------------
+-- | Tags which should be considered automatically ended in case one of a
+-- certain set of tags pops up.
 endOmittableNext :: Map Text (Set Text)
 endOmittableNext = M.fromAscList [
     ("colgroup", S.fromAscList ["caption", "colgroup", "tbody",
