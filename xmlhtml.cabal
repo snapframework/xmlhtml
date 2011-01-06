@@ -1,12 +1,25 @@
 Name:                xmlhtml
 Version:             0.1
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
-Description:         Contains a renderer and a parser for XML document
-                     fragments, which can optionally account for some of the
-                     differences with HTML 5 versus XML.  The HTML 5 support
-                     includes handling of tags with unparsed or unusual content
-                     like script or textarea, insertion of omitted end tags,
-                     etc.
+Description:         Contains renderers and parsers for both XML and HTML 5
+                     document fragments, which share data structures wo that
+                     it's easy to work with both.  Document fragments are bits
+                     of documents, which are not constrained by some of the
+                     high-level structure rules (in particular, they may
+                     contain more than one root element).
+                     .
+                     Note that this is not a compliant HTML 5 parser.  Rather,
+                     it is a parser for HTML 5 compliant documents.  It does not
+                     implement the HTML 5 parsing algorithm, and should
+                     generally be expected to perform correctly only on
+                     documents that you trust to conform to HTML 5.  This is
+                     not a suitable library for implementing web crawlers or
+                     other software that will be exposed to documents from
+                     outside sources.  The result is also not the HTML 5
+                     node structure, but rather something closer to the physical
+                     structure.  For example, omitted start tags are not
+                     inserted (and so, their corresponding end tags must also be
+                     omitted).
 License:             BSD3
 License-file:        LICENSE
 Author:              Chris Smith <cdsmith@gmail.com>
@@ -36,6 +49,7 @@ Library
                        bytestring == 0.9.*,
                        blaze-builder == 0.2.1.*
   if flag(test)
+    Hs-source-dirs:    tests
     Other-modules:     Text.XmlHtml.Tests
     Build-depends:     QuickCheck >= 2.0 && < 2.5
 
