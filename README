@@ -1,0 +1,17 @@
+Tasks:
+
+1. More unit tests!
+
+2. Fix internal DTD subset parsing.  Instead of throwing an error, read through
+   and just store as a gigantic Text value?
+
+3. Do something better with character encodings.  For now, they are basically
+   ignored, and we just use the byte order mark to distinguish between the
+   three required encodings.  We should implement the encoding sniffing rules
+   for both XML (the <?xml ... ?> declaration) and HTML 5.
+
+4. Improve parser error messages.
+
+5. Ensure that rendering always gives an error rather than writing an invalid
+   document. (is this a good idea?  It does limit rendering speed.)
+

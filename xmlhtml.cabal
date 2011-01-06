@@ -1,0 +1,42 @@
+Name:                xmlhtml
+Version:             0.1
+Synopsis:            XML parser and renderer with HTML 5 quirks mode
+Description:         Contains a renderer and a parser for XML document
+                     fragments, which can optionally account for some of the
+                     differences with HTML 5 versus XML.  The HTML 5 support
+                     includes handling of tags with unparsed or unusual content
+                     like script or textarea, insertion of omitted end tags,
+                     etc.
+License:             BSD3
+License-file:        LICENSE
+Author:              Chris Smith <cdsmith@gmail.com>
+Maintainer:          Chris Smith <cdsmith@gmail.com>
+Category:            Text
+Build-type:          Simple
+Cabal-version:       >=1.6
+
+Flag test
+  Description: Whether to build the unit tests
+  Default: False
+
+Library
+  Hs-source-dirs:      src
+  Exposed-modules:     Text.XmlHtml
+  Other-modules:       Text.XmlHtml.Common,
+                       Text.XmlHtml.XML.Parse,
+                       Text.XmlHtml.XML.Render,
+                       Text.XmlHtml.HTML.Meta,
+                       Text.XmlHtml.HTML.Parse,
+                       Text.XmlHtml.HTML.Render
+  Build-depends:       base == 4.*,
+                       containers == 0.3.*,
+                       attoparsec >= 0.8.3 && < 0.9,
+                       attoparsec-text == 0.8.*,
+                       text >= 0.10 && < 0.12,
+                       bytestring == 0.9.*,
+                       blaze-builder == 0.2.1.*
+  if flag(test)
+    Other-modules:     Text.XmlHtml.Tests
+    Build-depends:     QuickCheck >= 2.0 && < 2.5
+
+  Ghc-options:         -Wall -fwarn-tabs
