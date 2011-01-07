@@ -21,11 +21,10 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 
-{-
-    Get an initial guess at document encoding from the byte order mark.  If
-    the mark doesn't exist, guess UTF-8.  Otherwise, guess according to the
-    mark.
--}
+------------------------------------------------------------------------------
+-- | Get an initial guess at document encoding from the byte order mark.  If
+-- the mark doesn't exist, guess UTF-8.  Otherwise, guess according to the
+-- mark.
 guessEncoding :: ByteString -> (Encoding, ByteString)
 guessEncoding b
     | B.take 3 b == B.pack [ 0xEF, 0xBB, 0xBF ] = (UTF8,    B.drop 3 b)
@@ -33,6 +32,8 @@ guessEncoding b
     | B.take 2 b == B.pack [ 0xFF, 0xFE ]       = (UTF16LE, B.drop 2 b)
     | otherwise                                 = (UTF8,    b)
 
+
+------------------------------------------------------------------------------
 parse :: ByteString -> Either String Document
 parse b = let (e, b') = guessEncoding b
           in  handleResult e (parseText docFragment (decoder e b'))
@@ -40,6 +41,8 @@ parse b = let (e, b') = guessEncoding b
     handleResult _ (Left err)       = Left err
     handleResult e (Right (dt, ns)) = Right (XmlDocument e dt ns)
 
+
+------------------------------------------------------------------------------
 parseText :: Parser a -> Text -> Either String a
 parseText p t = case (P.parse parser t) of
     P.Fail _ _ err -> Left err
@@ -51,16 +54,17 @@ parseText p t = case (P.parse parser t) of
     P.Done _ _     -> Left "Unexpected text after input"
   where parser = p <* P.endOfInput
 
-{-
-    This is my best guess as to the best rule for handling document fragments
-    for processing.  It is essentially modeled after document, but allowing
-    multiple nodes.
--}
+
+------------------------------------------------------------------------------
+-- | This is my best guess as to the best rule for handling document fragments
+-- for processing.  It is essentially modeled after document, but allowing
+-- multiple nodes.
 docFragment :: Parser (Maybe DocType, [Node])
 docFragment = do
     (dt, nodes1) <- prolog
     nodes2       <- content
     return (dt, nodes1 ++ nodes2)
+
 
 -------------------------------------------------------------------------------
 -- Everything from here forward is translated from the XML specification.    --
@@ -169,6 +173,8 @@ docFragment = do
         {5} - These are orphaned productions for character classes.
 -}
 
+
+------------------------------------------------------------------------------
 document :: Parser (Maybe DocType, [Node])
 document = do
     (dt, nodes1) <- prolog
@@ -176,9 +182,13 @@ document = do
     nodes2       <- fmap catMaybes $ many misc
     return (dt, nodes1 ++ [ root ] ++ nodes2)
 
+
+------------------------------------------------------------------------------
 whiteSpace :: Parser ()
 whiteSpace = some (P.satisfy (`elem` " \t\r\n")) *> return ()
 
+
+------------------------------------------------------------------------------
 isNameStartChar :: Char -> Bool
 isNameStartChar c | c == ':'                         = True
                   | c == '_'                         = True
@@ -198,6 +208,8 @@ isNameStartChar c | c == ':'                         = True
                   | c >= '\x10000' && c <= '\xeffff' = True
                   | otherwise                        = False
 
+
+------------------------------------------------------------------------------
 isNameChar :: Char -> Bool
 isNameChar c | isNameStartChar c                = True
              | c == '-'                         = True
@@ -208,21 +220,31 @@ isNameChar c | isNameStartChar c                = True
              | c >= '\x203f'  && c <= '\x2040'  = True
              | otherwise                        = False
 
+
+------------------------------------------------------------------------------
 name :: Parser Text
 name = do
     c <- P.satisfy isNameStartChar
     r <- P.takeWhile isNameChar
     return $ T.cons c r
 
+
+------------------------------------------------------------------------------
 names :: Parser [Text]
 names = P.sepBy1 name (P.char ' ')
 
+
+------------------------------------------------------------------------------
 nmtoken :: Parser Text
 nmtoken = P.takeWhile1 isNameChar
 
+
+------------------------------------------------------------------------------
 nmtokens :: Parser [Text]
 nmtokens = P.sepBy1 nmtoken (P.char ' ')
 
+
+------------------------------------------------------------------------------
 attrValue :: Parser Text
 attrValue = fmap T.concat (singleQuoted <|> doubleQuoted)
   where
@@ -230,6 +252,8 @@ attrValue = fmap T.concat (singleQuoted <|> doubleQuoted)
     doubleQuoted = P.char '\"' *> refTill "<&\"" <* P.char '\"'
     refTill end = many (P.takeWhile1 (not . (`elem` end)) <|> reference)
 
+
+------------------------------------------------------------------------------
 systemLiteral :: Parser Text
 systemLiteral = singleQuoted <|> doubleQuoted
   where
@@ -244,6 +268,8 @@ systemLiteral = singleQuoted <|> doubleQuoted
         _ <- P.char '\"'
         return x
 
+
+------------------------------------------------------------------------------
 pubIdLiteral :: Parser Text
 pubIdLiteral = singleQuoted <|> doubleQuoted
   where
@@ -258,6 +284,8 @@ pubIdLiteral = singleQuoted <|> doubleQuoted
         _ <- P.char '\"'
         return x
 
+
+------------------------------------------------------------------------------
 isPubIdChar :: Char -> Bool
 isPubIdChar c | c >= 'a' && c <= 'z'                 = True
               | c >= 'A' && c <= 'Z'                 = True
@@ -265,14 +293,16 @@ isPubIdChar c | c >= 'a' && c <= 'z'                 = True
               | c `elem` " \r\n-\'()+,./:=?;!*#@$_%" = True
               | otherwise                            = False
 
-{-
-    The requirement to not contain "]]>" is for SGML compatibility.  We
-    deliberately choose to not enforce it.  This makes the parser accept
-    strictly more documents than a standards-compliant parser.
--}
+
+------------------------------------------------------------------------------
+-- | The requirement to not contain "]]>" is for SGML compatibility.  We
+-- deliberately choose to not enforce it.  This makes the parser accept
+-- strictly more documents than a standards-compliant parser.
 charData :: Parser Node
 charData = TextNode <$> P.takeWhile1 (not . (`elem` "<&"))
 
+
+------------------------------------------------------------------------------
 comment :: Parser (Maybe Node)
 comment = P.string "<!--" *> (Just <$> Comment <$> commentText) <* P.string "-->"
   where
@@ -280,32 +310,40 @@ comment = P.string "<!--" *> (Just <$> Comment <$> commentText) <* P.string "-->
         nonDash <|> P.try (T.cons <$> P.char '-' <*> nonDash)
     nonDash = P.takeWhile1 (not . (== '-'))
 
-{-
-    Always returns Nothing since there's no representation for a PI in the
-    document tree.
--}
+
+------------------------------------------------------------------------------
+-- | Always returns Nothing since there's no representation for a PI in the
+-- document tree.
 processingInstruction :: Parser (Maybe Node)
 processingInstruction =
     P.string "<?" *> piTarget *> whiteSpace
                   *> P.manyTill P.anyChar (P.string "?>")
                   *> return Nothing
 
+
+------------------------------------------------------------------------------
 piTarget :: Parser Text
 piTarget = do
     n <- name
     when (T.map toLower n == "xml") $ fail "xml declaration can't occur here"
     return n
 
+
+------------------------------------------------------------------------------
 cdata :: [Char] -> Parser a -> Parser Node
 cdata cs end = TextNode <$> T.concat <$> P.manyTill part end
   where part = P.takeWhile1 (not . (`elem` cs))
              <|> T.singleton <$> P.anyChar
 
+
+------------------------------------------------------------------------------
 cdSect :: Parser (Maybe Node)
 cdSect = Just <$> do
     _ <- P.string "<![CDATA["
     cdata "]" (P.string "]]>")
 
+
+------------------------------------------------------------------------------
 prolog :: Parser (Maybe DocType, [Node])
 prolog = do
     _      <- optional xmlDecl
@@ -318,9 +356,9 @@ prolog = do
         Nothing           -> return (Nothing, catMaybes nodes1)
         Just (dt, nodes2) -> return (Just dt, catMaybes (nodes1 ++ nodes2))
 
-{-
-    Return value is the encoding, if present.
--}
+
+------------------------------------------------------------------------------
+-- | Return value is the encoding, if present.
 xmlDecl :: Parser (Text, Maybe Text)
 xmlDecl = do
     _ <- P.string "<?xml"
@@ -331,6 +369,8 @@ xmlDecl = do
     _ <- P.string "?>"
     return (v,e)
 
+
+------------------------------------------------------------------------------
 versionInfo :: Parser Text
 versionInfo = do
     whiteSpace *> P.string "version" *> eq *> (singleQuoted <|> doubleQuoted)
@@ -342,16 +382,20 @@ versionInfo = do
         b <- fmap T.pack $ some (P.satisfy (\c -> c >= '0' && c <= '9'))
         return (T.append a b)
 
+
+------------------------------------------------------------------------------
 eq :: Parser ()
 eq = optional whiteSpace *> P.char '=' *> optional whiteSpace *> return ()
 
+
+------------------------------------------------------------------------------
 misc :: Parser (Maybe Node)
 misc = comment <|> processingInstruction <|> (whiteSpace *> return Nothing)
 
-{-
-    Internal subset is parsed, but ignored since we don't have data types to
-    store it.
--}
+
+------------------------------------------------------------------------------
+-- | Internal subset is parsed, but ignored since we don't have data types to
+-- store it.
 docType :: Parser DocType
 docType = do
     _     <- P.string "<!DOCTYPE"
@@ -366,6 +410,8 @@ docType = do
     _     <- P.char '>'
     return (DocType tag extid)
 
+
+------------------------------------------------------------------------------
 sdDecl :: Parser ()
 sdDecl = do
     whiteSpace
@@ -378,6 +424,8 @@ sdDecl = do
     double = P.char '\"' *> yesno <* P.char '\"'
     yesno  = P.string "yes" <|> P.string "no"
 
+
+------------------------------------------------------------------------------
 element :: Parser Node
 element = do
     (t,a,b) <- emptyOrStartTag
@@ -389,9 +437,9 @@ element = do
         endTag t
         return (Element t a c)
 
-{-
-    Results are (tag name, attributes, isEmpty)
--}
+
+------------------------------------------------------------------------------
+-- | Results are (tag name, attributes, isEmpty)
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
     _ <- P.char '<'
@@ -404,6 +452,8 @@ emptyOrStartTag = do
     _ <- P.char '>'
     return (t, a, isJust e)
 
+
+------------------------------------------------------------------------------
 attribute :: Parser (Text, Text)
 attribute = do
     n <- name
@@ -411,6 +461,8 @@ attribute = do
     v <- attrValue
     return (n,v)
 
+
+------------------------------------------------------------------------------
 endTag :: Text -> Parser ()
 endTag s = do
     _ <- P.string "</"
@@ -421,6 +473,8 @@ endTag s = do
     _ <- P.string ">"
     return ()
 
+
+------------------------------------------------------------------------------
 content :: Parser [Node]
 content = do
     n  <- optional charData
@@ -441,6 +495,8 @@ content = do
     coalesceText []
         = []
 
+
+------------------------------------------------------------------------------
 charRef :: Parser Text
 charRef = hexCharRef <|> decCharRef
   where
@@ -470,9 +526,13 @@ charRef = hexCharRef <|> decCharRef
             d <- P.satisfy (\c -> c >= 'a' && c <= 'f')
             return (10 + ord d - ord 'a')
 
+
+------------------------------------------------------------------------------
 reference :: Parser Text
 reference = charRef <|> entityRef
 
+
+------------------------------------------------------------------------------
 entityRef :: Parser Text
 entityRef = do
     _ <- P.char '&'
@@ -491,6 +551,8 @@ entityRef = do
         ("quot", "\"")
         ]
 
+
+------------------------------------------------------------------------------
 externalID :: Parser ExternalID
 externalID = systemID <|> publicID
   where
@@ -506,9 +568,9 @@ externalID = systemID <|> publicID
         sid <- systemLiteral
         return (Public pid sid)
 
-{-
-    Return value is the encoding.
--}
+
+------------------------------------------------------------------------------
+-- | Return value is the encoding.
 textDecl :: Parser (Maybe Text, Text)
 textDecl = do
     _ <- P.string "<?xml"
@@ -518,9 +580,13 @@ textDecl = do
     _ <- P.string "?>"
     return (v,e)
 
+
+------------------------------------------------------------------------------
 extParsedEnt :: Parser [Node]
 extParsedEnt = optional textDecl *> content
 
+
+------------------------------------------------------------------------------
 encodingDecl :: Parser Text
 encodingDecl = whiteSpace *> P.string "encoding" *> eq
             *> (singleQuoted <|> doubleQuoted)
