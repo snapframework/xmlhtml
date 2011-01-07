@@ -7,14 +7,65 @@ import Data.ByteString (ByteString)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 
-data Document = XmlDocument  Encoding (Maybe DocType) [Node]
-              | HtmlDocument Encoding (Maybe DocType) [Node]
+{-
+    Represents a document fragment, including the format, encoding, and
+    document type declaration as well as its content.
+-}
+data Document = XmlDocument  {
+                    docEncoding :: !Encoding,
+                    docType     :: !(Maybe DocType),
+                    docContent  :: ![Node]
+                }
+              | HtmlDocument {
+                    docEncoding :: !Encoding,
+                    docType     :: !(Maybe DocType),
+                    docContent  :: ![Node]
+                }
     deriving (Eq, Show)
 
-data Node = TextNode Text
-          | Comment Text
-          | Element Text [(Text, Text)] [Node]
+data Node = TextNode !Text
+          | Comment  !Text
+          | Element {
+                elementTag      :: !Text,
+                elementAttrs    :: ![(Text, Text)],
+                elementChildren :: ![Node]
     deriving (Eq, Show)
+
+isTextNode :: Node -> Bool
+isTextNode (TextNode _) = True
+isTextNode _            = False
+
+isComment :: Node -> Bool
+isComment (Comment _) = True
+isComment _           = False
+
+isElement :: Node -> Bool
+isElement (Element _ _ _) = True
+isElement _               = False
+
+tagName :: Node -> Maybe Text
+tagName (Element t _ _) = Just t
+tagName _               = Nothing
+
+nodeText :: Node -> Text
+nodeText (TextNode t)    = t
+nodeText (Comment _)     = ""
+nodeText (Element _ _ c) = T.concatMap nodeText c
+
+childNodes :: Node -> [Node]
+childNodes (Element _ _ c) = c
+childNodes _               = []
+
+childElements :: Node -> [Node]
+childElements (Element _ _ c) = filter isElement c
+childElements _               = []
+
+childElementsTag :: Text -> Node -> [Node]
+childElementsTag tag (Element _ _ c) = filter ((== Just t) . tagName) c
+childElementsTag _                   = []
+
+childElementTag :: Text -> Node -> Maybe Node
+childElementTag tag n = listToMaybe (childElementsTag tag n)
 
 data DocType = DocType Text (Maybe ExternalID)
     deriving (Eq, Show)
