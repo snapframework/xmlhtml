@@ -9,8 +9,8 @@ module Text.XmlHtml.Cursor (
     -- * Conversion to and from cursors
     fromNode,
     fromNodes,
-    toNode,
-    toNodes,
+    topNode,
+    topNodes,
     current,
     siblings,
 
@@ -110,14 +110,14 @@ fromNodes []     = Nothing
 
 ------------------------------------------------------------------------------
 -- | Retrieves the root node containing the current cursor position.
-toNode :: Cursor -> Node
-toNode cur  = current (root cur)
+topNode :: Cursor -> Node
+topNode cur  = current (root cur)
 
 
 ------------------------------------------------------------------------------
 -- | Retrieves the entire forest of 'Node's corresponding to a 'Cursor'.
-toNodes :: Cursor -> [Node]
-toNodes cur = siblings (root cur)
+topNodes :: Cursor -> [Node]
+topNodes cur = siblings (root cur)
 
 
 ------------------------------------------------------------------------------
