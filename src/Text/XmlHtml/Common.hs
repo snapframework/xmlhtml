@@ -92,13 +92,13 @@ childElementTag tag n = listToMaybe (childElementsTag tag n)
 
 
 ------------------------------------------------------------------------------
-data DocType = DocType Text (Maybe ExternalID)
+data DocType = DocType !Text !(Maybe ExternalID)
     deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
-data ExternalID = System Text
-                | Public Text Text
+data ExternalID = System !Text
+                | Public !Text !Text
     deriving (Eq, Show)
 
 

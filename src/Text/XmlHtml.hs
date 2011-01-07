@@ -26,6 +26,17 @@ module Text.XmlHtml (
     ExternalID(..),
     Encoding(..),
 
+    -- * Manipulating documents
+    isTextNode,
+    isComment,
+    isElement,
+    tagName,
+    nodeText,
+    childNodes,
+    childElements,
+    childElementsTag,
+    childElementTag,
+
     -- * Parsing
     parseXML,
     parseHTML,
