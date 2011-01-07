@@ -2,12 +2,12 @@
 
 module Text.XmlHtml.HTML.Meta where
 
-import Data.Text (Text)
+import           Data.Text (Text)
 
-import Data.Map (Map)
+import           Data.Map (Map)
 import qualified Data.Map as M
 
-import Data.Set (Set)
+import           Data.Set (Set)
 import qualified Data.Set as S
 
 ------------------------------------------------------------------------------

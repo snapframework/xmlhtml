@@ -3,12 +3,12 @@
 
 module Text.XmlHtml.HTML.Render where
 
-import Blaze.ByteString.Builder
-import Data.Monoid
-import Text.XmlHtml.Common
-import Text.XmlHtml.HTML.Meta
+import           Blaze.ByteString.Builder
+import           Data.Monoid
+import           Text.XmlHtml.Common
+import           Text.XmlHtml.HTML.Meta
 
-import Data.Text (Text)
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Data.Set as S

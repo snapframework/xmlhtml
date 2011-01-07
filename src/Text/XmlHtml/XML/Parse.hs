@@ -2,23 +2,23 @@
 
 module Text.XmlHtml.XML.Parse where
 
-import Control.Applicative
-import Control.Monad
-import Data.Char
-import Data.List
-import Data.Maybe
-import Text.XmlHtml.Common
+import           Control.Applicative
+import           Control.Monad
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import           Text.XmlHtml.Common
 
-import Data.ByteString (ByteString)
+import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 
-import Data.Attoparsec.Text (Parser)
+import           Data.Attoparsec.Text (Parser)
 import qualified Data.Attoparsec.Text as P
 
-import Data.Map (Map)
+import           Data.Map (Map)
 import qualified Data.Map as M
 
-import Data.Text (Text)
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 ------------------------------------------------------------------------------

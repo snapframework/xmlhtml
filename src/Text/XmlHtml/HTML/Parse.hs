@@ -3,24 +3,24 @@
 
 module Text.XmlHtml.HTML.Parse where
 
-import Control.Applicative
-import Control.Monad
-import Data.Char
-import Data.List
-import Data.Maybe
-import Text.XmlHtml.Common
-import Text.XmlHtml.HTML.Meta
+import           Control.Applicative
+import           Control.Monad
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import           Text.XmlHtml.Common
+import           Text.XmlHtml.HTML.Meta
 
-import Data.ByteString (ByteString)
+import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 
-import Data.Attoparsec.Text (Parser)
+import           Data.Attoparsec.Text (Parser)
 import qualified Data.Attoparsec.Text as P
 
 import qualified Data.Set as S
 import qualified Data.Map as M
 
-import Data.Text (Text)
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 

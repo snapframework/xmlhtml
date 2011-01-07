@@ -2,11 +2,11 @@
 
 module Text.XmlHtml.XML.Render where
 
-import Blaze.ByteString.Builder
-import Data.Monoid
-import Text.XmlHtml.Common
+import           Blaze.ByteString.Builder
+import           Data.Monoid
+import           Text.XmlHtml.Common
 
-import Data.Text (Text)
+import           Data.Text (Text)
 import qualified Data.Text as T
 
 

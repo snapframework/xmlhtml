@@ -46,10 +46,10 @@ module Text.XmlHtml (
     ) where
 
 ------------------------------------------------------------------------------
-import Blaze.ByteString.Builder (Builder)
-import Data.ByteString (ByteString)
+import           Blaze.ByteString.Builder (Builder)
+import           Data.ByteString (ByteString)
 
-import Text.XmlHtml.Common
+import           Text.XmlHtml.Common
 
 import qualified Text.XmlHtml.XML.Parse as XML
 import qualified Text.XmlHtml.XML.Render as XML
@@ -57,16 +57,19 @@ import qualified Text.XmlHtml.XML.Render as XML
 import qualified Text.XmlHtml.HTML.Parse as HTML
 import qualified Text.XmlHtml.HTML.Render as HTML
 
+
 ------------------------------------------------------------------------------
 -- | Parses the given XML fragment.
 parseXML :: ByteString -> Either String Document
 parseXML = XML.parse
+
 
 ------------------------------------------------------------------------------
 -- | Parses the given HTML fragment.  This enables HTML quirks mode, which
 --   changes the parsing algorithm to parse valid HTML 5 documents correctly.
 parseHTML :: ByteString -> Either String Document
 parseHTML = HTML.parse
+
 
 ------------------------------------------------------------------------------
 -- | Renders a 'Document'.
