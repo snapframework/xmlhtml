@@ -48,7 +48,7 @@ module Text.XmlHtml.Cursor (
     insertLeft,
     insertRight,
     insertManyLeft,
-    insertManyRight
+    insertManyRight,
     insertFirstChild,
     insertLastChild,
     insertManyFirstChild,
@@ -316,7 +316,7 @@ insertRight n (Cursor nn ls rs ps) = Cursor nn ls (n:rs) ps
 ------------------------------------------------------------------------------
 -- | Inserts a list of new 'Node's to the left of the current position.
 insertManyLeft :: [Node] -> Cursor -> Cursor
-insertMenyLeft ns (Cursor nn ls rs ps) = Cursor nn (reverse ns ++ ls) rs ps
+insertManyLeft ns (Cursor nn ls rs ps) = Cursor nn (reverse ns ++ ls) rs ps
 
 
 ------------------------------------------------------------------------------
