@@ -47,6 +47,12 @@ module Text.XmlHtml.Cursor (
     -- * Insertions
     insertLeft,
     insertRight,
+    insertManyLeft,
+    insertManyRight
+    insertFirstChild,
+    insertLastChild,
+    insertManyFirstChild,
+    insertManyLastChild,
     insertGoLeft,
     insertGoRight,
     
@@ -286,7 +292,7 @@ setNode n cur = cur { current = n }
 ------------------------------------------------------------------------------
 -- | Modifies the current node by applying a function.
 modifyNode :: (Node -> Node) -> Cursor -> Cursor
-modifyNode f cur = cur { current = f (current cur) }
+modifyNode f cur = setNode (f (current cur)) cur
 
 
 ------------------------------------------------------------------------------
@@ -305,6 +311,54 @@ insertLeft n (Cursor nn ls rs ps) = Cursor nn (n:ls) rs ps
 -- | Inserts a new 'Node' to the right of the current position.
 insertRight :: Node -> Cursor -> Cursor
 insertRight n (Cursor nn ls rs ps) = Cursor nn ls (n:rs) ps
+
+
+------------------------------------------------------------------------------
+-- | Inserts a list of new 'Node's to the left of the current position.
+insertManyLeft :: [Node] -> Cursor -> Cursor
+insertMenyLeft ns (Cursor nn ls rs ps) = Cursor nn (reverse ns ++ ls) rs ps
+
+
+------------------------------------------------------------------------------
+-- | Inserts a list of new 'Node's to the right of the current position.
+insertManyRight :: [Node] -> Cursor -> Cursor
+insertManyRight ns (Cursor nn ls rs ps) = Cursor nn ls (ns ++ rs) ps
+
+
+------------------------------------------------------------------------------
+-- | Inserts a 'Node' as the first child of the current element.
+insertFirstChild :: Node -> Cursor -> Maybe Cursor
+insertFirstChild n (Cursor (Element t a c) ls rs ps)
+    = Just (Cursor (Element t a (n:c)) ls rs ps)
+insertFirstChild _ _
+    = Nothing
+
+
+------------------------------------------------------------------------------
+-- | Inserts a 'Node' as the last child of the current element.
+insertLastChild :: Node -> Cursor -> Maybe Cursor
+insertLastChild n (Cursor (Element t a c) ls rs ps)
+    = Just (Cursor (Element t a (c ++ [n])) ls rs ps)
+insertLastChild _ _
+    = Nothing
+
+
+------------------------------------------------------------------------------
+-- | Inserts a list of 'Node's as the first children of the current element.
+insertManyFirstChild :: [Node] -> Cursor -> Maybe Cursor
+insertManyFirstChild ns (Cursor (Element t a c) ls rs ps)
+    = Just (Cursor (Element t a (ns ++ c)) ls rs ps)
+insertManyFirstChild _ _
+    = Nothing
+
+
+------------------------------------------------------------------------------
+-- | Inserts a list of 'Node's as the last children of the current element.
+insertManyLastChild :: [Node] -> Cursor -> Maybe Cursor
+insertManyLastChild ns (Cursor (Element t a c) ls rs ps)
+    = Just (Cursor (Element t a (c ++ ns)) ls rs ps)
+insertManyLastChild _ _
+    = Nothing
 
 
 ------------------------------------------------------------------------------
