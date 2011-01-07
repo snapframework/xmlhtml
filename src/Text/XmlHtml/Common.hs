@@ -77,6 +77,29 @@ tagName _               = Nothing
 
 
 ------------------------------------------------------------------------------
+-- | Retrieves the attribute with the given name.  If the 'Node' is not an
+-- element, the result is always 'Nothing'
+getAttribute :: Text -> Node -> Maybe Text
+getAttribute name (Element _ attrs _) = lookup name attrs
+getAttribute _    _                   = Nothing
+
+
+------------------------------------------------------------------------------
+-- | Checks if a given attribute exists in a 'Node'.
+hasAttribute :: Text -> Node -> Bool
+hasAttribute name = isJust . getAttribute name
+
+
+------------------------------------------------------------------------------
+-- | Sets the attribute name to the given value.  If the 'Node' is not an
+-- element, this is the identity.
+setAttribute :: Text -> Text -> Node -> Node
+setAttribute name val (Element t a c) = Element t newAttrs c
+  where newAttrs = (name, val) : filter ((/= name) . fst) a
+setAttribute _    _   n                   = n
+
+
+------------------------------------------------------------------------------
 -- | Gives the entire text content of a node, ignoring markup.
 nodeText :: Node -> Text
 nodeText (TextNode t)    = t
