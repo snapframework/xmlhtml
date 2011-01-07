@@ -284,7 +284,7 @@ prolog = do
     _      <- optional xmlDecl
     nodes1 <- many misc
     rest   <- optional $ do
-        dt     <- docType
+        dt     <- docTypeDecl
         nodes2 <- many misc
         return (dt, nodes2)
     case rest of
@@ -331,8 +331,8 @@ misc = Just <$> comment
 ------------------------------------------------------------------------------
 -- | Internal subset is parsed, but ignored since we don't have data types to
 -- store it.
-docType :: Parser DocType
-docType = do
+docTypeDecl :: Parser DocType
+docTypeDecl = do
     _     <- P.string "<!DOCTYPE"
     whiteSpace
     tag   <- name

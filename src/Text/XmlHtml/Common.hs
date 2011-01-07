@@ -3,8 +3,10 @@
 module Text.XmlHtml.Common where
 
 import Data.ByteString (ByteString)
+import Data.Maybe
 
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
 
@@ -31,6 +33,7 @@ data Node = TextNode !Text
                 elementTag      :: !Text,
                 elementAttrs    :: ![(Text, Text)],
                 elementChildren :: ![Node]
+            }
     deriving (Eq, Show)
 
 
@@ -62,7 +65,7 @@ tagName _               = Nothing
 nodeText :: Node -> Text
 nodeText (TextNode t)    = t
 nodeText (Comment _)     = ""
-nodeText (Element _ _ c) = T.concatMap nodeText c
+nodeText (Element _ _ c) = T.concat (map nodeText c)
 
 
 ------------------------------------------------------------------------------
@@ -79,8 +82,8 @@ childElements _               = []
 
 ------------------------------------------------------------------------------
 childElementsTag :: Text -> Node -> [Node]
-childElementsTag tag (Element _ _ c) = filter ((== Just t) . tagName) c
-childElementsTag _                   = []
+childElementsTag tag (Element _ _ c) = filter ((== Just tag) . tagName) c
+childElementsTag _   _               = []
 
 
 ------------------------------------------------------------------------------

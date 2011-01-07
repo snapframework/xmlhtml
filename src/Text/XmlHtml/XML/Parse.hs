@@ -103,7 +103,7 @@ docFragment = do
     [25]  Eq                 eq
     [26]  VersionNum         versionInfo           {3}
     [27]  Misc               misc
-    [28]  doctypedecl        docType
+    [28]  doctypedecl        docTypeDecl
     [28a] DeclSep                                  {4}
     [28b] intSubset                                {4}
     [29]  markupdecl                               {4}
@@ -349,7 +349,7 @@ prolog = do
     _      <- optional xmlDecl
     nodes1 <- many misc
     rest   <- optional $ do
-        dt     <- docType
+        dt     <- docTypeDecl
         nodes2 <- many misc
         return (dt, nodes2)
     case rest of
@@ -396,8 +396,8 @@ misc = comment <|> processingInstruction <|> (whiteSpace *> return Nothing)
 ------------------------------------------------------------------------------
 -- | Internal subset is parsed, but ignored since we don't have data types to
 -- store it.
-docType :: Parser DocType
-docType = do
+docTypeDecl :: Parser DocType
+docTypeDecl = do
     _     <- P.string "<!DOCTYPE"
     whiteSpace
     tag   <- name

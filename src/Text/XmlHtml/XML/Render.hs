@@ -19,7 +19,7 @@ fromText e t = fromByteString (encoder e t)
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render e dt ns = byteOrder
        `mappend` xmlDecl e
-       `mappend` docType e dt
+       `mappend` docTypeDecl e dt
        `mappend` (mconcat $ map (node e) ns)
     where byteOrder | isUTF16 e = fromText e "\xFEFF" -- byte order mark
                     | otherwise = mempty
@@ -33,12 +33,12 @@ xmlDecl e = fromText e "<?xml version=\"1.0\" encoding=\""
 
 
 ------------------------------------------------------------------------------
-docType :: Encoding -> Maybe DocType -> Builder
-docType _ Nothing                  = mempty
-docType e (Just (DocType tag ext)) = fromText e "<!DOCTYPE "
-                           `mappend` fromText e tag
-                           `mappend` externalID e ext
-                           `mappend` fromText e ">"
+docTypeDecl :: Encoding -> Maybe DocType -> Builder
+docTypeDecl _ Nothing                  = mempty
+docTypeDecl e (Just (DocType tag ext)) = fromText e "<!DOCTYPE "
+                               `mappend` fromText e tag
+                               `mappend` externalID e ext
+                               `mappend` fromText e ">"
 
 
 ------------------------------------------------------------------------------
