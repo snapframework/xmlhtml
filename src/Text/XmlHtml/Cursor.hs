@@ -197,7 +197,7 @@ nextDF c = firstChild c `mplus` up c
 
 
 ------------------------------------------------------------------------------
--- Repeats the given move until a 'Cursor' is obtained that matches the
+-- | Repeats the given move until a 'Cursor' is obtained that matches the
 -- predicate.
 search :: (Cursor -> Bool)         -- ^ predicate
        -> (Cursor -> Maybe Cursor) -- ^ move
@@ -208,19 +208,20 @@ search p move c | p c       = return c
 
 
 ------------------------------------------------------------------------------
--- Navigates a 'Cursor' to the first child that matches the predicate.
+-- | Navigates a 'Cursor' to the first child that matches the predicate.
 findChild :: (Cursor -> Bool) -> Cursor -> Maybe Cursor
 findChild p cur = search p right =<< firstChild cur
 
 
 ------------------------------------------------------------------------------
--- Navigates a 'Cursor' to the nearest left sibling that matches a predicate.
+-- | Navigates a 'Cursor' to the nearest left sibling that matches a
+-- predicate.
 findLeft :: (Cursor -> Bool) -> Cursor -> Maybe Cursor
 findLeft p cur = search p left =<< left cur
 
 
 ------------------------------------------------------------------------------
--- Navigates a 'Cursor' to the nearest right sibling that matches a predicate.
+-- | Navigates a 'Cursor' to the nearest right sibling that matches a predicate.
 findRight :: (Cursor -> Bool) -> Cursor -> Maybe Cursor
 findRight p cur = search p right =<< right cur
 
