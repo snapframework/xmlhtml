@@ -2,13 +2,19 @@
 
 module Text.XmlHtml.Common where
 
-import           Data.ByteString (ByteString)
+import           Blaze.ByteString.Builder
+import           Control.Applicative
 import           Data.Maybe
 
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
+import           Data.Attoparsec.Text (Parser)
+import qualified Data.Attoparsec.Text as P
+
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as B
 
 ------------------------------------------------------------------------------
 -- | Represents a document fragment, including the format, encoding, and
@@ -180,4 +186,34 @@ decoder UTF16LE = T.decodeUtf16LE
 ------------------------------------------------------------------------------
 isUTF16 :: Encoding -> Bool
 isUTF16 e = e == UTF16BE || e == UTF16LE
+
+
+------------------------------------------------------------------------------
+fromText :: Encoding -> Text -> Builder
+fromText e t = fromByteString (encoder e t)
+
+
+------------------------------------------------------------------------------
+-- | Get an initial guess at document encoding from the byte order mark.  If
+-- the mark doesn't exist, guess UTF-8.  Otherwise, guess according to the
+-- mark.
+guessEncoding :: ByteString -> (Encoding, ByteString)
+guessEncoding b
+    | B.take 3 b == B.pack [ 0xEF, 0xBB, 0xBF ] = (UTF8,    B.drop 3 b)
+    | B.take 2 b == B.pack [ 0xFE, 0xFF ]       = (UTF16BE, B.drop 2 b)
+    | B.take 2 b == B.pack [ 0xFF, 0xFE ]       = (UTF16LE, B.drop 2 b)
+    | otherwise                                 = (UTF8,    b)
+
+
+------------------------------------------------------------------------------
+parseText :: Parser a -> Text -> Either String a
+parseText p t = case (P.parse parser t) of
+    P.Fail _ _ err -> Left err
+    P.Partial f    -> case (f T.empty) of
+                        P.Fail _ _ err -> Left err
+                        P.Done "" r    -> Right r
+                        P.Done _  _    -> Left "Unexpected text after input"
+                        P.Partial _    -> Left "Misbehaving parser"
+    P.Done _ _     -> Left "Unexpected text after input"
+  where parser = p <* P.endOfInput
 

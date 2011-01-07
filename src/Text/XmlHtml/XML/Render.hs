@@ -11,11 +11,6 @@ import qualified Data.Text as T
 
 
 ------------------------------------------------------------------------------
-fromText :: Encoding -> Text -> Builder
-fromText e t = fromByteString (encoder e t)
-
-
-------------------------------------------------------------------------------
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render e dt ns = byteOrder
        `mappend` xmlDecl e

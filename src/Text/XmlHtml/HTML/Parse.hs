@@ -5,14 +5,12 @@ module Text.XmlHtml.HTML.Parse where
 
 import           Control.Applicative
 import           Control.Monad
+import           Data.ByteString (ByteString)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.HTML.Meta
-
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString as B
 
 import           Data.Attoparsec.Text (Parser)
 import qualified Data.Attoparsec.Text as P
@@ -25,18 +23,6 @@ import qualified Data.Text as T
 
 
 ------------------------------------------------------------------------------
--- | Get an initial guess at document encoding from the byte order mark.  If
--- the mark doesn't exist, guess UTF-8.  Otherwise, guess according to the
--- mark.
-guessEncoding :: ByteString -> (Encoding, ByteString)
-guessEncoding b
-    | B.take 3 b == B.pack [ 0xEF, 0xBB, 0xBF ] = (UTF8,    B.drop 3 b)
-    | B.take 2 b == B.pack [ 0xFE, 0xFF ]       = (UTF16BE, B.drop 2 b)
-    | B.take 2 b == B.pack [ 0xFF, 0xFE ]       = (UTF16LE, B.drop 2 b)
-    | otherwise                                 = (UTF8,    b)
-
-
-------------------------------------------------------------------------------
 parse :: ByteString -> Either String Document
 parse b = let (e, b') = guessEncoding b
           in  handleResult e (parseText docFragment (decoder e b'))
@@ -44,18 +30,6 @@ parse b = let (e, b') = guessEncoding b
     handleResult _ (Left err)       = Left err
     handleResult e (Right (dt, ns)) = Right (HtmlDocument e dt ns)
 
-
-------------------------------------------------------------------------------
-parseText :: Parser a -> Text -> Either String a
-parseText p t = case (P.parse parser t) of
-    P.Fail _ _ err -> Left err
-    P.Partial f    -> case (f T.empty) of
-                        P.Fail _ _ err -> Left err
-                        P.Done "" r    -> Right r
-                        P.Done _  _    -> Left "Unexpected text after input"
-                        P.Partial _    -> Left "Misbehaving parser"
-    P.Done _ _     -> Left "Unexpected text after input"
-  where parser = p <* P.endOfInput
 
 ------------------------------------------------------------------------------
 -- | This is my best guess as to the best rule for handling document fragments

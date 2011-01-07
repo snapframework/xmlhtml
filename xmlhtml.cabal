@@ -34,7 +34,8 @@ Flag test
 
 Library
   Hs-source-dirs:      src
-  Exposed-modules:     Text.XmlHtml
+  Exposed-modules:     Text.XmlHtml,
+                       Text.XmlHtml.Cursor
   Other-modules:       Text.XmlHtml.Common,
                        Text.XmlHtml.XML.Parse,
                        Text.XmlHtml.XML.Render,

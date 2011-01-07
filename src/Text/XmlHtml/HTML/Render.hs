@@ -14,18 +14,6 @@ import qualified Data.Text as T
 import qualified Data.Set as S
 
 ------------------------------------------------------------------------------
--- | Convenience functions that are useful later.
-isTextNode :: Node -> Bool
-isTextNode (TextNode _) = True
-isTextNode _            = False
-
-
-------------------------------------------------------------------------------
-fromText :: Encoding -> Text -> Builder
-fromText e t = fromByteString (encoder e t)
-
-
-------------------------------------------------------------------------------
 -- | And, the rendering code.
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render e dt ns = byteOrder
