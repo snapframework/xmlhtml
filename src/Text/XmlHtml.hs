@@ -36,6 +36,10 @@ module Text.XmlHtml (
     childElements,
     childElementsTag,
     childElementTag,
+    descendantNodes,
+    descendantElements,
+    descendantElementsTag,
+    descendantElementTag,
 
     -- * Parsing
     parseXML,

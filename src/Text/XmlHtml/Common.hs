@@ -106,6 +106,32 @@ childElementTag tag = listToMaybe . childElementsTag tag
 
 
 ------------------------------------------------------------------------------
+-- | Gives the descendants of the given node in the order that they begin in
+-- the document.
+descendantNodes :: Node -> [Node]
+descendantNodes = concatMap (\n -> n : descendantNodes n) . childNodes
+
+------------------------------------------------------------------------------
+-- | Gives the descendant elements of the given node, in the order that their
+-- start tags appear in the document.
+descendantElements :: Node -> [Node]
+descendantElements = filter isElement . descendantNodes
+
+
+------------------------------------------------------------------------------
+-- | Gives the descendant elements with a given tag name.
+descendantElementsTag :: Text -> Node -> [Node]
+descendantElementsTag tag = filter ((== Just tag) . tagName) . descendantNodes
+
+
+------------------------------------------------------------------------------
+-- | Gives the first descendant element of the node with the given tag name,
+-- or 'Nothing' if there is no such element.
+descendantElementTag :: Text -> Node -> Maybe Node
+descendantElementTag tag = listToMaybe . descendantElementsTag tag
+
+
+------------------------------------------------------------------------------
 -- | A document type declaration.  Note that DTD internal subsets are
 -- currently unimplemented.
 data DocType = DocType !Text !(Maybe ExternalID)
