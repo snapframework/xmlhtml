@@ -413,7 +413,7 @@ element = do
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
     t <- P.try $ P.char '<' *> name
-    a <- many $ do
+    a <- many $ P.try $ do
         whiteSpace
         attribute
     _ <- optional whiteSpace
