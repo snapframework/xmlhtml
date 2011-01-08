@@ -28,10 +28,6 @@ Category:            Text
 Build-type:          Simple
 Cabal-version:       >=1.6
 
-Flag test
-  Description: Whether to build the unit tests
-  Default: False
-
 Library
   Hs-source-dirs:      src
   Exposed-modules:     Text.XmlHtml,
@@ -48,9 +44,5 @@ Library
                        containers == 0.3.*,
                        parsec >= 3.0 && < 3.2,
                        text >= 0.10 && < 0.12
-  if flag(test)
-    Hs-source-dirs:    tests
-    Other-modules:     Text.XmlHtml.Tests
-    Build-depends:     QuickCheck >= 2.0 && < 2.5
 
   Ghc-options:         -Wall -fwarn-tabs

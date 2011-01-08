@@ -1,14 +1,14 @@
+{-# OPTIONS_GHC -O0 -fno-case-merge -fno-strictness -fno-cse #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Text.XmlHtml.HTML.Meta where
 
-import           Data.Text (Text)
-
+import           Data.Monoid
 import           Data.Map (Map)
 import qualified Data.Map as M
-
 import           Data.Set (Set)
 import qualified Data.Set as S
+import           Data.Text (Text)
 
 ------------------------------------------------------------------------------
 -- Metadata used for HTML5 quirks mode.                                     --
@@ -69,8 +69,70 @@ endOmittableNext = M.fromAscList [
     ]
 
 predefinedRefs :: Map Text Text
-predefinedRefs = M.fromAscList [
-    ("AElig", "\x000C6"),
+predefinedRefs = mconcat $ map M.fromAscList [
+      reftab1
+    , reftab2
+    , reftab3
+    , reftab4
+    , reftab5
+    , reftab6
+    , reftab7
+    , reftab8
+    , reftab9
+    , reftab10
+    , reftab11
+    , reftab12
+    , reftab13
+    , reftab14
+    , reftab15
+    , reftab16
+    , reftab17
+    , reftab18
+    , reftab19
+    , reftab20
+    , reftab21
+    , reftab22
+    , reftab23
+    , reftab24
+    , reftab25
+    , reftab26
+    , reftab27
+    , reftab28
+    , reftab29
+    , reftab30
+    , reftab31
+    , reftab32
+    , reftab33
+    , reftab34
+    , reftab35
+    , reftab36
+    , reftab37
+    , reftab38
+    , reftab39
+    , reftab40
+    , reftab41
+    , reftab42
+    , reftab43
+    , reftab44
+    , reftab45
+    , reftab46
+    , reftab47
+    , reftab48
+    , reftab49
+    , reftab50
+    , reftab51
+    , reftab52
+    , reftab53
+    , reftab54
+    , reftab55
+    , reftab56
+    , reftab57
+    , reftab58 ]
+
+
+reftab1 :: [(Text,Text)]
+reftab1 =
+  [ ("AElig", "\x000C6"),
     ("AMP", "\x00026"),
     ("Aacute", "\x000C1"),
     ("Abreve", "\x00102"),
@@ -106,8 +168,11 @@ predefinedRefs = M.fromAscList [
     ("Cacute", "\x00106"),
     ("Cap", "\x022D2"),
     ("CapitalDifferentialD", "\x02145"),
-    ("Cayleys", "\x0212D"),
-    ("Ccaron", "\x0010C"),
+    ("Cayleys", "\x0212D") ]
+
+reftab2 :: [(Text,Text)]
+reftab2 =
+  [ ("Ccaron", "\x0010C"),
     ("Ccedil", "\x000C7"),
     ("Ccirc", "\x00108"),
     ("Cconint", "\x02230"),
@@ -143,8 +208,11 @@ predefinedRefs = M.fromAscList [
     ("Dagger", "\x02021"),
     ("Darr", "\x021A1"),
     ("Dashv", "\x02AE4"),
-    ("Dcaron", "\x0010E"),
-    ("Dcy", "\x00414"),
+    ("Dcaron", "\x0010E") ]
+
+reftab3 :: [(Text,Text)]
+reftab3 =
+  [ ("Dcy", "\x00414"),
     ("Del", "\x02207"),
     ("Delta", "\x00394"),
     ("Dfr", "\x1D507"),
@@ -180,8 +248,11 @@ predefinedRefs = M.fromAscList [
     ("DownLeftRightVector", "\x02950"),
     ("DownLeftTeeVector", "\x0295E"),
     ("DownLeftVector", "\x021BD"),
-    ("DownLeftVectorBar", "\x02956"),
-    ("DownRightTeeVector", "\x0295F"),
+    ("DownLeftVectorBar", "\x02956") ]
+
+reftab4 :: [(Text,Text)]
+reftab4 =
+  [ ("DownRightTeeVector", "\x0295F"),
     ("DownRightVector", "\x021C1"),
     ("DownRightVectorBar", "\x02957"),
     ("DownTee", "\x022A4"),
@@ -217,8 +288,11 @@ predefinedRefs = M.fromAscList [
     ("Fcy", "\x00424"),
     ("Ffr", "\x1D509"),
     ("FilledSmallSquare", "\x025FC"),
-    ("FilledVerySmallSquare", "\x025AA"),
-    ("Fopf", "\x1D53D"),
+    ("FilledVerySmallSquare", "\x025AA") ]
+
+reftab5 :: [(Text,Text)]
+reftab5 =
+  [ ("Fopf", "\x1D53D"),
     ("ForAll", "\x02200"),
     ("Fouriertrf", "\x02131"),
     ("Fscr", "\x02131"),
@@ -254,8 +328,11 @@ predefinedRefs = M.fromAscList [
     ("Hscr", "\x0210B"),
     ("Hstrok", "\x00126"),
     ("HumpDownHump", "\x0224E"),
-    ("HumpEqual", "\x0224F"),
-    ("IEcy", "\x00415"),
+    ("HumpEqual", "\x0224F") ]
+
+reftab6 :: [(Text,Text)]
+reftab6 =
+  [ ("IEcy", "\x00415"),
     ("IJlig", "\x00132"),
     ("IOcy", "\x00401"),
     ("Iacute", "\x000CD"),
@@ -291,8 +368,11 @@ predefinedRefs = M.fromAscList [
     ("KJcy", "\x0040C"),
     ("Kappa", "\x0039A"),
     ("Kcedil", "\x00136"),
-    ("Kcy", "\x0041A"),
-    ("Kfr", "\x1D50E"),
+    ("Kcy", "\x0041A") ]
+
+reftab7 :: [(Text,Text)]
+reftab7 =
+  [ ("Kfr", "\x1D50E"),
     ("Kopf", "\x1D542"),
     ("Kscr", "\x1D4A6"),
     ("LJcy", "\x00409"),
@@ -328,8 +408,11 @@ predefinedRefs = M.fromAscList [
     ("LeftUpVector", "\x021BF"),
     ("LeftUpVectorBar", "\x02958"),
     ("LeftVector", "\x021BC"),
-    ("LeftVectorBar", "\x02952"),
-    ("Leftarrow", "\x021D0"),
+    ("LeftVectorBar", "\x02952") ]
+
+reftab8 :: [(Text,Text)]
+reftab8 =
+  [ ("Leftarrow", "\x021D0"),
     ("Leftrightarrow", "\x021D4"),
     ("LessEqualGreater", "\x022DA"),
     ("LessFullEqual", "\x02266"),
@@ -365,8 +448,11 @@ predefinedRefs = M.fromAscList [
     ("Mu", "\x0039C"),
     ("NJcy", "\x0040A"),
     ("Nacute", "\x00143"),
-    ("Ncaron", "\x00147"),
-    ("Ncedil", "\x00145"),
+    ("Ncaron", "\x00147") ]
+
+reftab9 :: [(Text,Text)]
+reftab9 =
+  [ ("Ncedil", "\x00145"),
     ("Ncy", "\x0041D"),
     ("NegativeMediumSpace", "\x0200B"),
     ("NegativeThickSpace", "\x0200B"),
@@ -402,8 +488,11 @@ predefinedRefs = M.fromAscList [
     ("NotLess", "\x0226E"),
     ("NotLessEqual", "\x02270"),
     ("NotLessGreater", "\x02278"),
-    ("NotLessLess", "\x0226A\x00338"),
-    ("NotLessSlantEqual", "\x02A7D\x00338"),
+    ("NotLessLess", "\x0226A\x00338") ]
+
+reftab10 :: [(Text,Text)]
+reftab10 =
+  [ ("NotLessSlantEqual", "\x02A7D\x00338"),
     ("NotLessTilde", "\x02274"),
     ("NotNestedGreaterGreater", "\x02AA2\x00338"),
     ("NotNestedLessLess", "\x02AA1\x00338"),
@@ -439,8 +528,11 @@ predefinedRefs = M.fromAscList [
     ("Ocirc", "\x000D4"),
     ("Ocy", "\x0041E"),
     ("Odblac", "\x00150"),
-    ("Ofr", "\x1D512"),
-    ("Ograve", "\x000D2"),
+    ("Ofr", "\x1D512") ]
+
+reftab11 :: [(Text,Text)]
+reftab11 =
+  [ ("Ograve", "\x000D2"),
     ("Omacr", "\x0014C"),
     ("Omega", "\x003A9"),
     ("Omicron", "\x0039F"),
@@ -476,8 +568,11 @@ predefinedRefs = M.fromAscList [
     ("Proportional", "\x0221D"),
     ("Pscr", "\x1D4AB"),
     ("Psi", "\x003A8"),
-    ("QUOT", "\x00022"),
-    ("Qfr", "\x1D514"),
+    ("QUOT", "\x00022") ]
+
+reftab12 :: [(Text,Text)]
+reftab12 =
+  [ ("Qfr", "\x1D514"),
     ("Qopf", "\x0211A"),
     ("Qscr", "\x1D4AC"),
     ("RBarr", "\x02910"),
@@ -513,8 +608,11 @@ predefinedRefs = M.fromAscList [
     ("RightTriangleEqual", "\x022B5"),
     ("RightUpDownVector", "\x0294F"),
     ("RightUpTeeVector", "\x0295C"),
-    ("RightUpVector", "\x021BE"),
-    ("RightUpVectorBar", "\x02954"),
+    ("RightUpVector", "\x021BE") ]
+
+reftab13 :: [(Text,Text)]
+reftab13 =
+  [ ("RightUpVectorBar", "\x02954"),
     ("RightVector", "\x021C0"),
     ("RightVectorBar", "\x02953"),
     ("Rightarrow", "\x021D2"),
@@ -550,8 +648,11 @@ predefinedRefs = M.fromAscList [
     ("SquareSupersetEqual", "\x02292"),
     ("SquareUnion", "\x02294"),
     ("Sscr", "\x1D4AE"),
-    ("Star", "\x022C6"),
-    ("Sub", "\x022D0"),
+    ("Star", "\x022C6") ]
+
+reftab14 :: [(Text,Text)]
+reftab14 =
+  [ ("Sub", "\x022D0"),
     ("Subset", "\x022D0"),
     ("SubsetEqual", "\x02286"),
     ("Succeeds", "\x0227B"),
@@ -587,8 +688,11 @@ predefinedRefs = M.fromAscList [
     ("Tscr", "\x1D4AF"),
     ("Tstrok", "\x00166"),
     ("Uacute", "\x000DA"),
-    ("Uarr", "\x0219F"),
-    ("Uarrocir", "\x02949"),
+    ("Uarr", "\x0219F") ]
+
+reftab15 :: [(Text,Text)]
+reftab15 =
+  [ ("Uarrocir", "\x02949"),
     ("Ubrcy", "\x0040E"),
     ("Ubreve", "\x0016C"),
     ("Ucirc", "\x000DB"),
@@ -624,8 +728,11 @@ predefinedRefs = M.fromAscList [
     ("Uuml", "\x000DC"),
     ("VDash", "\x022AB"),
     ("Vbar", "\x02AEB"),
-    ("Vcy", "\x00412"),
-    ("Vdash", "\x022A9"),
+    ("Vcy", "\x00412") ]
+
+reftab16 :: [(Text,Text)]
+reftab16 =
+  [ ("Vdash", "\x022A9"),
     ("Vdashl", "\x02AE6"),
     ("Vee", "\x022C1"),
     ("Verbar", "\x02016"),
@@ -661,8 +768,11 @@ predefinedRefs = M.fromAscList [
     ("ZHcy", "\x00416"),
     ("Zacute", "\x00179"),
     ("Zcaron", "\x0017D"),
-    ("Zcy", "\x00417"),
-    ("Zdot", "\x0017B"),
+    ("Zcy", "\x00417") ]
+
+reftab17 :: [(Text,Text)]
+reftab17 =
+  [ ("Zdot", "\x0017B"),
     ("ZeroWidthSpace", "\x0200B"),
     ("Zeta", "\x00396"),
     ("Zfr", "\x02128"),
@@ -698,8 +808,11 @@ predefinedRefs = M.fromAscList [
     ("angmsdaa", "\x029A8"),
     ("angmsdab", "\x029A9"),
     ("angmsdac", "\x029AA"),
-    ("angmsdad", "\x029AB"),
-    ("angmsdae", "\x029AC"),
+    ("angmsdad", "\x029AB") ]
+
+reftab18 :: [(Text,Text)]
+reftab18 =
+  [ ("angmsdae", "\x029AC"),
     ("angmsdaf", "\x029AD"),
     ("angmsdag", "\x029AE"),
     ("angmsdah", "\x029AF"),
@@ -735,8 +848,11 @@ predefinedRefs = M.fromAscList [
     ("backsim", "\x0223D"),
     ("backsimeq", "\x022CD"),
     ("barvee", "\x022BD"),
-    ("barwed", "\x02305"),
-    ("barwedge", "\x02305"),
+    ("barwed", "\x02305") ]
+
+reftab19 :: [(Text,Text)]
+reftab19 =
+  [ ("barwedge", "\x02305"),
     ("bbrk", "\x023B5"),
     ("bbrktbrk", "\x023B6"),
     ("bcong", "\x0224C"),
@@ -772,8 +888,11 @@ predefinedRefs = M.fromAscList [
     ("blacktriangleleft", "\x025C2"),
     ("blacktriangleright", "\x025B8"),
     ("blank", "\x02423"),
-    ("blk12", "\x02592"),
-    ("blk14", "\x02591"),
+    ("blk12", "\x02592") ]
+
+reftab20 :: [(Text,Text)]
+reftab20 =
+  [ ("blk14", "\x02591"),
     ("blk34", "\x02593"),
     ("block", "\x02588"),
     ("bne", "\x0003D\x020E5"),
@@ -809,8 +928,11 @@ predefinedRefs = M.fromAscList [
     ("boxdl", "\x02510"),
     ("boxdr", "\x0250C"),
     ("boxh", "\x02500"),
-    ("boxhD", "\x02565"),
-    ("boxhU", "\x02568"),
+    ("boxhD", "\x02565") ]
+
+reftab21 :: [(Text,Text)]
+reftab21 =
+  [ ("boxhU", "\x02568"),
     ("boxhd", "\x0252C"),
     ("boxhu", "\x02534"),
     ("boxminus", "\x0229F"),
@@ -846,8 +968,11 @@ predefinedRefs = M.fromAscList [
     ("cacute", "\x00107"),
     ("cap", "\x02229"),
     ("capand", "\x02A44"),
-    ("capbrcup", "\x02A49"),
-    ("capcap", "\x02A4B"),
+    ("capbrcup", "\x02A49") ]
+
+reftab22 :: [(Text,Text)]
+reftab22 =
+  [ ("capcap", "\x02A4B"),
     ("capcup", "\x02A47"),
     ("capdot", "\x02A40"),
     ("caps", "\x02229\x0FE00"),
@@ -883,8 +1008,11 @@ predefinedRefs = M.fromAscList [
     ("cire", "\x02257"),
     ("cirfnint", "\x02A10"),
     ("cirmid", "\x02AEF"),
-    ("cirscir", "\x029C2"),
-    ("clubs", "\x02663"),
+    ("cirscir", "\x029C2") ]
+
+reftab23 :: [(Text,Text)]
+reftab23 =
+  [ ("clubs", "\x02663"),
     ("clubsuit", "\x02663"),
     ("colon", "\x0003A"),
     ("colone", "\x02254"),
@@ -920,8 +1048,11 @@ predefinedRefs = M.fromAscList [
     ("cupbrcap", "\x02A48"),
     ("cupcap", "\x02A46"),
     ("cupcup", "\x02A4A"),
-    ("cupdot", "\x0228D"),
-    ("cupor", "\x02A45"),
+    ("cupdot", "\x0228D") ]
+
+reftab24 :: [(Text,Text)]
+reftab24 =
+  [ ("cupor", "\x02A45"),
     ("cups", "\x0222A\x0FE00"),
     ("curarr", "\x021B7"),
     ("curarrm", "\x0293C"),
@@ -957,8 +1088,11 @@ predefinedRefs = M.fromAscList [
     ("demptyv", "\x029B1"),
     ("dfisht", "\x0297F"),
     ("dfr", "\x1D521"),
-    ("dharl", "\x021C3"),
-    ("dharr", "\x021C2"),
+    ("dharl", "\x021C3") ]
+
+reftab25 :: [(Text,Text)]
+reftab25 =
+  [ ("dharr", "\x021C2"),
     ("diam", "\x022C4"),
     ("diamond", "\x022C4"),
     ("diamondsuit", "\x02666"),
@@ -994,8 +1128,11 @@ predefinedRefs = M.fromAscList [
     ("dsol", "\x029F6"),
     ("dstrok", "\x00111"),
     ("dtdot", "\x022F1"),
-    ("dtri", "\x025BF"),
-    ("dtrif", "\x025BE"),
+    ("dtri", "\x025BF") ]
+
+reftab26 :: [(Text,Text)]
+reftab26 =
+  [ ("dtrif", "\x025BE"),
     ("duarr", "\x021F5"),
     ("duhar", "\x0296F"),
     ("dwangle", "\x029A6"),
@@ -1031,8 +1168,11 @@ predefinedRefs = M.fromAscList [
     ("emsp13", "\x02004"),
     ("emsp14", "\x02005"),
     ("eng", "\x0014B"),
-    ("ensp", "\x02002"),
-    ("eogon", "\x00119"),
+    ("ensp", "\x02002") ]
+
+reftab27 :: [(Text,Text)]
+reftab27 =
+  [ ("eogon", "\x00119"),
     ("eopf", "\x1D556"),
     ("epar", "\x022D5"),
     ("eparsl", "\x029E3"),
@@ -1068,8 +1208,11 @@ predefinedRefs = M.fromAscList [
     ("female", "\x02640"),
     ("ffilig", "\x0FB03"),
     ("fflig", "\x0FB00"),
-    ("ffllig", "\x0FB04"),
-    ("ffr", "\x1D523"),
+    ("ffllig", "\x0FB04") ]
+
+reftab28 :: [(Text,Text)]
+reftab28 =
+  [ ("ffr", "\x1D523"),
     ("filig", "\x0FB01"),
     ("fjlig", "\x00066\x0006A"),
     ("flat", "\x0266D"),
@@ -1105,8 +1248,11 @@ predefinedRefs = M.fromAscList [
     ("gamma", "\x003B3"),
     ("gammad", "\x003DD"),
     ("gap", "\x02A86"),
-    ("gbreve", "\x0011F"),
-    ("gcirc", "\x0011D"),
+    ("gbreve", "\x0011F") ]
+
+reftab29 :: [(Text,Text)]
+reftab29 =
+  [ ("gcirc", "\x0011D"),
     ("gcy", "\x00433"),
     ("gdot", "\x00121"),
     ("ge", "\x02265"),
@@ -1142,8 +1288,11 @@ predefinedRefs = M.fromAscList [
     ("gscr", "\x0210A"),
     ("gsim", "\x02273"),
     ("gsime", "\x02A8E"),
-    ("gsiml", "\x02A90"),
-    ("gt", "\x0003E"),
+    ("gsiml", "\x02A90") ]
+
+reftab30 :: [(Text,Text)]
+reftab30 =
+  [ ("gt", "\x0003E"),
     ("gtcc", "\x02AA7"),
     ("gtcir", "\x02A7A"),
     ("gtdot", "\x022D7"),
@@ -1179,8 +1328,11 @@ predefinedRefs = M.fromAscList [
     ("homtht", "\x0223B"),
     ("hookleftarrow", "\x021A9"),
     ("hookrightarrow", "\x021AA"),
-    ("hopf", "\x1D559"),
-    ("horbar", "\x02015"),
+    ("hopf", "\x1D559") ]
+
+reftab31 :: [(Text,Text)]
+reftab31 =
+  [ ("horbar", "\x02015"),
     ("hscr", "\x1D4BD"),
     ("hslash", "\x0210F"),
     ("hstrok", "\x00127"),
@@ -1216,8 +1368,11 @@ predefinedRefs = M.fromAscList [
     ("int", "\x0222B"),
     ("intcal", "\x022BA"),
     ("integers", "\x02124"),
-    ("intercal", "\x022BA"),
-    ("intlarhk", "\x02A17"),
+    ("intercal", "\x022BA") ]
+
+reftab32 :: [(Text,Text)]
+reftab32 =
+  [ ("intlarhk", "\x02A17"),
     ("intprod", "\x02A3C"),
     ("iocy", "\x00451"),
     ("iogon", "\x0012F"),
@@ -1253,8 +1408,11 @@ predefinedRefs = M.fromAscList [
     ("khcy", "\x00445"),
     ("kjcy", "\x0045C"),
     ("kopf", "\x1D55C"),
-    ("kscr", "\x1D4C0"),
-    ("lAarr", "\x021DA"),
+    ("kscr", "\x1D4C0") ]
+
+reftab33 :: [(Text,Text)]
+reftab33 =
+  [ ("lAarr", "\x021DA"),
     ("lArr", "\x021D0"),
     ("lAtail", "\x0291B"),
     ("lBarr", "\x0290E"),
@@ -1290,8 +1448,11 @@ predefinedRefs = M.fromAscList [
     ("lbrke", "\x0298B"),
     ("lbrksld", "\x0298F"),
     ("lbrkslu", "\x0298D"),
-    ("lcaron", "\x0013E"),
-    ("lcedil", "\x0013C"),
+    ("lcaron", "\x0013E") ]
+
+reftab34 :: [(Text,Text)]
+reftab34 =
+  [ ("lcedil", "\x0013C"),
     ("lceil", "\x02308"),
     ("lcub", "\x0007B"),
     ("lcy", "\x0043B"),
@@ -1327,8 +1488,11 @@ predefinedRefs = M.fromAscList [
     ("lessdot", "\x022D6"),
     ("lesseqgtr", "\x022DA"),
     ("lesseqqgtr", "\x02A8B"),
-    ("lessgtr", "\x02276"),
-    ("lesssim", "\x02272"),
+    ("lessgtr", "\x02276") ]
+
+reftab35 :: [(Text,Text)]
+reftab35 =
+  [ ("lesssim", "\x02272"),
     ("lfisht", "\x0297C"),
     ("lfloor", "\x0230A"),
     ("lfr", "\x1D529"),
@@ -1364,8 +1528,11 @@ predefinedRefs = M.fromAscList [
     ("looparrowleft", "\x021AB"),
     ("looparrowright", "\x021AC"),
     ("lopar", "\x02985"),
-    ("lopf", "\x1D55D"),
-    ("loplus", "\x02A2D"),
+    ("lopf", "\x1D55D") ]
+
+reftab36 :: [(Text,Text)]
+reftab36 =
+  [ ("loplus", "\x02A2D"),
     ("lotimes", "\x02A34"),
     ("lowast", "\x02217"),
     ("lowbar", "\x0005F"),
@@ -1401,8 +1568,11 @@ predefinedRefs = M.fromAscList [
     ("ltrPar", "\x02996"),
     ("ltri", "\x025C3"),
     ("ltrie", "\x022B4"),
-    ("ltrif", "\x025C2"),
-    ("lurdshar", "\x0294A"),
+    ("ltrif", "\x025C2") ]
+
+reftab37 :: [(Text,Text)]
+reftab37 =
+  [ ("lurdshar", "\x0294A"),
     ("luruhar", "\x02966"),
     ("lvertneqq", "\x02268\x0FE00"),
     ("lvnE", "\x02268\x0FE00"),
@@ -1438,8 +1608,11 @@ predefinedRefs = M.fromAscList [
     ("models", "\x022A7"),
     ("mopf", "\x1D55E"),
     ("mp", "\x02213"),
-    ("mscr", "\x1D4C2"),
-    ("mstpos", "\x0223E"),
+    ("mscr", "\x1D4C2") ]
+
+reftab38 :: [(Text,Text)]
+reftab38 =
+  [ ("mstpos", "\x0223E"),
     ("mu", "\x003BC"),
     ("multimap", "\x022B8"),
     ("mumap", "\x022B8"),
@@ -1475,8 +1648,11 @@ predefinedRefs = M.fromAscList [
     ("ncongdot", "\x02A6D\x00338"),
     ("ncup", "\x02A42"),
     ("ncy", "\x0043D"),
-    ("ndash", "\x02013"),
-    ("ne", "\x02260"),
+    ("ndash", "\x02013") ]
+
+reftab39 :: [(Text,Text)]
+reftab39 =
+  [ ("ne", "\x02260"),
     ("neArr", "\x021D7"),
     ("nearhk", "\x02924"),
     ("nearr", "\x02197"),
@@ -1512,8 +1688,11 @@ predefinedRefs = M.fromAscList [
     ("nle", "\x02270"),
     ("nleftarrow", "\x0219A"),
     ("nleftrightarrow", "\x021AE"),
-    ("nleq", "\x02270"),
-    ("nleqq", "\x02266\x00338"),
+    ("nleq", "\x02270") ]
+
+reftab40 :: [(Text,Text)]
+reftab40 =
+  [ ("nleqq", "\x02266\x00338"),
     ("nleqslant", "\x02A7D\x00338"),
     ("nles", "\x02A7D\x00338"),
     ("nless", "\x0226E"),
@@ -1549,8 +1728,11 @@ predefinedRefs = M.fromAscList [
     ("nrarrc", "\x02933\x00338"),
     ("nrarrw", "\x0219D\x00338"),
     ("nrightarrow", "\x0219B"),
-    ("nrtri", "\x022EB"),
-    ("nrtrie", "\x022ED"),
+    ("nrtri", "\x022EB") ]
+
+reftab41 :: [(Text,Text)]
+reftab41 =
+  [ ("nrtrie", "\x022ED"),
     ("nsc", "\x02281"),
     ("nsccue", "\x022E1"),
     ("nsce", "\x02AB0\x00338"),
@@ -1586,8 +1768,11 @@ predefinedRefs = M.fromAscList [
     ("ntriangleright", "\x022EB"),
     ("ntrianglerighteq", "\x022ED"),
     ("nu", "\x003BD"),
-    ("num", "\x00023"),
-    ("numero", "\x02116"),
+    ("num", "\x00023") ]
+
+reftab42 :: [(Text,Text)]
+reftab42 =
+  [ ("numero", "\x02116"),
     ("numsp", "\x02007"),
     ("nvDash", "\x022AD"),
     ("nvHarr", "\x02904"),
@@ -1623,8 +1808,11 @@ predefinedRefs = M.fromAscList [
     ("ofcir", "\x029BF"),
     ("ofr", "\x1D52C"),
     ("ogon", "\x002DB"),
-    ("ograve", "\x000F2"),
-    ("ogt", "\x029C1"),
+    ("ograve", "\x000F2") ]
+
+reftab43 :: [(Text,Text)]
+reftab43 =
+  [ ("ogt", "\x029C1"),
     ("ohbar", "\x029B5"),
     ("ohm", "\x003A9"),
     ("oint", "\x0222E"),
@@ -1660,8 +1848,11 @@ predefinedRefs = M.fromAscList [
     ("otimes", "\x02297"),
     ("otimesas", "\x02A36"),
     ("ouml", "\x000F6"),
-    ("ovbar", "\x0233D"),
-    ("par", "\x02225"),
+    ("ovbar", "\x0233D") ]
+
+reftab44 :: [(Text,Text)]
+reftab44 =
+  [ ("par", "\x02225"),
     ("para", "\x000B6"),
     ("parallel", "\x02225"),
     ("parsim", "\x02AF3"),
@@ -1697,8 +1888,11 @@ predefinedRefs = M.fromAscList [
     ("pm", "\x000B1"),
     ("pointint", "\x02A15"),
     ("popf", "\x1D561"),
-    ("pound", "\x000A3"),
-    ("pr", "\x0227A"),
+    ("pound", "\x000A3") ]
+
+reftab45 :: [(Text,Text)]
+reftab45 =
+  [ ("pr", "\x0227A"),
     ("prE", "\x02AB3"),
     ("prap", "\x02AB7"),
     ("prcue", "\x0227C"),
@@ -1734,8 +1928,11 @@ predefinedRefs = M.fromAscList [
     ("qscr", "\x1D4C6"),
     ("quaternions", "\x0210D"),
     ("quatint", "\x02A16"),
-    ("quest", "\x0003F"),
-    ("questeq", "\x0225F"),
+    ("quest", "\x0003F") ]
+
+reftab46 :: [(Text,Text)]
+reftab46 =
+  [ ("questeq", "\x0225F"),
     ("quot", "\x00022"),
     ("rAarr", "\x021DB"),
     ("rArr", "\x021D2"),
@@ -1771,8 +1968,11 @@ predefinedRefs = M.fromAscList [
     ("rbrace", "\x0007D"),
     ("rbrack", "\x0005D"),
     ("rbrke", "\x0298C"),
-    ("rbrksld", "\x0298E"),
-    ("rbrkslu", "\x02990"),
+    ("rbrksld", "\x0298E") ]
+
+reftab47 :: [(Text,Text)]
+reftab47 =
+  [ ("rbrkslu", "\x02990"),
     ("rcaron", "\x00159"),
     ("rcedil", "\x00157"),
     ("rceil", "\x02309"),
@@ -1808,8 +2008,11 @@ predefinedRefs = M.fromAscList [
     ("rightthreetimes", "\x022CC"),
     ("ring", "\x002DA"),
     ("risingdotseq", "\x02253"),
-    ("rlarr", "\x021C4"),
-    ("rlhar", "\x021CC"),
+    ("rlarr", "\x021C4") ]
+
+reftab48 :: [(Text,Text)]
+reftab48 =
+  [ ("rlhar", "\x021CC"),
     ("rlm", "\x0200F"),
     ("rmoust", "\x023B1"),
     ("rmoustache", "\x023B1"),
@@ -1845,8 +2048,11 @@ predefinedRefs = M.fromAscList [
     ("scE", "\x02AB4"),
     ("scap", "\x02AB8"),
     ("scaron", "\x00161"),
-    ("sccue", "\x0227D"),
-    ("sce", "\x02AB0"),
+    ("sccue", "\x0227D") ]
+
+reftab49 :: [(Text,Text)]
+reftab49 =
+  [ ("sce", "\x02AB0"),
     ("scedil", "\x0015F"),
     ("scirc", "\x0015D"),
     ("scnE", "\x02AB6"),
@@ -1882,8 +2088,11 @@ predefinedRefs = M.fromAscList [
     ("sim", "\x0223C"),
     ("simdot", "\x02A6A"),
     ("sime", "\x02243"),
-    ("simeq", "\x02243"),
-    ("simg", "\x02A9E"),
+    ("simeq", "\x02243") ]
+
+reftab50 :: [(Text,Text)]
+reftab50 =
+  [ ("simg", "\x02A9E"),
     ("simgE", "\x02AA0"),
     ("siml", "\x02A9D"),
     ("simlE", "\x02A9F"),
@@ -1919,8 +2128,11 @@ predefinedRefs = M.fromAscList [
     ("sqsupe", "\x02292"),
     ("sqsupset", "\x02290"),
     ("sqsupseteq", "\x02292"),
-    ("squ", "\x025A1"),
-    ("square", "\x025A1"),
+    ("squ", "\x025A1") ]
+
+reftab51 :: [(Text,Text)]
+reftab51 =
+  [ ("square", "\x025A1"),
     ("squarf", "\x025AA"),
     ("squf", "\x025AA"),
     ("srarr", "\x02192"),
@@ -1956,8 +2168,11 @@ predefinedRefs = M.fromAscList [
     ("succcurlyeq", "\x0227D"),
     ("succeq", "\x02AB0"),
     ("succnapprox", "\x02ABA"),
-    ("succneqq", "\x02AB6"),
-    ("succnsim", "\x022E9"),
+    ("succneqq", "\x02AB6") ]
+
+reftab52 :: [(Text,Text)]
+reftab52 =
+  [ ("succnsim", "\x022E9"),
     ("succsim", "\x0227F"),
     ("sum", "\x02211"),
     ("sung", "\x0266A"),
@@ -1993,8 +2208,11 @@ predefinedRefs = M.fromAscList [
     ("szlig", "\x000DF"),
     ("target", "\x02316"),
     ("tau", "\x003C4"),
-    ("tbrk", "\x023B4"),
-    ("tcaron", "\x00165"),
+    ("tbrk", "\x023B4") ]
+
+reftab53 :: [(Text,Text)]
+reftab53 =
+  [ ("tcaron", "\x00165"),
     ("tcedil", "\x00163"),
     ("tcy", "\x00442"),
     ("tdot", "\x020DB"),
@@ -2030,8 +2248,11 @@ predefinedRefs = M.fromAscList [
     ("triangledown", "\x025BF"),
     ("triangleleft", "\x025C3"),
     ("trianglelefteq", "\x022B4"),
-    ("triangleq", "\x0225C"),
-    ("triangleright", "\x025B9"),
+    ("triangleq", "\x0225C") ]
+
+reftab54 :: [(Text,Text)]
+reftab54 =
+  [ ("triangleright", "\x025B9"),
     ("trianglerighteq", "\x022B5"),
     ("tridot", "\x025EC"),
     ("trie", "\x0225C"),
@@ -2067,8 +2288,11 @@ predefinedRefs = M.fromAscList [
     ("ulcorn", "\x0231C"),
     ("ulcorner", "\x0231C"),
     ("ulcrop", "\x0230F"),
-    ("ultri", "\x025F8"),
-    ("umacr", "\x0016B"),
+    ("ultri", "\x025F8") ]
+
+reftab55 :: [(Text,Text)]
+reftab55 =
+  [ ("umacr", "\x0016B"),
     ("uml", "\x000A8"),
     ("uogon", "\x00173"),
     ("uopf", "\x1D566"),
@@ -2104,8 +2328,11 @@ predefinedRefs = M.fromAscList [
     ("varnothing", "\x02205"),
     ("varphi", "\x003D5"),
     ("varpi", "\x003D6"),
-    ("varpropto", "\x0221D"),
-    ("varr", "\x02195"),
+    ("varpropto", "\x0221D") ]
+
+reftab56 :: [(Text,Text)]
+reftab56 =
+  [ ("varr", "\x02195"),
     ("varrho", "\x003F1"),
     ("varsigma", "\x003C2"),
     ("varsubsetneq", "\x0228A\x0FE00"),
@@ -2141,8 +2368,11 @@ predefinedRefs = M.fromAscList [
     ("wedge", "\x02227"),
     ("wedgeq", "\x02259"),
     ("weierp", "\x02118"),
-    ("wfr", "\x1D534"),
-    ("wopf", "\x1D568"),
+    ("wfr", "\x1D534") ]
+
+reftab57 :: [(Text,Text)]
+reftab57 =
+  [ ("wopf", "\x1D568"),
     ("wp", "\x02118"),
     ("wr", "\x02240"),
     ("wreath", "\x02240"),
@@ -2178,8 +2408,11 @@ predefinedRefs = M.fromAscList [
     ("yen", "\x000A5"),
     ("yfr", "\x1D536"),
     ("yicy", "\x00457"),
-    ("yopf", "\x1D56A"),
-    ("yscr", "\x1D4CE"),
+    ("yopf", "\x1D56A") ]
+
+reftab58 :: [(Text,Text)]
+reftab58 =
+  [ ("yscr", "\x1D4CE"),
     ("yucy", "\x0044E"),
     ("yuml", "\x000FF"),
     ("zacute", "\x0017A"),
@@ -2194,6 +2427,5 @@ predefinedRefs = M.fromAscList [
     ("zopf", "\x1D56B"),
     ("zscr", "\x1D4CF"),
     ("zwj", "\x0200D"),
-    ("zwnj", "\x0200C")
-    ]
+    ("zwnj", "\x0200C") ]
 
