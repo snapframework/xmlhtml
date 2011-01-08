@@ -23,6 +23,7 @@ tests = [
     testIt "cdataOnly        " cdataOnly,
     testIt "commentOnly      " commentOnly,
     testIt "emptyElement     " emptyElement,
+    testIt "emptyElement2    " emptyElement2,
     testIt "elemWithText     " elemWithText,
     testIt "xmlDecl          " xmlDecl,
     testIt "procInst         " procInst,
@@ -126,6 +127,10 @@ commentOnly   = parseXML "" "<!-- this <is> a \"comment -->"
 
 emptyElement :: Bool
 emptyElement  = parseXML "" "<myElement/>"
+    == Right (XmlDocument e Nothing [Element "myElement" [] []])
+
+emptyElement2 :: Bool
+emptyElement2  = parseXML "" "<myElement />"
     == Right (XmlDocument e Nothing [Element "myElement" [] []])
 
 elemWithText :: Bool
