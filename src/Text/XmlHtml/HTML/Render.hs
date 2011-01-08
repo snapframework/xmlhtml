@@ -37,7 +37,7 @@ externalID :: Encoding -> Maybe ExternalID -> Builder
 externalID _ Nothing                 = mempty
 externalID e (Just (System sid))     = fromText e " SYSTEM "
                                        `mappend` sysID e sid
-externalID e (Just (Public pid sid)) = fromText e " SYSTEM "
+externalID e (Just (Public pid sid)) = fromText e " PUBLIC "
                                        `mappend` pubID e pid
                                        `mappend` fromText e " "
                                        `mappend` sysID e sid
