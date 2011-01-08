@@ -10,8 +10,7 @@ import           Data.List
 import           Data.Maybe
 import           Text.XmlHtml.Common
 
-import           Data.Attoparsec.Text (Parser)
-import qualified Data.Attoparsec.Text as P
+import qualified Text.Parsec as P
 
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -21,23 +20,20 @@ import qualified Data.Text as T
 
 
 ------------------------------------------------------------------------------
-parse :: ByteString -> Either String Document
-parse b = let (e, b') = guessEncoding b
-          in  handleResult e (parseText docFragment (decoder e b'))
-  where
-    handleResult _ (Left err)       = Left err
-    handleResult e (Right (dt, ns)) = Right (XmlDocument e dt ns)
+parse :: String -> ByteString -> Either String Document
+parse src b = let (e, b') = guessEncoding b
+              in  parseText (docFragment e) src (decoder e b')
 
 
 ------------------------------------------------------------------------------
 -- | This is my best guess as to the best rule for handling document fragments
 -- for processing.  It is essentially modeled after document, but allowing
 -- multiple nodes.
-docFragment :: Parser (Maybe DocType, [Node])
-docFragment = do
+docFragment :: Encoding -> Parser Document
+docFragment e = do
     (dt, nodes1) <- prolog
     nodes2       <- content
-    return (dt, nodes1 ++ nodes2)
+    return $ XmlDocument e dt (nodes1 ++ nodes2)
 
 
 -------------------------------------------------------------------------------
@@ -199,7 +195,7 @@ isNameChar c | isNameStartChar c                = True
 name :: Parser Text
 name = do
     c <- P.satisfy isNameStartChar
-    r <- P.takeWhile isNameChar
+    r <- takeWhile0 isNameChar
     return $ T.cons c r
 
 
@@ -210,7 +206,7 @@ names = P.sepBy1 name (P.char ' ')
 
 ------------------------------------------------------------------------------
 nmtoken :: Parser Text
-nmtoken = P.takeWhile1 isNameChar
+nmtoken = takeWhile1 isNameChar
 
 
 ------------------------------------------------------------------------------
@@ -224,7 +220,7 @@ attrValue = fmap T.concat (singleQuoted <|> doubleQuoted)
   where
     singleQuoted = P.char '\'' *> refTill "<&\'" <* P.char '\''
     doubleQuoted = P.char '\"' *> refTill "<&\"" <* P.char '\"'
-    refTill end = many (P.takeWhile1 (not . (`elem` end)) <|> reference)
+    refTill end = many (takeWhile1 (not . (`elem` end)) <|> reference)
 
 
 ------------------------------------------------------------------------------
@@ -233,12 +229,12 @@ systemLiteral = singleQuoted <|> doubleQuoted
   where
     singleQuoted = do
         _ <- P.char '\''
-        x <- P.takeWhile (not . (== '\''))
+        x <- takeWhile0 (not . (== '\''))
         _ <- P.char '\''
         return x
     doubleQuoted = do
         _ <- P.char '\"'
-        x <- P.takeWhile (not . (== '\"'))
+        x <- takeWhile0 (not . (== '\"'))
         _ <- P.char '\"'
         return x
 
@@ -249,12 +245,12 @@ pubIdLiteral = singleQuoted <|> doubleQuoted
   where
     singleQuoted = do
         _ <- P.char '\''
-        x <- P.takeWhile (\c -> isPubIdChar c && c /= '\'')
+        x <- takeWhile0 (\c -> isPubIdChar c && c /= '\'')
         _ <- P.char '\''
         return x
     doubleQuoted = do
         _ <- P.char '\"'
-        x <- P.takeWhile isPubIdChar
+        x <- takeWhile0 isPubIdChar
         _ <- P.char '\"'
         return x
 
@@ -273,16 +269,16 @@ isPubIdChar c | c >= 'a' && c <= 'z'                 = True
 -- deliberately choose to not enforce it.  This makes the parser accept
 -- strictly more documents than a standards-compliant parser.
 charData :: Parser Node
-charData = TextNode <$> P.takeWhile1 (not . (`elem` "<&"))
+charData = TextNode <$> takeWhile1 (not . (`elem` "<&"))
 
 
 ------------------------------------------------------------------------------
 comment :: Parser (Maybe Node)
-comment = P.string "<!--" *> (Just <$> Comment <$> commentText) <* P.string "-->"
+comment = text "<!--" *> (Just <$> Comment <$> commentText) <* text "-->"
   where
     commentText = fmap T.concat $ many $
         nonDash <|> P.try (T.cons <$> P.char '-' <*> nonDash)
-    nonDash = P.takeWhile1 (not . (== '-'))
+    nonDash = takeWhile1 (not . (== '-'))
 
 
 ------------------------------------------------------------------------------
@@ -290,9 +286,9 @@ comment = P.string "<!--" *> (Just <$> Comment <$> commentText) <* P.string "-->
 -- document tree.
 processingInstruction :: Parser (Maybe Node)
 processingInstruction =
-    P.string "<?" *> piTarget *> whiteSpace
-                  *> P.manyTill P.anyChar (P.string "?>")
-                  *> return Nothing
+    text "<?" *> piTarget *> whiteSpace
+              *> P.manyTill P.anyChar (text "?>")
+              *> return Nothing
 
 
 ------------------------------------------------------------------------------
@@ -306,15 +302,15 @@ piTarget = do
 ------------------------------------------------------------------------------
 cdata :: [Char] -> Parser a -> Parser Node
 cdata cs end = TextNode <$> T.concat <$> P.manyTill part end
-  where part = P.takeWhile1 (not . (`elem` cs))
+  where part = takeWhile1 (not . (`elem` cs))
              <|> T.singleton <$> P.anyChar
 
 
 ------------------------------------------------------------------------------
 cdSect :: Parser (Maybe Node)
 cdSect = Just <$> do
-    _ <- P.string "<![CDATA["
-    cdata "]" (P.string "]]>")
+    _ <- text "<![CDATA["
+    cdata "]" (text "]]>")
 
 
 ------------------------------------------------------------------------------
@@ -335,24 +331,24 @@ prolog = do
 -- | Return value is the encoding, if present.
 xmlDecl :: Parser (Text, Maybe Text)
 xmlDecl = do
-    _ <- P.string "<?xml"
+    _ <- text "<?xml"
     v <- versionInfo
     e <- optional encodingDecl
     _ <- optional sdDecl
     _ <- optional whiteSpace
-    _ <- P.string "?>"
+    _ <- text "?>"
     return (v,e)
 
 
 ------------------------------------------------------------------------------
 versionInfo :: Parser Text
 versionInfo = do
-    whiteSpace *> P.string "version" *> eq *> (singleQuoted <|> doubleQuoted)
+    whiteSpace *> text "version" *> eq *> (singleQuoted <|> doubleQuoted)
   where
     singleQuoted = P.char '\'' *> versionNum <* P.char '\''
     doubleQuoted = P.char '\"' *> versionNum <* P.char '\"'
     versionNum   = do
-        a <- P.string "1."
+        a <- text "1."
         b <- fmap T.pack $ some (P.satisfy (\c -> c >= '0' && c <= '9'))
         return (T.append a b)
 
@@ -372,10 +368,11 @@ misc = comment <|> processingInstruction <|> (whiteSpace *> return Nothing)
 -- store it.
 docTypeDecl :: Parser DocType
 docTypeDecl = do
-    _     <- P.string "<!DOCTYPE"
+    _     <- text "<!DOCTYPE"
     whiteSpace
     tag   <- name
-    extid <- optional $ whiteSpace *> externalID
+    _     <- optional whiteSpace
+    extid <- optional externalID
     _     <- optional whiteSpace
     _     <- optional $ do
             _ <- P.char '['
@@ -388,15 +385,14 @@ docTypeDecl = do
 ------------------------------------------------------------------------------
 sdDecl :: Parser ()
 sdDecl = do
-    whiteSpace
-    _ <- P.string "standalone"
+    _ <- P.try $ whiteSpace *> text "standalone"
     eq
     _ <- single <|> double
     return ()
   where
     single = P.char '\'' *> yesno <* P.char '\''
     double = P.char '\"' *> yesno <* P.char '\"'
-    yesno  = P.string "yes" <|> P.string "no"
+    yesno  = text "yes" <|> text "no"
 
 
 ------------------------------------------------------------------------------
@@ -416,8 +412,7 @@ element = do
 -- | Results are (tag name, attributes, isEmpty)
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
-    _ <- P.char '<'
-    t <- name
+    t <- P.try $ P.char '<' *> name
     a <- many $ do
         whiteSpace
         attribute
@@ -439,12 +434,12 @@ attribute = do
 ------------------------------------------------------------------------------
 endTag :: Text -> Parser ()
 endTag s = do
-    _ <- P.string "</"
+    _ <- text "</"
     t <- name
     when (s /= t) $ fail $ "mismatched tags: </" ++ T.unpack t ++
                            "> found inside <" ++ T.unpack s ++ "> tag"
     _ <- optional whiteSpace
-    _ <- P.string ">"
+    _ <- text ">"
     return ()
 
 
@@ -475,7 +470,7 @@ charRef :: Parser Text
 charRef = hexCharRef <|> decCharRef
   where
     decCharRef = do
-        _ <- P.string "&#"
+        _ <- text "&#"
         ds <- some digit
         _ <- P.char ';'
         return $ T.singleton $ chr $ foldl' (\a b -> 10 * a + b) 0 ds
@@ -484,7 +479,7 @@ charRef = hexCharRef <|> decCharRef
             d <- P.satisfy (\c -> c >= '0' && c <= '9')
             return (ord d - ord '0')
     hexCharRef = do
-        _ <- P.string "&#x"
+        _ <- text "&#x"
         ds <- some digit
         _ <- P.char ';'
         return $ T.singleton $ chr $ foldl' (\a b -> 16 * a + b) 0 ds
@@ -531,11 +526,11 @@ externalID :: Parser ExternalID
 externalID = systemID <|> publicID
   where
     systemID = do
-        _ <- P.string "SYSTEM"
+        _ <- text "SYSTEM"
         whiteSpace
         fmap System systemLiteral
     publicID = do
-        _ <- P.string "PUBLIC"
+        _ <- text "PUBLIC"
         whiteSpace
         pid <- pubIdLiteral
         whiteSpace
@@ -547,11 +542,11 @@ externalID = systemID <|> publicID
 -- | Return value is the encoding.
 textDecl :: Parser (Maybe Text, Text)
 textDecl = do
-    _ <- P.string "<?xml"
+    _ <- text "<?xml"
     v <- optional versionInfo
     e <- encodingDecl
     _ <- optional whiteSpace
-    _ <- P.string "?>"
+    _ <- text "?>"
     return (v,e)
 
 
@@ -562,14 +557,16 @@ extParsedEnt = optional textDecl *> content
 
 ------------------------------------------------------------------------------
 encodingDecl :: Parser Text
-encodingDecl = whiteSpace *> P.string "encoding" *> eq
-            *> (singleQuoted <|> doubleQuoted)
+encodingDecl = do
+    _ <- P.try $ whiteSpace *> text "encoding"
+    _ <- eq
+    singleQuoted <|> doubleQuoted
   where
     singleQuoted = P.char '\'' *> encName <* P.char '\''
     doubleQuoted = P.char '\"' *> encName <* P.char '\"'
     encName      = do
         c  <- P.satisfy isEncStart
-        cs <- P.takeWhile isEnc
+        cs <- takeWhile0 isEnc
         return (T.cons c cs)
     isEncStart c | c >= 'A' && c <= 'Z' = True
                  | c >= 'a' && c <= 'z' = True

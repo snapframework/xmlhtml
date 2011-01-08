@@ -12,8 +12,7 @@ import           Data.Maybe
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.HTML.Meta
 
-import           Data.Attoparsec.Text (Parser)
-import qualified Data.Attoparsec.Text as P
+import qualified Text.Parsec as P
 
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -23,23 +22,20 @@ import qualified Data.Text as T
 
 
 ------------------------------------------------------------------------------
-parse :: ByteString -> Either String Document
-parse b = let (e, b') = guessEncoding b
-          in  handleResult e (parseText docFragment (decoder e b'))
-  where
-    handleResult _ (Left err)       = Left err
-    handleResult e (Right (dt, ns)) = Right (HtmlDocument e dt ns)
+parse :: String -> ByteString -> Either String Document
+parse src b = let (e, b') = guessEncoding b
+              in  parseText (docFragment e) src (decoder e b')
 
 
 ------------------------------------------------------------------------------
 -- | This is my best guess as to the best rule for handling document fragments
 -- for processing.  It is essentially modeled after document, but allowing
 -- multiple nodes.
-docFragment :: Parser (Maybe DocType, [Node])
-docFragment = do
+docFragment :: Encoding -> Parser Document
+docFragment e = do
     (dt, nodes1)      <- prolog
     (nodes2, Matched) <- content Nothing
-    return (dt, nodes1 ++ nodes2)
+    return $ HtmlDocument e dt (nodes1 ++ nodes2)
 
 ------------------------------------------------------------------------------
 -- Parsing code                                                             --
@@ -136,7 +132,7 @@ isNameChar c | isNameStartChar c                = True
 name :: Parser Text
 name = do
     c <- P.satisfy isNameStartChar
-    r <- P.takeWhile isNameChar
+    r <- takeWhile0 isNameChar
     return $ T.cons c r
 
 
@@ -147,7 +143,7 @@ names = P.sepBy1 name (P.char ' ')
 
 ------------------------------------------------------------------------------
 nmtoken :: Parser Text
-nmtoken = P.takeWhile1 isNameChar
+nmtoken = takeWhile1 isNameChar
 
 
 ------------------------------------------------------------------------------
@@ -161,12 +157,12 @@ systemLiteral = singleQuoted <|> doubleQuoted
   where
     singleQuoted = do
         _ <- P.char '\''
-        x <- P.takeWhile (not . (== '\''))
+        x <- takeWhile0 (not . (== '\''))
         _ <- P.char '\''
         return x
     doubleQuoted = do
         _ <- P.char '\"'
-        x <- P.takeWhile (not . (== '\"'))
+        x <- takeWhile0 (not . (== '\"'))
         _ <- P.char '\"'
         return x
 
@@ -177,12 +173,12 @@ pubIdLiteral = singleQuoted <|> doubleQuoted
   where
     singleQuoted = do
         _ <- P.char '\''
-        x <- P.takeWhile (\c -> isPubIdChar c && c /= '\'')
+        x <- takeWhile0 (\c -> isPubIdChar c && c /= '\'')
         _ <- P.char '\''
         return x
     doubleQuoted = do
         _ <- P.char '\"'
-        x <- P.takeWhile isPubIdChar
+        x <- takeWhile0 isPubIdChar
         _ <- P.char '\"'
         return x
 
@@ -201,25 +197,25 @@ isPubIdChar c | c >= 'a' && c <= 'z'                 = True
 -- want to enforce it in the name of being accepting of more input.  Also,
 -- it's unclear to me how to express it in parser combinators.    
 charData :: Parser Node
-charData = TextNode <$> P.takeWhile1 (not . (`elem` "<&"))
+charData = TextNode <$> takeWhile1 (not . (`elem` "<&"))
 
 
 ------------------------------------------------------------------------------
 comment :: Parser Node
-comment = P.string "<!--" *> (Comment <$> commentText) <* P.string "-->"
+comment = text "<!--" *> (Comment <$> commentText) <* text "-->"
   where
     commentText = fmap T.concat $ many $
         nonDash <|> P.try (T.cons <$> P.char '-' <*> nonDash)
-    nonDash = P.takeWhile1 (not . (== '-'))
+    nonDash = takeWhile1 (not . (== '-'))
 
 ------------------------------------------------------------------------------
 -- | Always returns Nothing since there's no representation for a PI in the
 -- document tree.
 processingInstruction :: Parser (Maybe Node)
 processingInstruction =
-    P.string "<?" *> piTarget *> whiteSpace
-                  *> P.manyTill P.anyChar (P.string "?>")
-                  *> return Nothing
+    text "<?" *> piTarget *> whiteSpace
+              *> P.manyTill P.anyChar (text "?>")
+              *> return Nothing
 
 
 ------------------------------------------------------------------------------
@@ -233,7 +229,7 @@ piTarget = do
 ------------------------------------------------------------------------------
 cdata :: [Char] -> Parser a -> Parser Node
 cdata cs end = TextNode <$> T.concat <$> P.manyTill part end
-  where part = P.takeWhile1 (not . (`elem` cs))
+  where part = takeWhile1 (not . (`elem` cs))
              <|> T.singleton <$> P.anyChar
 
 ------------------------------------------------------------------------------
@@ -242,14 +238,14 @@ cdata cs end = TextNode <$> T.concat <$> P.manyTill part end
 -- RCDATA element.)
 rcdata :: [Char] -> Parser a -> Parser Node
 rcdata cs end = TextNode <$> T.concat <$> P.manyTill part end
-  where part = P.takeWhile1 (not . (`elem` cs))
+  where part = takeWhile1 (not . (`elem` cs))
              <|> reference
              <|> T.singleton <$> P.anyChar
 
 
 ------------------------------------------------------------------------------
 cdSect :: Parser Node
-cdSect = P.string "<![CDATA[" *> cdata "]" (P.string "]]>")
+cdSect = text "<![CDATA[" *> cdata "]" (text "]]>")
 
 
 ------------------------------------------------------------------------------
@@ -269,24 +265,24 @@ prolog = do
 -- | Return value is the encoding, if present.
 xmlDecl :: Parser (Text, Maybe Text)
 xmlDecl = do
-    _ <- P.string "<?xml"
+    _ <- text "<?xml"
     v <- versionInfo
     e <- optional encodingDecl
     _ <- optional sdDecl
     _ <- optional whiteSpace
-    _ <- P.string "?>"
+    _ <- text "?>"
     return (v,e)
 
 
 ------------------------------------------------------------------------------
 versionInfo :: Parser Text
 versionInfo = do
-    whiteSpace *> P.string "version" *> eq *> (singleQuoted <|> doubleQuoted)
+    whiteSpace *> text "version" *> eq *> (singleQuoted <|> doubleQuoted)
   where
     singleQuoted = P.char '\'' *> versionNum <* P.char '\''
     doubleQuoted = P.char '\"' *> versionNum <* P.char '\"'
     versionNum   = do
-        a <- P.string "1."
+        a <- text "1."
         b <- fmap T.pack $ some (P.satisfy (\c -> c >= '0' && c <= '9'))
         return (T.append a b)
 
@@ -307,10 +303,11 @@ misc = Just <$> comment
 -- store it.
 docTypeDecl :: Parser DocType
 docTypeDecl = do
-    _     <- P.string "<!DOCTYPE"
+    _     <- text "<!DOCTYPE"
     whiteSpace
     tag   <- name
-    extid <- optional $ whiteSpace *> externalID
+    _     <- optional whiteSpace
+    extid <- optional externalID
     _     <- optional whiteSpace
     _     <- optional $ do
             _ <- P.char '['
@@ -323,15 +320,15 @@ docTypeDecl = do
 ------------------------------------------------------------------------------
 sdDecl :: Parser ()
 sdDecl = do
-    whiteSpace
-    _ <- P.string "standalone"
+    _ <- P.try $ whiteSpace *> text "standalone"
     eq
     _ <- single <|> double
     return ()
   where
     single = P.char '\'' *> yesno <* P.char '\''
     double = P.char '\"' *> yesno <* P.char '\"'
-    yesno  = P.string "yes" <|> P.string "no"
+    yesno  = text "yes" <|> text "no"
+
 
 ------------------------------------------------------------------------------
 -- | When parsing an element, three things can happen (besides failure):
@@ -391,8 +388,7 @@ finishElement t a b = do
 ------------------------------------------------------------------------------
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
-    _ <- P.char '<'
-    t <- name
+    t <- P.try $ P.char '<' *> name
     a <- many $ do
         whiteSpace
         attribute
@@ -405,7 +401,7 @@ emptyOrStartTag = do
 
 ------------------------------------------------------------------------------
 attrName :: Parser Text
-attrName = P.takeWhile1 isAttrName
+attrName = takeWhile1 isAttrName
   where isAttrName c | c `elem` "\0 \"\'>/=" = False
                      | isControlChar c       = False
                      | otherwise             = True
@@ -429,7 +425,7 @@ quotedAttrValue = singleQuoted <|> doubleQuoted
     singleQuoted = P.char '\'' *> refTill "&\'" <* P.char '\''
     doubleQuoted = P.char '\"' *> refTill "&\"" <* P.char '\"'
     refTill end = T.concat <$> many
-        (P.takeWhile1 (not . (`elem` end))
+        (takeWhile1 (not . (`elem` end))
          <|> P.try reference
          <|> T.singleton <$> P.char '&')
 
@@ -439,7 +435,7 @@ unquotedAttrValue :: Parser Text
 unquotedAttrValue = refTill " \"\'=<>&`"
   where
     refTill end = T.concat <$> some
-        (P.takeWhile1 (not . (`elem` end))
+        (takeWhile1 (not . (`elem` end))
          <|> P.try reference
          <|> T.singleton <$> P.char '&')
 
@@ -464,7 +460,7 @@ attribute = do
 ------------------------------------------------------------------------------
 endTag :: Text -> Parser ElemResult
 endTag s = do
-    _ <- P.string "</"
+    _ <- text "</"
     t <- name
     r <- if (T.map toLower s == T.map toLower t)
             then return Matched
@@ -473,7 +469,7 @@ endTag s = do
                 else fail $ "mismatched tags: </" ++ T.unpack t ++
                             "> found inside <" ++ T.unpack s ++ "> tag"
     _ <- optional whiteSpace
-    _ <- P.string ">"
+    _ <- text ">"
     return r
 
 
@@ -536,7 +532,7 @@ charRef :: Parser Text
 charRef = hexCharRef <|> decCharRef
   where
     decCharRef = do
-        _ <- P.string "&#"
+        _ <- text "&#"
         ds <- some digit
         _ <- P.char ';'
         return $ T.singleton $ chr $ foldl' (\a b -> 10 * a + b) 0 ds
@@ -545,7 +541,7 @@ charRef = hexCharRef <|> decCharRef
             d <- P.satisfy (\c -> c >= '0' && c <= '9')
             return (ord d - ord '0')
     hexCharRef = do
-        _ <- P.string "&#x" <|> P.string "&#X"
+        _ <- text "&#x" <|> text "&#X"
         ds <- some digit
         _ <- P.char ';'
         return $ T.singleton $ chr $ foldl' (\a b -> 16 * a + b) 0 ds
@@ -583,26 +579,27 @@ externalID :: Parser ExternalID
 externalID = systemID <|> publicID
   where
     systemID = do
-        _ <- P.string "SYSTEM"
+        _ <- text "SYSTEM"
         whiteSpace
         fmap System systemLiteral
     publicID = do
-        _ <- P.string "PUBLIC"
+        _ <- text "PUBLIC"
         whiteSpace
         pid <- pubIdLiteral
         whiteSpace
         sid <- systemLiteral
         return (Public pid sid)
 
+
 ------------------------------------------------------------------------------
 -- | Return value is the encoding.
 textDecl :: Parser (Maybe Text, Text)
 textDecl = do
-    _ <- P.string "<?xml"
+    _ <- text "<?xml"
     v <- optional versionInfo
     e <- encodingDecl
     _ <- optional whiteSpace
-    _ <- P.string "?>"
+    _ <- text "?>"
     return (v,e)
 
 
@@ -615,14 +612,16 @@ extParsedEnt = do
 
 ------------------------------------------------------------------------------
 encodingDecl :: Parser Text
-encodingDecl = whiteSpace *> P.string "encoding" *> eq
-            *> (singleQuoted <|> doubleQuoted)
+encodingDecl = do
+    _ <- P.try $ whiteSpace *> text "encoding"
+    _ <- eq
+    singleQuoted <|> doubleQuoted
   where
     singleQuoted = P.char '\'' *> encName <* P.char '\''
     doubleQuoted = P.char '\"' *> encName <* P.char '\"'
     encName      = do
         c  <- P.satisfy isEncStart
-        cs <- P.takeWhile isEnc
+        cs <- takeWhile0 isEnc
         return (T.cons c cs)
     isEncStart c | c >= 'A' && c <= 'Z' = True
                  | c >= 'a' && c <= 'z' = True

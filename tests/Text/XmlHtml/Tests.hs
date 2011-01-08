@@ -88,159 +88,159 @@ isLeft _        = False
 e :: Encoding
 e = UTF8
 
-emptyDocument = parseXML ""
+emptyDocument = parseXML "" ""
     == Right (XmlDocument e Nothing [])
 
-publicDocType = parseXML "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
+publicDocType = parseXML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
     == Right (XmlDocument e (Just (DocType "tag" (Just (Public "foo" "bar")))) [])
 
-systemDocType = parseXML "<!DOCTYPE tag SYSTEM \"foo\">"
+systemDocType = parseXML "" "<!DOCTYPE tag SYSTEM \"foo\">"
     == Right (XmlDocument e (Just (DocType "tag" (Just (System "foo")))) [])
 
-emptyDocType  = parseXML "<!DOCTYPE tag >"
+emptyDocType  = parseXML "" "<!DOCTYPE tag >"
     == Right (XmlDocument e (Just (DocType "tag" Nothing)) [])
 
-textOnly      = parseXML "sldhfsklj''a's s"
+textOnly      = parseXML "" "sldhfsklj''a's s"
     == Right (XmlDocument e Nothing [TextNode "sldhfsklj''a's s"])
 
-textWithRefs  = parseXML "This is Bob&apos;s sled"
+textWithRefs  = parseXML "" "This is Bob&apos;s sled"
     == Right (XmlDocument e Nothing [TextNode "This is Bob's sled"])
 
-untermRef     = isLeft (parseXML "&#X6a")
+untermRef     = isLeft (parseXML "" "&#X6a")
 
-textWithCDATA = parseXML "Testing <![CDATA[with <some> c]data]]>"
+textWithCDATA = parseXML "" "Testing <![CDATA[with <some> c]data]]>"
     == Right (XmlDocument e Nothing [TextNode "Testing with <some> c]data"])
 
-cdataOnly     = parseXML "<![CDATA[ Testing <![CDATA[ test ]]>"
+cdataOnly     = parseXML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
     == Right (XmlDocument e Nothing [TextNode " Testing <![CDATA[ test "])
 
-commentOnly   = parseXML "<!-- this <is> a \"comment -->"
+commentOnly   = parseXML "" "<!-- this <is> a \"comment -->"
     == Right (XmlDocument e Nothing [Comment " this <is> a \"comment "])
 
-emptyElement  = parseXML "<myElement/>"
+emptyElement  = parseXML "" "<myElement/>"
     == Right (XmlDocument e Nothing [Element "myElement" [] []])
 
-elemWithText  = parseXML "<myElement>text</myElement>"
+elemWithText  = parseXML "" "<myElement>text</myElement>"
     == Right (XmlDocument e Nothing [Element "myElement" [] [TextNode "text"]])
 
-xmlDecl       = parseXML "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+xmlDecl       = parseXML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
     == Right (XmlDocument e Nothing [])
 
-procInst      = parseXML "<?myPI This''is <not> parsed!?>"
+procInst      = parseXML "" "<?myPI This''is <not> parsed!?>"
     == Right (XmlDocument e Nothing [])
 
 
-emptyDocumentHTML = parseHTML ""
+emptyDocumentHTML = parseHTML "" ""
     == Right (HtmlDocument e Nothing [])
 
-publicDocTypeHTML = parseHTML "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
+publicDocTypeHTML = parseHTML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
     == Right (HtmlDocument e (Just (DocType "tag" (Just (Public "foo" "bar")))) [])
 
-systemDocTypeHTML = parseHTML "<!DOCTYPE tag SYSTEM \"foo\">"
+systemDocTypeHTML = parseHTML "" "<!DOCTYPE tag SYSTEM \"foo\">"
     == Right (HtmlDocument e (Just (DocType "tag" (Just (System "foo")))) [])
 
-emptyDocTypeHTML  = parseHTML "<!DOCTYPE tag >"
+emptyDocTypeHTML  = parseHTML "" "<!DOCTYPE tag >"
     == Right (HtmlDocument e (Just (DocType "tag" Nothing)) [])
 
-textOnlyHTML      = parseHTML "sldhfsklj''a's s"
+textOnlyHTML      = parseHTML "" "sldhfsklj''a's s"
     == Right (HtmlDocument e Nothing [TextNode "sldhfsklj''a's s"])
 
-textWithRefsHTML  = parseHTML "This is Bob&apos;s sled"
+textWithRefsHTML  = parseHTML "" "This is Bob&apos;s sled"
     == Right (HtmlDocument e Nothing [TextNode "This is Bob's sled"])
 
-untermRefHTML     = isLeft (parseHTML "&#X6a")
+untermRefHTML     = isLeft (parseHTML "" "&#X6a")
 
-textWithCDataHTML = parseHTML "Testing <![CDATA[with <some> c]data]]>"
+textWithCDataHTML = parseHTML "" "Testing <![CDATA[with <some> c]data]]>"
     == Right (HtmlDocument e Nothing [TextNode "Testing with <some> c]data"])
 
-cdataOnlyHTML     = parseHTML "<![CDATA[ Testing <![CDATA[ test ]]>"
+cdataOnlyHTML     = parseHTML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
     == Right (HtmlDocument e Nothing [TextNode " Testing <![CDATA[ test "])
 
-commentOnlyHTML   = parseHTML "<!-- this <is> a \"comment -->"
+commentOnlyHTML   = parseHTML "" "<!-- this <is> a \"comment -->"
     == Right (HtmlDocument e Nothing [Comment " this <is> a \"comment "])
 
-emptyElementHTML  = parseHTML "<myElement/>"
+emptyElementHTML  = parseHTML "" "<myElement/>"
     == Right (HtmlDocument e Nothing [Element "myElement" [] []])
 
-elemWithTextHTML  = parseHTML "<myElement>text</myElement>"
+elemWithTextHTML  = parseHTML "" "<myElement>text</myElement>"
     == Right (HtmlDocument e Nothing [Element "myElement" [] [TextNode "text"]])
 
-xmlDeclHTML       = parseHTML "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+xmlDeclHTML       = parseHTML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
     == Right (HtmlDocument e Nothing [])
 
-procInstHTML      = parseHTML "<?myPI This''is <not> parsed!?>"
+procInstHTML      = parseHTML "" "<?myPI This''is <not> parsed!?>"
     == Right (HtmlDocument e Nothing [])
 
-voidElem      = parseHTML "<img>"
+voidElem      = parseHTML "" "<img>"
     == Right (HtmlDocument e Nothing [Element "img" [] []])
 
-voidEmptyElem = parseHTML "<img/>"
+voidEmptyElem = parseHTML "" "<img/>"
     == Right (HtmlDocument e Nothing [Element "img" [] []])
 
-rawTextElem   = parseHTML "<script>This<is'\"a]]>test&amp;</script>"
+rawTextElem   = parseHTML "" "<script>This<is'\"a]]>test&amp;</script>"
     == Right (HtmlDocument e Nothing [Element "script" [] [
                     TextNode "This<is'\"a]]>test&amp;"]
                     ])
 
-rcdataElem    = parseHTML "<textarea>This<is>'\"a]]>test&amp;</textarea>"
+rcdataElem    = parseHTML "" "<textarea>This<is>'\"a]]>test&amp;</textarea>"
     == Right (HtmlDocument e Nothing [Element "textarea" [] [
                     TextNode "This<is>'\"a]]>test&"]
                     ])
 
-endTagCase    = parseHTML "<testing></TeStInG>"
+endTagCase    = parseHTML "" "<testing></TeStInG>"
     == Right (HtmlDocument e Nothing [Element "testing" [] []])
 
-hexEntityCap  = parseHTML "&#X6a;"
+hexEntityCap  = parseHTML "" "&#X6a;"
     == Right (HtmlDocument e Nothing [TextNode "\x6a"])
 
-laxAttrName   = parseHTML "<test val<fun=\"test\"></test>"
+laxAttrName   = parseHTML "" "<test val<fun=\"test\"></test>"
     == Right (HtmlDocument e Nothing [Element "test" [("val<fun", "test")] []])
 
-emptyAttr     = parseHTML "<test attr></test>"
+emptyAttr     = parseHTML "" "<test attr></test>"
     == Right (HtmlDocument e Nothing [Element "test" [("attr", "")] []])
 
-unquotedAttr  = parseHTML "<test attr=you&amp;me></test>"
+unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"
     == Right (HtmlDocument e Nothing [Element "test" [("attr", "you&me")] []])
 
-laxAttrVal    = parseHTML "<test attr=\"a &amp; d < b & c\"/>"
+laxAttrVal    = parseHTML "" "<test attr=\"a &amp; d < b & c\"/>"
     == Right (HtmlDocument e Nothing [Element "test" [("attr", "a & d < b & c")] []])
 
-omitOptionalEnds   = parseHTML "<html><body><p></html>"
+omitOptionalEnds   = parseHTML "" "<html><body><p></html>"
     == Right (HtmlDocument e Nothing [Element "html" [] [
                 Element "body" [] [ Element "p" [] []]]])
 
-omitEndHEAD   = parseHTML "<head><body>"
+omitEndHEAD   = parseHTML "" "<head><body>"
     == Right (HtmlDocument e Nothing [Element "head" [] [], Element "body" [] []])
-omitEndLI     = parseHTML "<li><li>"
+omitEndLI     = parseHTML "" "<li><li>"
     == Right (HtmlDocument e Nothing [Element "li" [] [], Element "li" [] []])
-omitEndDT     = parseHTML "<dt><dd>"
+omitEndDT     = parseHTML "" "<dt><dd>"
     == Right (HtmlDocument e Nothing [Element "dt" [] [], Element "dd" [] []])
-omitEndDD     = parseHTML "<dd><dt>"
+omitEndDD     = parseHTML "" "<dd><dt>"
     == Right (HtmlDocument e Nothing [Element "dd" [] [], Element "dt" [] []])
-omitEndP      = parseHTML "<p><h1></h1>"
+omitEndP      = parseHTML "" "<p><h1></h1>"
     == Right (HtmlDocument e Nothing [Element "p" [] [], Element "h1" [] []])
-omitEndRT     = parseHTML "<rt><rp>"
+omitEndRT     = parseHTML "" "<rt><rp>"
     == Right (HtmlDocument e Nothing [Element "rt" [] [], Element "rp" [] []])
-omitEndRP     = parseHTML "<rp><rt>"
+omitEndRP     = parseHTML "" "<rp><rt>"
     == Right (HtmlDocument e Nothing [Element "rp" [] [], Element "rt" [] []])
-omitEndOPTGRP = parseHTML "<optgroup><optgroup>"
+omitEndOPTGRP = parseHTML "" "<optgroup><optgroup>"
     == Right (HtmlDocument e Nothing [Element "optgroup" [] [], Element "optgroup" [] []])
-omitEndOPTION = parseHTML "<option><option>"
+omitEndOPTION = parseHTML "" "<option><option>"
     == Right (HtmlDocument e Nothing [Element "option" [] [], Element "option" [] []])
-omitEndCOLGRP = parseHTML "<colgroup><tbody>"
+omitEndCOLGRP = parseHTML "" "<colgroup><tbody>"
     == Right (HtmlDocument e Nothing [Element "colgroup" [] [], Element "tbody" [] []])
-omitEndTHEAD  = parseHTML "<thead><tbody>"
+omitEndTHEAD  = parseHTML "" "<thead><tbody>"
     == Right (HtmlDocument e Nothing [Element "thead" [] [], Element "tbody" [] []])
-omitEndTBODY  = parseHTML "<tbody><thead>"
+omitEndTBODY  = parseHTML "" "<tbody><thead>"
     == Right (HtmlDocument e Nothing [Element "tbody" [] [], Element "thead" [] []])
-omitEndTFOOT  = parseHTML "<tfoot><tbody>"
+omitEndTFOOT  = parseHTML "" "<tfoot><tbody>"
     == Right (HtmlDocument e Nothing [Element "tfoot" [] [], Element "tbody" [] []])
-omitEndTR     = parseHTML "<tr><tr>"
+omitEndTR     = parseHTML "" "<tr><tr>"
     == Right (HtmlDocument e Nothing [Element "tr" [] [], Element "tr" [] []])
-omitEndTD     = parseHTML "<td><td>"
+omitEndTD     = parseHTML "" "<td><td>"
     == Right (HtmlDocument e Nothing [Element "td" [] [], Element "td" [] []])
-omitEndTH     = parseHTML "<th><td>"
+omitEndTH     = parseHTML "" "<th><td>"
     == Right (HtmlDocument e Nothing [Element "th" [] [], Element "td" [] []])
-testNewRefs   = parseHTML "&CenterDot;&doublebarwedge;&fjlig;"
+testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
     == Right (HtmlDocument e Nothing [TextNode "\x000B7\x02306\&fj"])
 

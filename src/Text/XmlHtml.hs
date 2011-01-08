@@ -67,14 +67,14 @@ import qualified Text.XmlHtml.HTML.Render as HTML
 
 ------------------------------------------------------------------------------
 -- | Parses the given XML fragment.
-parseXML :: ByteString -> Either String Document
+parseXML :: String -> ByteString -> Either String Document
 parseXML = XML.parse
 
 
 ------------------------------------------------------------------------------
 -- | Parses the given HTML fragment.  This enables HTML quirks mode, which
 --   changes the parsing algorithm to parse valid HTML 5 documents correctly.
-parseHTML :: ByteString -> Either String Document
+parseHTML :: String -> ByteString -> Either String Document
 parseHTML = HTML.parse
 
 

@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Text.XmlHtml.Common where
 
@@ -10,11 +12,12 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
-import           Data.Attoparsec.Text (Parser)
-import qualified Data.Attoparsec.Text as P
+import           Text.Parsec (Parsec)
+import qualified Text.Parsec as P
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
+
 
 ------------------------------------------------------------------------------
 -- | Represents a document fragment, including the format, encoding, and
@@ -229,14 +232,50 @@ guessEncoding b
 
 
 ------------------------------------------------------------------------------
-parseText :: Parser a -> Text -> Either String a
-parseText p t = case (P.parse parser t) of
-    P.Fail _ _ err -> Left err
-    P.Partial f    -> case (f T.empty) of
-                        P.Fail _ _ err -> Left err
-                        P.Done "" r    -> Right r
-                        P.Done _  _    -> Left "Unexpected text after input"
-                        P.Partial _    -> Left "Misbehaving parser"
-    P.Done _ _     -> Left "Unexpected text after input"
-  where parser = p <* P.endOfInput
+-- | Specialized type for the parsers we use here.
+type Parser = Parsec Text ()
+
+
+------------------------------------------------------------------------------
+-- An (orphaned) instance for parsing Text with Parsec.
+instance (Monad m) => P.Stream T.Text m Char where
+    uncons = return . T.uncons
+
+
+------------------------------------------------------------------------------
+-- | Parses a 'Text' value and gives back the result.  The parser is expected
+-- to match the entire string.
+parseText :: Parser a         -- ^ The parser to match
+          -> String           -- ^ Name of the source file (can be @""@)
+          -> Text             -- ^ Text to parse
+          -> Either String a  -- Either an error message or the result
+parseText p src t = inLeft show (P.parse p src t)
+  where inLeft :: (a -> b) -> Either a c -> Either b c
+        inLeft f (Left x)  = Left (f x)
+        inLeft _ (Right x) = Right x
+
+
+------------------------------------------------------------------------------
+-- | Consume input as long as the predicate returns 'True', and return the
+-- consumed input.  This parser does not fail.  If it matches no input, it
+-- will return an empty string.
+takeWhile0 :: (Char -> Bool) -> Parser Text
+takeWhile0 p = fmap T.pack $ P.many $ P.satisfy p
+
+
+------------------------------------------------------------------------------
+-- | Consume input as long as the predicate returns 'True', and return the
+-- consumed input.  This parser requires the predicate to succeed on at least
+-- one character of input.  It will fail if the first character fails the
+-- predicate.
+takeWhile1 :: (Char -> Bool) -> Parser Text
+takeWhile1 p = fmap T.pack $ P.many1 $ P.satisfy p
+
+
+------------------------------------------------------------------------------
+-- | The equivalent of Parsec's string combinator, but for text.  If there is
+-- not a complete match, then no input is consumed.  This matches the behavior
+-- of @string@ from the attoparsec-text package.
+text :: Text -> Parser Text
+text t = P.try $ P.string (T.unpack t) *> return t
 
