@@ -31,6 +31,7 @@ rm -Rf $DIR
 mkdir -p $DIR
 
 EXCLUDES='Main
+Text.XmlHtml.HTML.Meta
 Text.XmlHtml.Tests'
 
 EXCL=""
