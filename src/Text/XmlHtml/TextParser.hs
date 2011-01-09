@@ -114,7 +114,7 @@ data ScanState a = ScanNext (Char -> ScanState a)
 ------------------------------------------------------------------------------
 -- | Scans text and progresses through a DFA, collecting the complete matching
 -- text as it goes.
-scanText :: (Char -> ScanState a) -> Parser (Text, a)
+scanText :: (Char -> ScanState a) -> Parser (String, a)
 scanText f = do
     (c,r) <- P.try $ do
         c <- P.anyChar
@@ -124,6 +124,6 @@ scanText f = do
             ScanFail err -> fail err
     case r of
         Left f' -> do (t,x) <- scanText f'
-                      return (T.cons c t, x)
-        Right x -> return (T.singleton c, x)
+                      return (c:t, x)
+        Right x -> return ([c], x)
 

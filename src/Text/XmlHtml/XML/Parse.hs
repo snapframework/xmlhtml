@@ -369,7 +369,7 @@ data InternalDoctypeState = IDSStart
 -- | Internal DOCTYPE subset.  We don't actually parse this; just scan through
 -- and look for the end, and store it in a block of text.
 internalDoctype :: Parser InternalSubset
-internalDoctype = InternalText <$> fst <$> scanText (dfa IDSStart)
+internalDoctype = InternalText <$> T.pack <$> fst <$> scanText (dfa IDSStart)
               <|> return NoInternalSubset
   where dfa IDSStart '[' = ScanNext (dfa (IDSScanning 0))
         dfa IDSStart _   = ScanFail "Not a DOCTYPE internal subset"
