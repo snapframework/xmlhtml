@@ -181,9 +181,7 @@ quotedAttrValue = singleQuoted <|> doubleQuoted
     singleQuoted = P.char '\'' *> refTill "&\'" <* P.char '\''
     doubleQuoted = P.char '\"' *> refTill "&\"" <* P.char '\"'
     refTill end = T.concat <$> many
-        (takeWhile1 (not . (`elem` end))
-         <|> P.try reference
-         <|> T.singleton <$> P.char '&')
+        (takeWhile1 (not . (`elem` end)) <|> reference)
 
 
 ------------------------------------------------------------------------------
@@ -191,9 +189,7 @@ unquotedAttrValue :: Parser Text
 unquotedAttrValue = refTill " \"\'=<>&`"
   where
     refTill end = T.concat <$> some
-        (takeWhile1 (not . (`elem` end))
-         <|> P.try reference
-         <|> T.singleton <$> P.char '&')
+        (takeWhile1 (not . (`elem` end)) <|> reference)
 
 
 ------------------------------------------------------------------------------
@@ -243,10 +239,7 @@ content parent = do
             Just (tt, m) -> return (s:tt, m)
 
     whileMatched = do
-        (n,end) <- (,Matched) <$> (:[]) <$> Just <$>
-                            TextNode <$> P.try reference
-               <|> (,Matched) <$> (:[]) <$> Just <$>
-                            TextNode <$> T.singleton <$> P.char '&'
+        (n,end) <- (,Matched) <$> (:[]) <$> Just <$> TextNode <$> reference
                <|> (,Matched) <$> (:[]) <$> XML.cdSect
                <|> (,Matched) <$> (:[]) <$> XML.processingInstruction
                <|> (,Matched) <$> (:[]) <$> XML.comment
@@ -287,29 +280,41 @@ content parent = do
 
 
 ------------------------------------------------------------------------------
-charRef :: Parser Text
-charRef = hexCharRef <|> decCharRef
+reference :: Parser Text
+reference = do
+    _    <- P.char '&'
+    r    <- (Left  <$> P.try finishCharRef)
+        <|> (Right <$> P.try finishEntityRef)
+        <|> (Left  <$> return '&')
+    case r of
+        Left c   -> do
+            when (not (isValidChar c)) $ fail $
+                "Reference is not a valid character"
+            return (T.singleton c)
+        Right nm -> case M.lookup nm predefinedRefs of
+            Nothing -> fail $ "Unknown entity reference: " ++ T.unpack nm
+            Just t  -> return t
+
+
+------------------------------------------------------------------------------
+finishCharRef :: Parser Char
+finishCharRef = P.char '#' *> (hexCharRef <|> decCharRef)
   where
     decCharRef = do
-        _ <- text "&#"
         ds <- some digit
         _ <- P.char ';'
         let c = chr $ foldl' (\a b -> 10 * a + b) 0 ds
-        when (not (isValidChar c)) $ fail $
-            "Reference is not a valid character"
-        return $ T.singleton c
+        return c
       where
         digit = do
             d <- P.satisfy (\c -> c >= '0' && c <= '9')
             return (ord d - ord '0')
     hexCharRef = do
-        _ <- text "&#x" <|> text "&#X"
+        _ <- P.char 'x' <|> P.char 'X'
         ds <- some digit
         _ <- P.char ';'
         let c = chr $ foldl' (\a b -> 16 * a + b) 0 ds
-        when (not (isValidChar c)) $ fail $
-            "Reference is not a valid character"
-        return $ T.singleton c
+        return c
       where
         digit = num <|> upper <|> lower
         num = do
@@ -324,17 +329,6 @@ charRef = hexCharRef <|> decCharRef
 
 
 ------------------------------------------------------------------------------
-reference :: Parser Text
-reference = charRef <|> entityRef
-
-
-------------------------------------------------------------------------------
-entityRef :: Parser Text
-entityRef = do
-    _ <- P.char '&'
-    n <- XML.name
-    _ <- P.char ';'
-    case M.lookup n predefinedRefs of
-        Nothing -> fail $ "Unknown entity reference: " ++ T.unpack n
-        Just t  -> return t
+finishEntityRef :: Parser Text
+finishEntityRef = XML.name <* P.char ';'
 
