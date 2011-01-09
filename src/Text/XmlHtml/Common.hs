@@ -5,18 +5,14 @@
 module Text.XmlHtml.Common where
 
 import           Blaze.ByteString.Builder
-import           Control.Applicative
 import           Data.Maybe
 
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-
-import           Text.Parsec (Parsec)
-import qualified Text.Parsec as P
+import qualified Data.Text.Encoding.Error as TE
 
 import           Data.ByteString (ByteString)
-import qualified Data.ByteString as B
 
 
 ------------------------------------------------------------------------------
@@ -32,7 +28,7 @@ data Document = XmlDocument  {
                     docType     :: !(Maybe DocType),
                     docContent  :: ![Node]
                 }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Read)
 
 
 ------------------------------------------------------------------------------
@@ -47,7 +43,7 @@ data Node = TextNode !Text
                 elementAttrs    :: ![(Text, Text)],
                 elementChildren :: ![Node]
             }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Read)
 
 
 ------------------------------------------------------------------------------
@@ -166,22 +162,31 @@ descendantElementTag tag = listToMaybe . descendantElementsTag tag
 ------------------------------------------------------------------------------
 -- | A document type declaration.  Note that DTD internal subsets are
 -- currently unimplemented.
-data DocType = DocType !Text !(Maybe ExternalID)
-    deriving (Eq, Show)
+data DocType = DocType !Text !ExternalID !InternalSubset
+    deriving (Eq, Show, Read)
 
 
 ------------------------------------------------------------------------------
 -- | An external ID, as in a document type declaration.  This can be a
--- SYSTEM identifier, or a PUBLIC identifier.
-data ExternalID = System !Text
-                | Public !Text !Text
-    deriving (Eq, Show)
+-- SYSTEM identifier, or a PUBLIC identifier, or can be omitted.
+data ExternalID = Public !Text !Text
+                | System !Text
+                | NoExternalID
+    deriving (Eq, Show, Read)
+
+
+------------------------------------------------------------------------------
+-- | The internal subset is unparsed, but preserved in case it's actually
+-- wanted.
+data InternalSubset = InternalText !Text
+                    | NoInternalSubset
+    deriving (Eq, Show, Read)
 
 
 ------------------------------------------------------------------------------
 -- | The character encoding of a document.  Currently only the required
 -- character encodings are implemented.
-data Encoding = UTF8 | UTF16BE | UTF16LE deriving (Eq, Show)
+data Encoding = UTF8 | UTF16BE | UTF16LE deriving (Eq, Show, Read)
 
 
 ------------------------------------------------------------------------------
@@ -204,9 +209,9 @@ encoder UTF16LE = T.encodeUtf16LE
 ------------------------------------------------------------------------------
 -- | Gets the decoding function from 'ByteString' to 'Text' for an encoding.
 decoder :: Encoding -> ByteString -> Text
-decoder UTF8    = T.decodeUtf8
-decoder UTF16BE = T.decodeUtf16BE
-decoder UTF16LE = T.decodeUtf16LE
+decoder UTF8    = T.decodeUtf8With    (TE.replace '\xFFFF')
+decoder UTF16BE = T.decodeUtf16BEWith (TE.replace '\xFFFF')
+decoder UTF16LE = T.decodeUtf16LEWith (TE.replace '\xFFFF')
 
 
 ------------------------------------------------------------------------------
@@ -217,65 +222,4 @@ isUTF16 e = e == UTF16BE || e == UTF16LE
 ------------------------------------------------------------------------------
 fromText :: Encoding -> Text -> Builder
 fromText e t = fromByteString (encoder e t)
-
-
-------------------------------------------------------------------------------
--- | Get an initial guess at document encoding from the byte order mark.  If
--- the mark doesn't exist, guess UTF-8.  Otherwise, guess according to the
--- mark.
-guessEncoding :: ByteString -> (Encoding, ByteString)
-guessEncoding b
-    | B.take 3 b == B.pack [ 0xEF, 0xBB, 0xBF ] = (UTF8,    B.drop 3 b)
-    | B.take 2 b == B.pack [ 0xFE, 0xFF ]       = (UTF16BE, B.drop 2 b)
-    | B.take 2 b == B.pack [ 0xFF, 0xFE ]       = (UTF16LE, B.drop 2 b)
-    | otherwise                                 = (UTF8,    b)
-
-
-------------------------------------------------------------------------------
--- | Specialized type for the parsers we use here.
-type Parser = Parsec Text ()
-
-
-------------------------------------------------------------------------------
--- An (orphaned) instance for parsing Text with Parsec.
-instance (Monad m) => P.Stream T.Text m Char where
-    uncons = return . T.uncons
-
-
-------------------------------------------------------------------------------
--- | Parses a 'Text' value and gives back the result.  The parser is expected
--- to match the entire string.
-parseText :: Parser a         -- ^ The parser to match
-          -> String           -- ^ Name of the source file (can be @""@)
-          -> Text             -- ^ Text to parse
-          -> Either String a  -- Either an error message or the result
-parseText p src t = inLeft show (P.parse p src t)
-  where inLeft :: (a -> b) -> Either a c -> Either b c
-        inLeft f (Left x)  = Left (f x)
-        inLeft _ (Right x) = Right x
-
-
-------------------------------------------------------------------------------
--- | Consume input as long as the predicate returns 'True', and return the
--- consumed input.  This parser does not fail.  If it matches no input, it
--- will return an empty string.
-takeWhile0 :: (Char -> Bool) -> Parser Text
-takeWhile0 p = fmap T.pack $ P.many $ P.satisfy p
-
-
-------------------------------------------------------------------------------
--- | Consume input as long as the predicate returns 'True', and return the
--- consumed input.  This parser requires the predicate to succeed on at least
--- one character of input.  It will fail if the first character fails the
--- predicate.
-takeWhile1 :: (Char -> Bool) -> Parser Text
-takeWhile1 p = fmap T.pack $ P.many1 $ P.satisfy p
-
-
-------------------------------------------------------------------------------
--- | The equivalent of Parsec's string combinator, but for text.  If there is
--- not a complete match, then no input is consumed.  This matches the behavior
--- of @string@ from the attoparsec-text package.
-text :: Text -> Parser Text
-text t = P.try $ P.string (T.unpack t) *> return t
 

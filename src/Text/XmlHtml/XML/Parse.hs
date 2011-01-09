@@ -4,11 +4,11 @@ module Text.XmlHtml.XML.Parse where
 
 import           Control.Applicative
 import           Control.Monad
-import           Data.ByteString (ByteString)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
 import           Text.XmlHtml.Common
+import           Text.XmlHtml.TextParser
 
 import qualified Text.Parsec as P
 
@@ -17,12 +17,6 @@ import qualified Data.Map as M
 
 import           Data.Text (Text)
 import qualified Data.Text as T
-
-
-------------------------------------------------------------------------------
-parse :: String -> ByteString -> Either String Document
-parse src b = let (e, b') = guessEncoding b
-              in  parseText (docFragment e) src (decoder e b')
 
 
 ------------------------------------------------------------------------------
@@ -134,23 +128,12 @@ docFragment e = do
     Notes:
         {1} - These productions match single characters, and so are implemented
               as predicates instead of parsers.
-        {2} - As an extension, all valid Haskell characters can occur in a
-              parsed file
         {3} - Denotes a production which is not exposed as a top-level symbol
               because it is trivial and included in another definition.
         {4} - This module does not contain a parser for the DTD subsets, so
               grammar that occurs only in DTD subsets is not defined.
         {5} - These are orphaned productions for character classes.
 -}
-
-
-------------------------------------------------------------------------------
-document :: Parser (Maybe DocType, [Node])
-document = do
-    (dt, nodes1) <- prolog
-    root         <- element
-    nodes2       <- fmap catMaybes $ many misc
-    return (dt, nodes1 ++ [ root ] ++ nodes2)
 
 
 ------------------------------------------------------------------------------
@@ -368,18 +351,41 @@ misc = comment <|> processingInstruction <|> (whiteSpace *> return Nothing)
 -- store it.
 docTypeDecl :: Parser DocType
 docTypeDecl = do
-    _     <- text "<!DOCTYPE"
+    _      <- text "<!DOCTYPE"
     whiteSpace
-    tag   <- name
-    _     <- optional whiteSpace
-    extid <- optional externalID
-    _     <- optional whiteSpace
-    _     <- optional $ do
-            _ <- P.char '['
-            {- XXX: Should scan for end, anyway -}
-            fail "embedded DTD subsets not allowed"
-    _     <- P.char '>'
-    return (DocType tag extid)
+    tag    <- name
+    _      <- optional whiteSpace
+    extid  <- externalID
+    _      <- optional whiteSpace
+    intsub <- internalDoctype
+    _      <- P.char '>'
+    return (DocType tag extid intsub)
+
+
+------------------------------------------------------------------------------
+-- | States for the DOCTYPE internal subset state machine.
+data InternalDoctypeState = IDSStart
+                          | IDSScanning Int
+                          | IDSInQuote Int Char
+
+
+------------------------------------------------------------------------------
+-- | Internal DOCTYPE subset.  We don't actually parse this; just scan through
+-- and look for the end, and store it in a block of text.
+internalDoctype :: Parser InternalSubset
+internalDoctype = InternalText <$> fst <$> scanText (dfa IDSStart)
+              <|> return NoInternalSubset
+  where dfa IDSStart '[' = ScanNext (dfa (IDSScanning 0))
+        dfa IDSStart _   = ScanFail "Not a DOCTYPE internal subset"
+        dfa (IDSScanning n) '['  = ScanNext (dfa (IDSScanning (n+1)))
+        dfa (IDSScanning 0) ']'  = ScanFinish ()
+        dfa (IDSScanning n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
+        dfa (IDSScanning n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
+        dfa (IDSScanning n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
+        dfa (IDSScanning n) _    = ScanNext (dfa (IDSScanning n))
+        dfa (IDSInQuote n c) d
+          | c == d               = ScanNext (dfa (IDSScanning n))
+          | otherwise            = ScanNext (dfa (IDSInQuote n c))
 
 
 ------------------------------------------------------------------------------
@@ -413,7 +419,7 @@ element = do
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
     t <- P.try $ P.char '<' *> name
-    a <- many $ do
+    a <- many $ P.try $ do
         whiteSpace
         attribute
     _ <- optional whiteSpace
@@ -523,7 +529,7 @@ entityRef = do
 
 ------------------------------------------------------------------------------
 externalID :: Parser ExternalID
-externalID = systemID <|> publicID
+externalID = systemID <|> publicID <|> return NoExternalID
   where
     systemID = do
         _ <- text "SYSTEM"

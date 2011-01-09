@@ -29,22 +29,29 @@ xmlDecl e = fromText e "<?xml version=\"1.0\" encoding=\""
 
 ------------------------------------------------------------------------------
 docTypeDecl :: Encoding -> Maybe DocType -> Builder
-docTypeDecl _ Nothing                  = mempty
-docTypeDecl e (Just (DocType tag ext)) = fromText e "<!DOCTYPE "
-                               `mappend` fromText e tag
-                               `mappend` externalID e ext
-                               `mappend` fromText e ">"
+docTypeDecl _ Nothing                      = mempty
+docTypeDecl e (Just (DocType tag ext int)) = fromText e "<!DOCTYPE "
+                                   `mappend` fromText e tag
+                                   `mappend` externalID e ext
+                                   `mappend` internalSubset e int
+                                   `mappend` fromText e ">"
 
 
 ------------------------------------------------------------------------------
-externalID :: Encoding -> Maybe ExternalID -> Builder
-externalID _ Nothing                 = mempty
-externalID e (Just (System sid))     = fromText e " SYSTEM "
-                                       `mappend` sysID e sid
-externalID e (Just (Public pid sid)) = fromText e " PUBLIC "
-                                       `mappend` pubID e pid
-                                       `mappend` fromText e " "
-                                       `mappend` sysID e sid
+externalID :: Encoding -> ExternalID -> Builder
+externalID _ NoExternalID     = mempty
+externalID e (System sid)     = fromText e " SYSTEM "
+                                `mappend` sysID e sid
+externalID e (Public pid sid) = fromText e " PUBLIC "
+                                `mappend` pubID e pid
+                                `mappend` fromText e " "
+                                `mappend` sysID e sid
+
+
+------------------------------------------------------------------------------
+internalSubset :: Encoding -> InternalSubset -> Builder
+internalSubset _ NoInternalSubset = mempty
+internalSubset e (InternalText t) = fromText e " " `mappend` fromText e t
 
 
 ------------------------------------------------------------------------------

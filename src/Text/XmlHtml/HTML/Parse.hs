@@ -4,13 +4,13 @@
 module Text.XmlHtml.HTML.Parse where
 
 import           Control.Applicative
-import           Control.Monad
-import           Data.ByteString (ByteString)
 import           Data.Char
 import           Data.List
 import           Data.Maybe
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.HTML.Meta
+import           Text.XmlHtml.TextParser
+import qualified Text.XmlHtml.XML.Parse as XML
 
 import qualified Text.Parsec as P
 
@@ -22,20 +22,14 @@ import qualified Data.Text as T
 
 
 ------------------------------------------------------------------------------
-parse :: String -> ByteString -> Either String Document
-parse src b = let (e, b') = guessEncoding b
-              in  parseText (docFragment e) src (decoder e b')
-
-
-------------------------------------------------------------------------------
--- | This is my best guess as to the best rule for handling document fragments
--- for processing.  It is essentially modeled after document, but allowing
--- multiple nodes.
+-- | HTML version of document fragment parsing rule  It differs only in that
+-- it parses the HTML version of 'content' and returns an 'HtmlDocument'.
 docFragment :: Encoding -> Parser Document
 docFragment e = do
-    (dt, nodes1)      <- prolog
+    (dt, nodes1)      <- XML.prolog
     (nodes2, Matched) <- content Nothing
     return $ HtmlDocument e dt (nodes1 ++ nodes2)
+
 
 ------------------------------------------------------------------------------
 -- Parsing code                                                             --
@@ -77,160 +71,12 @@ docFragment e = do
 
     10. There are many more character references available.
 
-    11. Omittable end tags are inserted automatically.
+    11. Only "ambiguous" ampersands are prohibited in character data.  This
+        means ampersands that parse like character or entity references.
+
+    12. Omittable end tags are inserted automatically.
 -}
 
-
-------------------------------------------------------------------------------
-document :: Parser (Maybe DocType, [Node])
-document = do
-    (dt, nodes1)    <- prolog
-    (root, Matched) <- element
-    nodes2          <- fmap catMaybes $ many misc
-    return (dt, nodes1 ++ [ root ] ++ nodes2)
-
-
-------------------------------------------------------------------------------
-whiteSpace :: Parser ()
-whiteSpace = some (P.satisfy (`elem` " \t\r\n")) *> return ()
-
-
-------------------------------------------------------------------------------
-isNameStartChar :: Char -> Bool
-isNameStartChar c | c == ':'                         = True
-                  | c == '_'                         = True
-                  | c >= 'a'       && c <= 'z'       = True
-                  | c >= 'A'       && c <= 'Z'       = True
-                  | c >= '\xc0'    && c <= '\xd6'    = True
-                  | c >= '\xd8'    && c <= '\xf6'    = True
-                  | c >= '\xf8'    && c <= '\x2ff'   = True
-                  | c >= '\x370'   && c <= '\x37d'   = True
-                  | c >= '\x37f'   && c <= '\x1fff'  = True
-                  | c >= '\x200c'  && c <= '\x200d'  = True
-                  | c >= '\x2070'  && c <= '\x218f'  = True
-                  | c >= '\x2c00'  && c <= '\x2fef'  = True
-                  | c >= '\x3001'  && c <= '\xd7ff'  = True
-                  | c >= '\xf900'  && c <= '\xfdcf'  = True
-                  | c >= '\xfdf0'  && c <= '\xfffd'  = True
-                  | c >= '\x10000' && c <= '\xeffff' = True
-                  | otherwise                        = False
-
-
-------------------------------------------------------------------------------
-isNameChar :: Char -> Bool
-isNameChar c | isNameStartChar c                = True
-             | c == '-'                         = True
-             | c == '.'                         = True
-             | c == '\xb7'                      = True
-             | c >= '0'       && c <= '9'       = True
-             | c >= '\x300'   && c <= '\x36f'   = True
-             | c >= '\x203f'  && c <= '\x2040'  = True
-             | otherwise                        = False
-
-
-------------------------------------------------------------------------------
-name :: Parser Text
-name = do
-    c <- P.satisfy isNameStartChar
-    r <- takeWhile0 isNameChar
-    return $ T.cons c r
-
-
-------------------------------------------------------------------------------
-names :: Parser [Text]
-names = P.sepBy1 name (P.char ' ')
-
-
-------------------------------------------------------------------------------
-nmtoken :: Parser Text
-nmtoken = takeWhile1 isNameChar
-
-
-------------------------------------------------------------------------------
-nmtokens :: Parser [Text]
-nmtokens = P.sepBy1 nmtoken (P.char ' ')
-
-
-------------------------------------------------------------------------------
-systemLiteral :: Parser Text
-systemLiteral = singleQuoted <|> doubleQuoted
-  where
-    singleQuoted = do
-        _ <- P.char '\''
-        x <- takeWhile0 (not . (== '\''))
-        _ <- P.char '\''
-        return x
-    doubleQuoted = do
-        _ <- P.char '\"'
-        x <- takeWhile0 (not . (== '\"'))
-        _ <- P.char '\"'
-        return x
-
-
-------------------------------------------------------------------------------
-pubIdLiteral :: Parser Text
-pubIdLiteral = singleQuoted <|> doubleQuoted
-  where
-    singleQuoted = do
-        _ <- P.char '\''
-        x <- takeWhile0 (\c -> isPubIdChar c && c /= '\'')
-        _ <- P.char '\''
-        return x
-    doubleQuoted = do
-        _ <- P.char '\"'
-        x <- takeWhile0 isPubIdChar
-        _ <- P.char '\"'
-        return x
-
-
-------------------------------------------------------------------------------
-isPubIdChar :: Char -> Bool
-isPubIdChar c | c >= 'a' && c <= 'z'                 = True
-              | c >= 'A' && c <= 'Z'                 = True
-              | c >= '0' && c <= '9'                 = True
-              | c `elem` " \r\n-\'()+,./:=?;!*#@$_%" = True
-              | otherwise                            = False
-
-------------------------------------------------------------------------------
--- | XXX: This does not comply with the rule prohibiting ]]> in character data.
--- The purpose of that rule is unclear to me, and it seems possible we don't
--- want to enforce it in the name of being accepting of more input.  Also,
--- it's unclear to me how to express it in parser combinators.    
-charData :: Parser Node
-charData = TextNode <$> takeWhile1 (not . (`elem` "<&"))
-
-
-------------------------------------------------------------------------------
-comment :: Parser Node
-comment = text "<!--" *> (Comment <$> commentText) <* text "-->"
-  where
-    commentText = fmap T.concat $ many $
-        nonDash <|> P.try (T.cons <$> P.char '-' <*> nonDash)
-    nonDash = takeWhile1 (not . (== '-'))
-
-------------------------------------------------------------------------------
--- | Always returns Nothing since there's no representation for a PI in the
--- document tree.
-processingInstruction :: Parser (Maybe Node)
-processingInstruction =
-    text "<?" *> piTarget *> whiteSpace
-              *> P.manyTill P.anyChar (text "?>")
-              *> return Nothing
-
-
-------------------------------------------------------------------------------
-piTarget :: Parser Text
-piTarget = do
-    n <- name
-    when (T.map toLower n == "xml") $ fail "xml declaration can't occur here"
-    return n
-
-
-------------------------------------------------------------------------------
-cdata :: [Char] -> Parser a -> Parser Node
-cdata cs end = TextNode <$> T.concat <$> P.manyTill part end
-  where part = takeWhile1 (not . (`elem` cs))
-             <|> T.singleton <$> P.anyChar
 
 ------------------------------------------------------------------------------
 -- | Reads text and references, up until the passed-in parser succeeds.
@@ -241,93 +87,6 @@ rcdata cs end = TextNode <$> T.concat <$> P.manyTill part end
   where part = takeWhile1 (not . (`elem` cs))
              <|> reference
              <|> T.singleton <$> P.anyChar
-
-
-------------------------------------------------------------------------------
-cdSect :: Parser Node
-cdSect = text "<![CDATA[" *> cdata "]" (text "]]>")
-
-
-------------------------------------------------------------------------------
-prolog :: Parser (Maybe DocType, [Node])
-prolog = do
-    _      <- optional xmlDecl
-    nodes1 <- many misc
-    rest   <- optional $ do
-        dt     <- docTypeDecl
-        nodes2 <- many misc
-        return (dt, nodes2)
-    case rest of
-        Nothing           -> return (Nothing, catMaybes nodes1)
-        Just (dt, nodes2) -> return (Just dt, catMaybes (nodes1 ++ nodes2))
-
-------------------------------------------------------------------------------
--- | Return value is the encoding, if present.
-xmlDecl :: Parser (Text, Maybe Text)
-xmlDecl = do
-    _ <- text "<?xml"
-    v <- versionInfo
-    e <- optional encodingDecl
-    _ <- optional sdDecl
-    _ <- optional whiteSpace
-    _ <- text "?>"
-    return (v,e)
-
-
-------------------------------------------------------------------------------
-versionInfo :: Parser Text
-versionInfo = do
-    whiteSpace *> text "version" *> eq *> (singleQuoted <|> doubleQuoted)
-  where
-    singleQuoted = P.char '\'' *> versionNum <* P.char '\''
-    doubleQuoted = P.char '\"' *> versionNum <* P.char '\"'
-    versionNum   = do
-        a <- text "1."
-        b <- fmap T.pack $ some (P.satisfy (\c -> c >= '0' && c <= '9'))
-        return (T.append a b)
-
-
-------------------------------------------------------------------------------
-eq :: Parser ()
-eq = optional whiteSpace *> P.char '=' *> optional whiteSpace *> return ()
-
-
-------------------------------------------------------------------------------
-misc :: Parser (Maybe Node)
-misc = Just <$> comment
-       <|> processingInstruction
-       <|> (whiteSpace *> return Nothing)
-
-------------------------------------------------------------------------------
--- | Internal subset is parsed, but ignored since we don't have data types to
--- store it.
-docTypeDecl :: Parser DocType
-docTypeDecl = do
-    _     <- text "<!DOCTYPE"
-    whiteSpace
-    tag   <- name
-    _     <- optional whiteSpace
-    extid <- optional externalID
-    _     <- optional whiteSpace
-    _     <- optional $ do
-            _ <- P.char '['
-            {- XXX: Should scan for end, anyway -}
-            fail "embedded DTD subsets not allowed"
-    _     <- P.char '>'
-    return (DocType tag extid)
-
-
-------------------------------------------------------------------------------
-sdDecl :: Parser ()
-sdDecl = do
-    _ <- P.try $ whiteSpace *> text "standalone"
-    eq
-    _ <- single <|> double
-    return ()
-  where
-    single = P.char '\'' *> yesno <* P.char '\''
-    double = P.char '\"' *> yesno <* P.char '\"'
-    yesno  = text "yes" <|> text "no"
 
 
 ------------------------------------------------------------------------------
@@ -364,7 +123,7 @@ finishElement t a b = do
   where
     nonEmptyElem
         | T.map toLower t `S.member` rawTextTags = do
-            c <- cdata  "<"  $ P.try (endTag t)
+            c <- XML.cdata  "<"  $ P.try (endTag t)
             return (Element t a [c], Matched)
         | T.map toLower t `S.member` rcdataTags = do
             c <- rcdata "&<" $ P.try (endTag t)
@@ -388,11 +147,11 @@ finishElement t a b = do
 ------------------------------------------------------------------------------
 emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
-    t <- P.try $ P.char '<' *> name
-    a <- many $ do
-        whiteSpace
+    t <- P.try $ P.char '<' *> XML.name
+    a <- many $ P.try $ do
+        XML.whiteSpace
         attribute
-    _ <- optional whiteSpace
+    _ <- optional XML.whiteSpace
     e <- fmap isJust $ optional (P.char '/')
     let e' = e || (T.map toLower t `S.member` voidTags)
     _ <- P.char '>'
@@ -408,8 +167,8 @@ attrName = takeWhile1 isAttrName
 
 
 ------------------------------------------------------------------------------
--- | From 8.2.2.3 of the spec, omitting the very high control characters
--- because they are unlikely to occur and I got tired of typing.
+-- | From 8.2.2.3 of the HTML 5 spec, omitting the very high control
+-- characters because they are unlikely to occur and I got tired of typing.
 isControlChar :: Char -> Bool
 isControlChar c | c >= '\x0001' && c <= '\x0008' = True
                 | c >= '\x000E' && c <= '\x001F' = True
@@ -449,10 +208,10 @@ attrValue = quotedAttrValue <|> unquotedAttrValue
 attribute :: Parser (Text, Text)
 attribute = do
     n <- attrName
-    _ <- optional whiteSpace
+    _ <- optional XML.whiteSpace
     v <- optional $ do
         _ <- P.char '='
-        _ <- optional whiteSpace
+        _ <- optional XML.whiteSpace
         attrValue
     return $ maybe (n,"") (n,) v
 
@@ -461,14 +220,14 @@ attribute = do
 endTag :: Text -> Parser ElemResult
 endTag s = do
     _ <- text "</"
-    t <- name
+    t <- XML.name
     r <- if (T.map toLower s == T.map toLower t)
             then return Matched
             else if T.map toLower s `S.member` endOmittableLast
                 then return (ImplicitLast t)
                 else fail $ "mismatched tags: </" ++ T.unpack t ++
                             "> found inside <" ++ T.unpack s ++ "> tag"
-    _ <- optional whiteSpace
+    _ <- optional XML.whiteSpace
     _ <- text ">"
     return r
 
@@ -480,17 +239,20 @@ content parent = do
     return (coalesceText (catMaybes ns), end)
   where
     readText     = do
-        s <- optional charData
+        s <- optional XML.charData
         t <- optional whileMatched
         case t of
             Nothing      -> return ([s], Matched)
             Just (tt, m) -> return (s:tt, m)
 
     whileMatched = do
-        (n,end) <- (,Matched) <$> (:[]) <$> Just <$> TextNode <$> reference
-               <|> (,Matched) <$> (:[]) <$> Just <$> cdSect
-               <|> (,Matched) <$> (:[]) <$> processingInstruction
-               <|> (,Matched) <$> (:[]) <$> Just <$> comment
+        (n,end) <- (,Matched) <$> (:[]) <$> Just <$>
+                            TextNode <$> P.try reference
+               <|> (,Matched) <$> (:[]) <$> Just <$>
+                            TextNode <$> T.singleton <$> P.char '&'
+               <|> (,Matched) <$> (:[]) <$> XML.cdSect
+               <|> (,Matched) <$> (:[]) <$> XML.processingInstruction
+               <|> (,Matched) <$> (:[]) <$> XML.comment
                <|> doElement
         case end of
             Matched -> do
@@ -567,68 +329,9 @@ reference = charRef <|> entityRef
 entityRef :: Parser Text
 entityRef = do
     _ <- P.char '&'
-    n <- name
+    n <- XML.name
     _ <- P.char ';'
     case M.lookup n predefinedRefs of
         Nothing -> fail $ "Unknown entity reference: " ++ T.unpack n
         Just t  -> return t
-
-
-------------------------------------------------------------------------------
-externalID :: Parser ExternalID
-externalID = systemID <|> publicID
-  where
-    systemID = do
-        _ <- text "SYSTEM"
-        whiteSpace
-        fmap System systemLiteral
-    publicID = do
-        _ <- text "PUBLIC"
-        whiteSpace
-        pid <- pubIdLiteral
-        whiteSpace
-        sid <- systemLiteral
-        return (Public pid sid)
-
-
-------------------------------------------------------------------------------
--- | Return value is the encoding.
-textDecl :: Parser (Maybe Text, Text)
-textDecl = do
-    _ <- text "<?xml"
-    v <- optional versionInfo
-    e <- encodingDecl
-    _ <- optional whiteSpace
-    _ <- text "?>"
-    return (v,e)
-
-
-------------------------------------------------------------------------------
-extParsedEnt :: Parser [Node]
-extParsedEnt = do
-    (ns, Matched) <- optional textDecl *> content Nothing
-    return ns
-
-
-------------------------------------------------------------------------------
-encodingDecl :: Parser Text
-encodingDecl = do
-    _ <- P.try $ whiteSpace *> text "encoding"
-    _ <- eq
-    singleQuoted <|> doubleQuoted
-  where
-    singleQuoted = P.char '\'' *> encName <* P.char '\''
-    doubleQuoted = P.char '\"' *> encName <* P.char '\"'
-    encName      = do
-        c  <- P.satisfy isEncStart
-        cs <- takeWhile0 isEnc
-        return (T.cons c cs)
-    isEncStart c | c >= 'A' && c <= 'Z' = True
-                 | c >= 'a' && c <= 'z' = True
-                 | otherwise = False
-    isEnc      c | c >= 'A' && c <= 'Z' = True
-                 | c >= 'a' && c <= 'z' = True
-                 | c >= '0' && c <= '9' = True
-                 | c `elem` "._-"       = True
-                 | otherwise = False
 

@@ -57,6 +57,7 @@ import           Blaze.ByteString.Builder (Builder)
 import           Data.ByteString (ByteString)
 
 import           Text.XmlHtml.Common
+import           Text.XmlHtml.TextParser
 
 import qualified Text.XmlHtml.XML.Parse as XML
 import qualified Text.XmlHtml.XML.Render as XML
@@ -68,14 +69,14 @@ import qualified Text.XmlHtml.HTML.Render as HTML
 ------------------------------------------------------------------------------
 -- | Parses the given XML fragment.
 parseXML :: String -> ByteString -> Either String Document
-parseXML = XML.parse
+parseXML = parse XML.docFragment
 
 
 ------------------------------------------------------------------------------
 -- | Parses the given HTML fragment.  This enables HTML quirks mode, which
 --   changes the parsing algorithm to parse valid HTML 5 documents correctly.
 parseHTML :: String -> ByteString -> Either String Document
-parseHTML = HTML.parse
+parseHTML = parse HTML.docFragment
 
 
 ------------------------------------------------------------------------------

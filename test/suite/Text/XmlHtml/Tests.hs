@@ -7,6 +7,7 @@ import           Data.ByteString.Char8()
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Text.XmlHtml
+import           Text.XmlHtml.OASISTest
 import           Test.HUnit hiding (Test)
 
 tests :: [Test]
@@ -73,7 +74,7 @@ tests = [
     testIt "omitEndTH        " omitEndTH,
     testIt "testNewRefs      " testNewRefs
     ]
-
+    ++ testsOASIS
 
 testIt :: TestName -> Bool -> Test
 testIt name b = testCase name $ assertBool name b
@@ -81,6 +82,10 @@ testIt name b = testCase name $ assertBool name b
 isLeft :: Either a b -> Bool
 isLeft (Left _) = True
 isLeft _        = False
+
+isRight :: Either a b -> Bool
+isRight (Right _) = True
+isRight _         = False
 
 e :: Encoding
 e = UTF8
