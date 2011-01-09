@@ -1,0 +1,2 @@
+Correctly allow this as an empty document (no DTD parsing, and empty doc
+content is allowed).

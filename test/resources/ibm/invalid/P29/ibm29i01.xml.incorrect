@@ -1,0 +1,1 @@
+Incorrect because of bad entity ref; we don't parse internal DTD subsets.

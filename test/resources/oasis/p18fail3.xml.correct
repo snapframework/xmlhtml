@@ -1,0 +1,1 @@
+This is accepted not because CDATA nests, but because we accept ]]> in char data
