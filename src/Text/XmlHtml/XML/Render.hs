@@ -3,6 +3,8 @@
 module Text.XmlHtml.XML.Render where
 
 import           Blaze.ByteString.Builder
+import           Data.Char
+import           Data.Maybe
 import           Data.Monoid
 import           Text.XmlHtml.Common
 
@@ -15,9 +17,12 @@ render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render e dt ns = byteOrder
        `mappend` xmlDecl e
        `mappend` docTypeDecl e dt
-       `mappend` (mconcat $ map (node e) ns)
+       `mappend` nodes
     where byteOrder | isUTF16 e = fromText e "\xFEFF" -- byte order mark
                     | otherwise = mempty
+          nodes | null ns   = mempty
+                | otherwise = firstNode e (head ns)
+                    `mappend` (mconcat $ map (node e) (tail ns))
 
 
 ------------------------------------------------------------------------------
@@ -85,6 +90,17 @@ node e (Element t a c)                     = element e t a c
 
 
 ------------------------------------------------------------------------------
+-- | Process the first node differently to encode leading whitespace.  This
+-- lets us be sure that @parseXML@ is a left inverse to @render@.
+firstNode :: Encoding -> Node -> Builder
+firstNode e (Comment t)     = node e (Comment t)
+firstNode e (Element t a c) = node e (Element t a c)
+firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
+                              in escaped "<>& \t\r\n" e (T.singleton c)
+                                 `mappend` node e (TextNode t')
+
+
+------------------------------------------------------------------------------
 escaped :: [Char] -> Encoding -> Text -> Builder
 escaped _   _ "" = mempty
 escaped bad e t  = let (p,s) = T.break (`elem` bad) t
@@ -101,7 +117,9 @@ entity e '<'  = fromText e "&lt;"
 entity e '>'  = fromText e "&gt;"
 entity e '\'' = fromText e "&apos;"
 entity e '\"' = fromText e "&quot;"
-entity _ _    = error "Misbehaving renderer"
+entity e c    = fromText e "&#"
+                `mappend` fromText e (T.pack (show (ord c)))
+                `mappend` fromText e ";"
 
 
 ------------------------------------------------------------------------------

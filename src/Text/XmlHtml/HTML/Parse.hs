@@ -110,13 +110,6 @@ data ElemResult = Matched
 
 
 ------------------------------------------------------------------------------
-element :: Parser (Node, ElemResult)
-element = do
-    (t,a,b) <- emptyOrStartTag
-    finishElement t a b
-
-
-------------------------------------------------------------------------------
 finishElement :: Text -> [(Text, Text)] -> Bool -> Parser (Node, ElemResult)
 finishElement t a b = do
     if b then return (Element t a [], Matched)

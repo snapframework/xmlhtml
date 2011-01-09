@@ -183,21 +183,6 @@ name = do
 
 
 ------------------------------------------------------------------------------
-names :: Parser [Text]
-names = P.sepBy1 name (P.char ' ')
-
-
-------------------------------------------------------------------------------
-nmtoken :: Parser Text
-nmtoken = takeWhile1 isNameChar
-
-
-------------------------------------------------------------------------------
-nmtokens :: Parser [Text]
-nmtokens = P.sepBy1 nmtoken (P.char ' ')
-
-
-------------------------------------------------------------------------------
 attrValue :: Parser Text
 attrValue = fmap T.concat (singleQuoted <|> doubleQuoted)
   where
@@ -590,23 +575,6 @@ externalID = systemID <|> publicID <|> return NoExternalID
         whiteSpace
         sid <- systemLiteral
         return (Public pid sid)
-
-
-------------------------------------------------------------------------------
--- | Return value is the encoding.
-textDecl :: Parser (Maybe Text, Text)
-textDecl = do
-    _ <- text "<?xml"
-    v <- optional versionInfo
-    e <- encodingDecl
-    _ <- optional whiteSpace
-    _ <- text "?>"
-    return (v,e)
-
-
-------------------------------------------------------------------------------
-extParsedEnt :: Parser [Node]
-extParsedEnt = optional textDecl *> content
 
 
 ------------------------------------------------------------------------------

@@ -7,74 +7,75 @@ import           Data.ByteString.Char8()
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Text.XmlHtml
+import           Text.XmlHtml.Cursor() -- Just to get it in test coverage
 import           Text.XmlHtml.OASISTest
 import           Test.HUnit hiding (Test)
 
 tests :: [Test]
 tests = [
     -- XML parsing tests
-    testIt "emptyDocument    " emptyDocument,
-    testIt "publicDocType    " publicDocType,
-    testIt "systemDocType    " systemDocType,
-    testIt "emptyDocType     " emptyDocType,
-    testIt "textOnly         " textOnly,
-    testIt "textWithRefs     " textWithRefs,
-    testIt "untermRef        " untermRef,
-    testIt "textWithCDATA    " textWithCDATA,
-    testIt "cdataOnly        " cdataOnly,
-    testIt "commentOnly      " commentOnly,
-    testIt "emptyElement     " emptyElement,
-    testIt "emptyElement2    " emptyElement2,
-    testIt "elemWithText     " elemWithText,
-    testIt "xmlDecl          " xmlDecl,
-    testIt "procInst         " procInst,
+    testIt "emptyDocument          " emptyDocument,
+    testIt "publicDocType          " publicDocType,
+    testIt "systemDocType          " systemDocType,
+    testIt "emptyDocType           " emptyDocType,
+    testIt "textOnly               " textOnly,
+    testIt "textWithRefs           " textWithRefs,
+    testIt "untermRef              " untermRef,
+    testIt "textWithCDATA          " textWithCDATA,
+    testIt "cdataOnly              " cdataOnly,
+    testIt "commentOnly            " commentOnly,
+    testIt "emptyElement           " emptyElement,
+    testIt "emptyElement2          " emptyElement2,
+    testIt "elemWithText           " elemWithText,
+    testIt "xmlDecl                " xmlDecl,
+    testIt "procInst               " procInst,
 
     -- Repeat XML tests with HTML parser
-    testIt "emptyDocumentHTML" emptyDocumentHTML,
-    testIt "publicDocTypeHTML" publicDocTypeHTML,
-    testIt "systemDocTypeHTML" systemDocTypeHTML,
-    testIt "emptyDocTypeHTML " emptyDocTypeHTML,
-    testIt "textOnlyHTML     " textOnlyHTML,
-    testIt "textWithRefsHTML " textWithRefsHTML,
-    testIt "textWithCDataHTML" textWithCDataHTML,
-    testIt "cdataOnlyHTML    " cdataOnlyHTML,
-    testIt "commentOnlyHTML  " commentOnlyHTML,
-    testIt "emptyElementHTML " emptyElementHTML,
-    testIt "emptyElement2HTML" emptyElement2HTML,
-    testIt "elemWithTextHTML " elemWithTextHTML,
-    testIt "xmlDeclHTML      " xmlDeclHTML,
-    testIt "procInstHTML     " procInstHTML,
+    testIt "emptyDocumentHTML      " emptyDocumentHTML,
+    testIt "publicDocTypeHTML      " publicDocTypeHTML,
+    testIt "systemDocTypeHTML      " systemDocTypeHTML,
+    testIt "emptyDocTypeHTML       " emptyDocTypeHTML,
+    testIt "textOnlyHTML           " textOnlyHTML,
+    testIt "textWithRefsHTML       " textWithRefsHTML,
+    testIt "textWithCDataHTML      " textWithCDataHTML,
+    testIt "cdataOnlyHTML          " cdataOnlyHTML,
+    testIt "commentOnlyHTML        " commentOnlyHTML,
+    testIt "emptyElementHTML       " emptyElementHTML,
+    testIt "emptyElement2HTML      " emptyElement2HTML,
+    testIt "elemWithTextHTML       " elemWithTextHTML,
+    testIt "xmlDeclHTML            " xmlDeclHTML,
+    testIt "procInstHTML           " procInstHTML,
 
     -- testIt HTML parser quirks
-    testIt "voidElem         " voidElem,
-    testIt "voidEmptyElem    " voidEmptyElem,
-    testIt "rawTextElem      " rawTextElem,
-    testIt "rcdataElem       " rcdataElem,
-    testIt "endTagCase       " endTagCase,
-    testIt "hexEntityCap     " hexEntityCap,
-    testIt "laxAttrName      " laxAttrName,
-    testIt "emptyAttr        " emptyAttr,
-    testIt "unquotedAttr     " unquotedAttr,
-    testIt "laxAttrVal       " laxAttrVal,
-    testIt "ampersandInText  " ampersandInText,
-    testIt "omitOptionalEnds " omitOptionalEnds,
-    testIt "omitEndHEAD      " omitEndHEAD,
-    testIt "omitEndLI        " omitEndLI,
-    testIt "omitEndDT        " omitEndDT,
-    testIt "omitEndDD        " omitEndDD,
-    testIt "omitEndP         " omitEndP,
-    testIt "omitEndRT        " omitEndRT,
-    testIt "omitEndRP        " omitEndRP,
-    testIt "omitEndOPTGRP    " omitEndOPTGRP,
-    testIt "omitEndOPTION    " omitEndOPTION,
-    testIt "omitEndCOLGRP    " omitEndCOLGRP,
-    testIt "omitEndTHEAD     " omitEndTHEAD,
-    testIt "omitEndTBODY     " omitEndTBODY,
-    testIt "omitEndTFOOT     " omitEndTFOOT,
-    testIt "omitEndTR        " omitEndTR,
-    testIt "omitEndTD        " omitEndTD,
-    testIt "omitEndTH        " omitEndTH,
-    testIt "testNewRefs      " testNewRefs
+    testIt "voidElem               " voidElem,
+    testIt "voidEmptyElem          " voidEmptyElem,
+    testIt "rawTextElem            " rawTextElem,
+    testIt "rcdataElem             " rcdataElem,
+    testIt "endTagCase             " endTagCase,
+    testIt "hexEntityCap           " hexEntityCap,
+    testIt "laxAttrName            " laxAttrName,
+    testIt "emptyAttr              " emptyAttr,
+    testIt "unquotedAttr           " unquotedAttr,
+    testIt "laxAttrVal             " laxAttrVal,
+    testIt "ampersandInText        " ampersandInText,
+    testIt "omitOptionalEnds       " omitOptionalEnds,
+    testIt "omitEndHEAD            " omitEndHEAD,
+    testIt "omitEndLI              " omitEndLI,
+    testIt "omitEndDT              " omitEndDT,
+    testIt "omitEndDD              " omitEndDD,
+    testIt "omitEndP               " omitEndP,
+    testIt "omitEndRT              " omitEndRT,
+    testIt "omitEndRP              " omitEndRP,
+    testIt "omitEndOPTGRP          " omitEndOPTGRP,
+    testIt "omitEndOPTION          " omitEndOPTION,
+    testIt "omitEndCOLGRP          " omitEndCOLGRP,
+    testIt "omitEndTHEAD           " omitEndTHEAD,
+    testIt "omitEndTBODY           " omitEndTBODY,
+    testIt "omitEndTFOOT           " omitEndTFOOT,
+    testIt "omitEndTR              " omitEndTR,
+    testIt "omitEndTD              " omitEndTD,
+    testIt "omitEndTH              " omitEndTH,
+    testIt "testNewRefs            " testNewRefs
     ]
     ++ testsOASIS
 
@@ -84,10 +85,6 @@ testIt name b = testCase name $ assertBool name b
 isLeft :: Either a b -> Bool
 isLeft (Left _) = True
 isLeft _        = False
-
-isRight :: Either a b -> Bool
-isRight (Right _) = True
-isRight _         = False
 
 e :: Encoding
 e = UTF8

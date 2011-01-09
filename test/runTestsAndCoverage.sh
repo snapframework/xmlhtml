@@ -32,6 +32,7 @@ mkdir -p $DIR
 
 EXCLUDES='Main
 Text.XmlHtml.HTML.Meta
+Text.XmlHtml.OASISTest
 Text.XmlHtml.Tests'
 
 EXCL=""
