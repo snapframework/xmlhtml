@@ -4,6 +4,7 @@
 module Text.XmlHtml.HTML.Parse where
 
 import           Control.Applicative
+import           Control.Monad
 import           Data.Char
 import           Data.List
 import           Data.Maybe
@@ -151,11 +152,14 @@ emptyOrStartTag = do
     a <- many $ P.try $ do
         XML.whiteSpace
         attribute
+    when (hasDups a) $ fail "Duplicate attribute names in element"
     _ <- optional XML.whiteSpace
     e <- fmap isJust $ optional (P.char '/')
     let e' = e || (T.map toLower t `S.member` voidTags)
     _ <- P.char '>'
     return (t, a, e')
+  where
+    hasDups a = length (nub (map fst a)) < length a
 
 
 ------------------------------------------------------------------------------
@@ -297,7 +301,10 @@ charRef = hexCharRef <|> decCharRef
         _ <- text "&#"
         ds <- some digit
         _ <- P.char ';'
-        return $ T.singleton $ chr $ foldl' (\a b -> 10 * a + b) 0 ds
+        let c = chr $ foldl' (\a b -> 10 * a + b) 0 ds
+        when (not (isValidChar c)) $ fail $
+            "Reference is not a valid character"
+        return $ T.singleton c
       where
         digit = do
             d <- P.satisfy (\c -> c >= '0' && c <= '9')
@@ -306,7 +313,10 @@ charRef = hexCharRef <|> decCharRef
         _ <- text "&#x" <|> text "&#X"
         ds <- some digit
         _ <- P.char ';'
-        return $ T.singleton $ chr $ foldl' (\a b -> 16 * a + b) 0 ds
+        let c = chr $ foldl' (\a b -> 16 * a + b) 0 ds
+        when (not (isValidChar c)) $ fail $
+            "Reference is not a valid character"
+        return $ T.singleton c
       where
         digit = num <|> upper <|> lower
         num = do

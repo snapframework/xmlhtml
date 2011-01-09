@@ -268,11 +268,16 @@ comment = text "<!--" *> (Just <$> Comment <$> commentText) <* text "-->"
 -- | Always returns Nothing since there's no representation for a PI in the
 -- document tree.
 processingInstruction :: Parser (Maybe Node)
-processingInstruction =
-    text "<?" *> piTarget *> whiteSpace
-              *> P.manyTill P.anyChar (text "?>")
-              *> return Nothing
-
+processingInstruction = do
+    _ <- text "<?"
+    _ <- piTarget
+    _ <- emptyEnd <|> contentEnd
+    return Nothing
+  where
+    emptyEnd   = P.try (P.string "?>")
+    contentEnd = P.try $ do
+        _ <- whiteSpace
+        P.manyTill P.anyChar (P.try $ text "?>")
 
 ------------------------------------------------------------------------------
 piTarget :: Parser Text
@@ -367,6 +372,12 @@ docTypeDecl = do
 data InternalDoctypeState = IDSStart
                           | IDSScanning Int
                           | IDSInQuote Int Char
+                          | IDSCommentS1 Int
+                          | IDSCommentS2 Int
+                          | IDSCommentS3 Int
+                          | IDSComment Int
+                          | IDSCommentD1 Int
+                          | IDSCommentE1 Int
 
 
 ------------------------------------------------------------------------------
@@ -377,15 +388,43 @@ internalDoctype = InternalText <$> fst <$> scanText (dfa IDSStart)
               <|> return NoInternalSubset
   where dfa IDSStart '[' = ScanNext (dfa (IDSScanning 0))
         dfa IDSStart _   = ScanFail "Not a DOCTYPE internal subset"
-        dfa (IDSScanning n) '['  = ScanNext (dfa (IDSScanning (n+1)))
-        dfa (IDSScanning 0) ']'  = ScanFinish ()
-        dfa (IDSScanning n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
-        dfa (IDSScanning n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
-        dfa (IDSScanning n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
-        dfa (IDSScanning n) _    = ScanNext (dfa (IDSScanning n))
         dfa (IDSInQuote n c) d
-          | c == d               = ScanNext (dfa (IDSScanning n))
-          | otherwise            = ScanNext (dfa (IDSInQuote n c))
+          | c == d                = ScanNext (dfa (IDSScanning n))
+          | otherwise             = ScanNext (dfa (IDSInQuote n c))
+        dfa (IDSScanning n) '['   = ScanNext (dfa (IDSScanning (n+1)))
+        dfa (IDSScanning 0) ']'   = ScanFinish ()
+        dfa (IDSScanning n) ']'   = ScanNext (dfa (IDSScanning (n-1)))
+        dfa (IDSScanning n) '\''  = ScanNext (dfa (IDSInQuote n '\''))
+        dfa (IDSScanning n) '\"'  = ScanNext (dfa (IDSInQuote n '\"'))
+        dfa (IDSScanning n) '<'   = ScanNext (dfa (IDSCommentS1 n))
+        dfa (IDSScanning n) _     = ScanNext (dfa (IDSScanning n))
+        dfa (IDSCommentS1 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
+        dfa (IDSCommentS1 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS1 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
+        dfa (IDSCommentS1 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
+        dfa (IDSCommentS1 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
+        dfa (IDSCommentS1 n) '!'  = ScanNext (dfa (IDSCommentS2 n))
+        dfa (IDSCommentS1 n) _    = ScanNext (dfa (IDSScanning n))
+        dfa (IDSCommentS2 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
+        dfa (IDSCommentS2 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS2 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
+        dfa (IDSCommentS2 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
+        dfa (IDSCommentS2 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
+        dfa (IDSCommentS2 n) '-'  = ScanNext (dfa (IDSCommentS3 n))
+        dfa (IDSCommentS2 n) _    = ScanNext (dfa (IDSScanning n))
+        dfa (IDSCommentS3 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
+        dfa (IDSCommentS3 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS3 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
+        dfa (IDSCommentS3 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
+        dfa (IDSCommentS3 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
+        dfa (IDSCommentS3 n) '-'  = ScanNext (dfa (IDSComment n))
+        dfa (IDSCommentS3 n) _    = ScanNext (dfa (IDSScanning n))
+        dfa (IDSComment n) '-'    = ScanNext (dfa (IDSCommentD1 n))
+        dfa (IDSComment n) _      = ScanNext (dfa (IDSComment n))
+        dfa (IDSCommentD1 n) '-'  = ScanNext (dfa (IDSCommentE1 n))
+        dfa (IDSCommentD1 n) _    = ScanNext (dfa (IDSComment n))
+        dfa (IDSCommentE1 n) '>'  = ScanNext (dfa (IDSScanning n))
+        dfa (IDSCommentE1 _) _    = ScanFail "Poorly formatted comment"
 
 
 ------------------------------------------------------------------------------
@@ -422,10 +461,13 @@ emptyOrStartTag = do
     a <- many $ P.try $ do
         whiteSpace
         attribute
+    when (hasDups a) $ fail "Duplicate attribute names in element"
     _ <- optional whiteSpace
     e <- optional (P.char '/')
     _ <- P.char '>'
     return (t, a, isJust e)
+  where
+    hasDups a = length (nub (map fst a)) < length a
 
 
 ------------------------------------------------------------------------------
@@ -479,7 +521,10 @@ charRef = hexCharRef <|> decCharRef
         _ <- text "&#"
         ds <- some digit
         _ <- P.char ';'
-        return $ T.singleton $ chr $ foldl' (\a b -> 10 * a + b) 0 ds
+        let c = chr $ foldl' (\a b -> 10 * a + b) 0 ds
+        when (not (isValidChar c)) $ fail $
+            "Reference is not a valid character"
+        return $ T.singleton c
       where
         digit = do
             d <- P.satisfy (\c -> c >= '0' && c <= '9')
@@ -488,7 +533,10 @@ charRef = hexCharRef <|> decCharRef
         _ <- text "&#x"
         ds <- some digit
         _ <- P.char ';'
-        return $ T.singleton $ chr $ foldl' (\a b -> 16 * a + b) 0 ds
+        let c = chr $ foldl' (\a b -> 16 * a + b) 0 ds
+        when (not (isValidChar c)) $ fail $
+            "Reference is not a valid character"
+        return $ T.singleton c
       where
         digit = num <|> upper <|> lower
         num = do

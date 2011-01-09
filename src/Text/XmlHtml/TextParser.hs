@@ -5,6 +5,8 @@
 module Text.XmlHtml.TextParser where
 
 import           Control.Applicative
+import           Data.Char
+import           Data.Maybe
 import           Text.XmlHtml.Common
 
 import           Data.Text (Text)
@@ -44,9 +46,11 @@ instance (Monad m) => P.Stream T.Text m Char where
 parse :: (Encoding -> Parser a) -> String -> ByteString -> Either String a
 parse p src b = let (e, b') = guessEncoding b
                     t       = decoder e b'
-                    good    = T.all isValidChar t
-                in  if good then parseText (p e) src t
-                            else Left "Document contains invalid characters"
+                    bad     = T.find (not . isValidChar) t
+                in  if isNothing bad
+                        then parseText (p e) src t
+                        else Left $ "Document contains invalid character:"
+                                 ++ " \\" ++ show (ord (fromJust bad))
 
 
 ------------------------------------------------------------------------------

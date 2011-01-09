@@ -1,8 +1,0 @@
-XmlDocument {docEncoding = UTF8, docType = Just (DocType "animal" (Just (System "ibm61n01.dtd"))),
-    docContent = [Comment " syntax test for Production 61",
-                  Element {elementTag = "animal", elementAttrs = [], elementChildren = [
-                      TextNode "\r\n ",
-                      Element {elementTag = "tiger", elementAttrs = [], elementChildren = []},
-                      TextNode "\r\n"
-                      ]},
-                  TextNode "\r\n"]}

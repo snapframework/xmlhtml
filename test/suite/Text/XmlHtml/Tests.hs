@@ -36,7 +36,6 @@ tests = [
     testIt "emptyDocTypeHTML " emptyDocTypeHTML,
     testIt "textOnlyHTML     " textOnlyHTML,
     testIt "textWithRefsHTML " textWithRefsHTML,
-    testIt "untermRefHTML    " untermRefHTML,
     testIt "textWithCDataHTML" textWithCDataHTML,
     testIt "cdataOnlyHTML    " cdataOnlyHTML,
     testIt "commentOnlyHTML  " commentOnlyHTML,
@@ -57,6 +56,7 @@ tests = [
     testIt "emptyAttr        " emptyAttr,
     testIt "unquotedAttr     " unquotedAttr,
     testIt "laxAttrVal       " laxAttrVal,
+    testIt "ampersandInText  " ampersandInText,
     testIt "omitOptionalEnds " omitOptionalEnds,
     testIt "omitEndHEAD      " omitEndHEAD,
     testIt "omitEndLI        " omitEndLI,
@@ -98,15 +98,15 @@ emptyDocument = parseXML "" ""
 
 publicDocType :: Bool
 publicDocType = parseXML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
-    == Right (XmlDocument e (Just (DocType "tag" (Just (Public "foo" "bar")))) [])
+    == Right (XmlDocument e (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
 
 systemDocType :: Bool
 systemDocType = parseXML "" "<!DOCTYPE tag SYSTEM \"foo\">"
-    == Right (XmlDocument e (Just (DocType "tag" (Just (System "foo")))) [])
+    == Right (XmlDocument e (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
 
 emptyDocType :: Bool
 emptyDocType  = parseXML "" "<!DOCTYPE tag >"
-    == Right (XmlDocument e (Just (DocType "tag" Nothing)) [])
+    == Right (XmlDocument e (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
 
 textOnly :: Bool
 textOnly      = parseXML "" "sldhfsklj''a's s"
@@ -158,15 +158,15 @@ emptyDocumentHTML = parseHTML "" ""
 
 publicDocTypeHTML :: Bool
 publicDocTypeHTML = parseHTML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
-    == Right (HtmlDocument e (Just (DocType "tag" (Just (Public "foo" "bar")))) [])
+    == Right (HtmlDocument e (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
 
 systemDocTypeHTML :: Bool
 systemDocTypeHTML = parseHTML "" "<!DOCTYPE tag SYSTEM \"foo\">"
-    == Right (HtmlDocument e (Just (DocType "tag" (Just (System "foo")))) [])
+    == Right (HtmlDocument e (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
 
 emptyDocTypeHTML :: Bool
 emptyDocTypeHTML  = parseHTML "" "<!DOCTYPE tag >"
-    == Right (HtmlDocument e (Just (DocType "tag" Nothing)) [])
+    == Right (HtmlDocument e (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
 
 textOnlyHTML :: Bool
 textOnlyHTML      = parseHTML "" "sldhfsklj''a's s"
@@ -175,9 +175,6 @@ textOnlyHTML      = parseHTML "" "sldhfsklj''a's s"
 textWithRefsHTML :: Bool
 textWithRefsHTML  = parseHTML "" "This is Bob&apos;s sled"
     == Right (HtmlDocument e Nothing [TextNode "This is Bob's sled"])
-
-untermRefHTML :: Bool
-untermRefHTML     = isLeft (parseHTML "" "&#X6a")
 
 textWithCDataHTML :: Bool
 textWithCDataHTML = parseHTML "" "Testing <![CDATA[with <some> c]data]]>"
@@ -254,6 +251,10 @@ unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"
 laxAttrVal :: Bool
 laxAttrVal    = parseHTML "" "<test attr=\"a &amp; d < b & c\"/>"
     == Right (HtmlDocument e Nothing [Element "test" [("attr", "a & d < b & c")] []])
+
+ampersandInText :: Bool
+ampersandInText   = parseHTML "" "&#X6a"
+    == Right (HtmlDocument e Nothing [TextNode "&#X6a"])
 
 omitOptionalEnds :: Bool
 omitOptionalEnds   = parseHTML "" "<html><body><p></html>"

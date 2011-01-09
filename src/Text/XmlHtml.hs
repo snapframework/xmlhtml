@@ -6,8 +6,9 @@
 --
 --   Limitations:
 --
---   * The XML parser does not parse internal DOCTYPE subsets.  If one is
---     found, the parsing will fail.
+--   * The XML parser does not parse internal DOCTYPE subsets.  They are just
+--     stored as blocks of text, with minimal scanning done to match quotes
+--     and brackets to determine the end.
 --
 --   * The HTML 5 parser is not a compliant HTML parser.  Instead, it is a
 --     parser for valid HTML 5 content.  It should only be used on content
@@ -24,6 +25,7 @@ module Text.XmlHtml (
     Node(..),
     DocType(..),
     ExternalID(..),
+    InternalSubset(..),
     Encoding(..),
 
     -- * Manipulating documents
