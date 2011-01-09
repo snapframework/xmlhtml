@@ -33,6 +33,7 @@ Library
   Exposed-modules:     Text.XmlHtml,
                        Text.XmlHtml.Cursor
   Other-modules:       Text.XmlHtml.Common,
+                       Text.XmlHtml.TextParser,
                        Text.XmlHtml.XML.Parse,
                        Text.XmlHtml.XML.Render,
                        Text.XmlHtml.HTML.Meta,
