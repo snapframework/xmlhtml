@@ -24,6 +24,7 @@ tests = [
     testIt "cdataOnly        " cdataOnly,
     testIt "commentOnly      " commentOnly,
     testIt "emptyElement     " emptyElement,
+    testIt "emptyElement2    " emptyElement2,
     testIt "elemWithText     " elemWithText,
     testIt "xmlDecl          " xmlDecl,
     testIt "procInst         " procInst,
@@ -40,6 +41,7 @@ tests = [
     testIt "cdataOnlyHTML    " cdataOnlyHTML,
     testIt "commentOnlyHTML  " commentOnlyHTML,
     testIt "emptyElementHTML " emptyElementHTML,
+    testIt "emptyElement2HTML" emptyElement2HTML,
     testIt "elemWithTextHTML " elemWithTextHTML,
     testIt "xmlDeclHTML      " xmlDeclHTML,
     testIt "procInstHTML     " procInstHTML,
@@ -133,6 +135,10 @@ emptyElement :: Bool
 emptyElement  = parseXML "" "<myElement/>"
     == Right (XmlDocument e Nothing [Element "myElement" [] []])
 
+emptyElement2 :: Bool
+emptyElement2  = parseXML "" "<myElement />"
+    == Right (XmlDocument e Nothing [Element "myElement" [] []])
+
 elemWithText :: Bool
 elemWithText  = parseXML "" "<myElement>text</myElement>"
     == Right (XmlDocument e Nothing [Element "myElement" [] [TextNode "text"]])
@@ -187,6 +193,10 @@ commentOnlyHTML   = parseHTML "" "<!-- this <is> a \"comment -->"
 
 emptyElementHTML :: Bool
 emptyElementHTML  = parseHTML "" "<myElement/>"
+    == Right (HtmlDocument e Nothing [Element "myElement" [] []])
+
+emptyElement2HTML :: Bool
+emptyElement2HTML = parseHTML "" "<myElement />"
     == Right (HtmlDocument e Nothing [Element "myElement" [] []])
 
 elemWithTextHTML :: Bool
