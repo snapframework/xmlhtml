@@ -1,0 +1,4 @@
+XmlDocument {docEncoding = UTF8, docType = Just (DocType "animal" (Just (System "ibm31n01.dtd"))),
+    docContent = [Element {elementTag = "animal", elementAttrs = [], elementChildren = []},
+                  TextNode "\r\n",
+                  Comment " Illegal extSubsetDecl in the external DTD "]}
