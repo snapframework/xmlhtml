@@ -7,7 +7,8 @@ import           Data.ByteString.Char8()
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Text.XmlHtml
-import           Text.XmlHtml.Cursor() -- Just to get it in test coverage
+import           Text.XmlHtml.Cursor()         -- Just to get it in hpc
+import           Text.Blaze.Renderer.XmlHtml() -- Just to get it in hpc
 import           Text.XmlHtml.OASISTest
 import           Test.HUnit hiding (Test)
 
