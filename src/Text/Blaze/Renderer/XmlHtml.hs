@@ -1,5 +1,5 @@
--- | Renderer that supports rendering to xmlhtml forests.  Patterned after the
--- Hexpat renderer.
+-- | Renderer that supports rendering to xmlhtml forests.  This is a port of
+-- the Hexpat renderer.
 --
 -- Warning: because this renderer doesn't directly create the output, but rather
 -- an XML tree representation, it is impossible to render pre-escaped text. This
@@ -66,7 +66,7 @@ renderNodes = go []
     {-# NOINLINE go #-}
 {-# INLINE renderNodes #-}
 
--- | Render HTML to an expat forest
+-- | Render HTML to an xmlhtml Document
 --
 renderHtml :: Html -> Document
 renderHtml html = HtmlDocument UTF8 Nothing (renderNodes html [])
