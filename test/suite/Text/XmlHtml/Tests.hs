@@ -49,6 +49,8 @@ tests = [
 
     -- testIt HTML parser quirks
     testIt "voidElem               " voidElem,
+    testIt "caseInsDoctype1        " caseInsDoctype1,
+    testIt "caseInsDoctype2        " caseInsDoctype2,
     testIt "voidEmptyElem          " voidEmptyElem,
     testIt "rawTextElem            " rawTextElem,
     testIt "rcdataElem             " rcdataElem,
@@ -205,6 +207,14 @@ xmlDeclHTML       = parseHTML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
 procInstHTML :: Bool
 procInstHTML      = parseHTML "" "<?myPI This''is <not> parsed!?>"
     == Right (HtmlDocument e Nothing [])
+
+caseInsDoctype1 :: Bool
+caseInsDoctype1 = parseHTML "" "<!dOcTyPe html SyStEm 'foo'>"
+    == Right (HtmlDocument e (Just (DocType "html" (System "foo") NoInternalSubset)) [])
+
+caseInsDoctype2 :: Bool
+caseInsDoctype2 = parseHTML "" "<!dOcTyPe html PuBlIc 'foo' 'bar'>"
+    == Right (HtmlDocument e (Just (DocType "html" (Public "foo" "bar") NoInternalSubset)) [])
 
 voidElem :: Bool
 voidElem      = parseHTML "" "<img>"

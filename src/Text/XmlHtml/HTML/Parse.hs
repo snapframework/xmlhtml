@@ -27,7 +27,7 @@ import qualified Data.Text as T
 -- it parses the HTML version of 'content' and returns an 'HtmlDocument'.
 docFragment :: Encoding -> Parser Document
 docFragment e = do
-    (dt, nodes1)      <- XML.prolog
+    (dt, nodes1)      <- prolog
     (nodes2, Matched) <- content Nothing
     return $ HtmlDocument e dt (nodes1 ++ nodes2)
 
@@ -76,7 +76,63 @@ docFragment e = do
         means ampersands that parse like character or entity references.
 
     12. Omittable end tags are inserted automatically.
+
+    13. DOCTYPE tags matched with case insensitive keywords.
 -}
+
+
+------------------------------------------------------------------------------
+prolog :: Parser (Maybe DocType, [Node])
+prolog = do
+    _      <- optional XML.xmlDecl
+    nodes1 <- many XML.misc
+    rest   <- optional $ do
+        dt     <- docTypeDecl
+        nodes2 <- many XML.misc
+        return (dt, nodes2)
+    case rest of
+        Nothing           -> return (Nothing, catMaybes nodes1)
+        Just (dt, nodes2) -> return (Just dt, catMaybes (nodes1 ++ nodes2))
+
+
+------------------------------------------------------------------------------
+-- | Internal subset is parsed, but ignored since we don't have data types to
+-- store it.
+docTypeDecl :: Parser DocType
+docTypeDecl = do
+    P.try $ do
+        _      <- text "<!"
+        decl   <- XML.name
+        when (T.toLower decl /= "doctype") $ fail "Expected DOCTYPE"
+    XML.whiteSpace
+    tag    <- XML.name
+    _      <- optional XML.whiteSpace
+    extid  <- externalID
+    _      <- optional XML.whiteSpace
+    intsub <- XML.internalDoctype
+    _      <- P.char '>'
+    return (DocType tag extid intsub)
+
+
+------------------------------------------------------------------------------
+externalID :: Parser ExternalID
+externalID = do
+    tok  <- optional $ T.toLower <$> XML.name
+    case tok of
+        Just "system" -> systemID
+        Just "public" -> publicID
+        Just _        -> fail "Expected SYSTEM or PUBLIC"
+        Nothing       -> return NoExternalID
+  where
+    systemID = do
+        XML.whiteSpace
+        System <$> XML.systemLiteral
+    publicID = do
+        XML.whiteSpace
+        pid <- XML.pubIdLiteral
+        XML.whiteSpace
+        sid <- XML.systemLiteral
+        return (Public pid sid)
 
 
 ------------------------------------------------------------------------------
