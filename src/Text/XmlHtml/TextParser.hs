@@ -48,7 +48,7 @@ parse p src b = let (e, b') = guessEncoding b
                     t       = decoder e b'
                     bad     = T.find (not . isValidChar) t
                 in  if isNothing bad
-                        then parseText (p e) src t
+                        then parseText (p e <* P.eof) src t
                         else Left $ "Document contains invalid character:"
                                  ++ " \\" ++ show (ord (fromJust bad))
 
@@ -72,7 +72,7 @@ parseText :: Parser a         -- ^ The parser to match
           -> String           -- ^ Name of the source file (can be @""@)
           -> Text             -- ^ Text to parse
           -> Either String a  -- Either an error message or the result
-parseText p src t = inLeft show (P.parse (p <* P.eof) src t)
+parseText p src t = inLeft show (P.parse p src t)
   where inLeft :: (a -> b) -> Either a c -> Either b c
         inLeft f (Left x)  = Left (f x)
         inLeft _ (Right x) = Right x

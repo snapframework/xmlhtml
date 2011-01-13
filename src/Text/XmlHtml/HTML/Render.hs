@@ -4,11 +4,15 @@
 module Text.XmlHtml.HTML.Render where
 
 import           Blaze.ByteString.Builder
+import           Control.Applicative
 import           Data.Maybe
 import           Data.Monoid
+import qualified Text.Parsec as P
 import           Text.XmlHtml.Common
+import           Text.XmlHtml.TextParser
 import           Text.XmlHtml.HTML.Meta
-import           Text.XmlHtml.XML.Render (docTypeDecl, escaped)
+import qualified Text.XmlHtml.HTML.Parse as P
+import           Text.XmlHtml.XML.Render (docTypeDecl, entity)
 
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -29,10 +33,32 @@ render e dt ns = byteOrder
 
 
 ------------------------------------------------------------------------------
+-- | HTML allows & so long as it is not "ambiguous" (i.e., looks like an
+-- entity).  So we have a special case for that.
+escaped :: [Char] -> Encoding -> Text -> Builder
+escaped _   _ "" = mempty
+escaped bad e t  =
+    let (p,s) = T.break (`elem` bad) t
+        r     = T.uncons s
+    in  fromText e p `mappend` case r of
+            Nothing
+                -> mempty
+            Just ('&',ss) | isLeft (parseText ambigAmp "" s)
+                -> fromText e "&" `mappend` escaped bad e ss
+            Just (c,ss)
+                -> entity e c `mappend` escaped bad e ss
+  where isLeft   = either (const True) (const False)
+        ambigAmp = P.char '&' *>
+            (P.finishCharRef *> return () <|> P.finishEntityRef *> return ())
+
+
+------------------------------------------------------------------------------
 node :: Encoding -> Node -> Builder
 node e (TextNode t)                        = escaped "<>&" e t
-node e (Comment t) | "--" `T.isInfixOf` t  = error "Invalid comment"
-                   | "-" `T.isSuffixOf` t  = error "Invalid comment"
+node e (Comment t) | ">"  `T.isPrefixOf` t = error "Invalid comment"
+                   | "->" `T.isPrefixOf` t = error "Invalid comment"
+                   | "--" `T.isInfixOf`  t = error "Invalid comment"
+                   | "-"  `T.isSuffixOf` t = error "Invalid comment"
                    | otherwise             = fromText e "<!--"
                                              `mappend` fromText e t
                                              `mappend` fromText e "-->"
@@ -41,16 +67,19 @@ node e (Element t a c)                     = element e t a c
 
 ------------------------------------------------------------------------------
 -- | Process the first node differently to encode leading whitespace.  This
--- lets us be sure that @parseXML@ is a left inverse to @render@.
+-- lets us be sure that @parseHTML@ is a left inverse to @render@.
 firstNode :: Encoding -> Node -> Builder
 firstNode e (Comment t)     = node e (Comment t)
 firstNode e (Element t a c) = node e (Element t a c)
+firstNode _ (TextNode "")   = mempty
 firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
                               in escaped "<>& \t\r\n" e (T.singleton c)
                                  `mappend` node e (TextNode t')
 
 
 ------------------------------------------------------------------------------
+-- XXX: Should do something to avoid concatting large CDATA sections before
+-- writing them to the output.
 element :: Encoding -> Text -> [(Text, Text)] -> [Node] -> Builder
 element e t a c
     | t `S.member` voidTags && null c         =
@@ -61,7 +90,8 @@ element e t a c
     | t `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
     | t `S.member` rawTextTags,
-      [ TextNode s ] <- c,
+      all isTextNode c,
+      let s = T.concat (map nodeText c),
       not ("</" `T.append` t `T.isInfixOf` s) =
         fromText e "<"
         `mappend` fromText e t
@@ -77,12 +107,12 @@ element e t a c
     | t `S.member` rawTextTags                =
         error $ T.unpack t ++ " cannot contain child elements or comments"
     | t `S.member` rcdataTags,
-      [ TextNode s ] <- c                     =
+      all isTextNode c                        =
         fromText e "<"
         `mappend` fromText e t
         `mappend` (mconcat $ map (attribute e) a)
         `mappend` fromText e ">"
-        `mappend` escaped "<&" e s
+        `mappend` mconcat (map (escaped "<&" e . nodeText) c)
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"

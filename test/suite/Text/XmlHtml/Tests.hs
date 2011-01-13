@@ -3,14 +3,18 @@
 
 module Text.XmlHtml.Tests (tests) where
 
-import           Data.ByteString.Char8()
+import           Blaze.ByteString.Builder
+import qualified Data.ByteString.Char8 as B
+import           Data.Text ()                  -- for string instance
+import qualified Data.Text.Encoding as T
+import           Test.ChasingBottoms (isBottom)
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
+import           Test.HUnit hiding (Test)
+import           Text.Blaze.Renderer.XmlHtml() -- Just to get it in hpc
 import           Text.XmlHtml
 import           Text.XmlHtml.Cursor()         -- Just to get it in hpc
-import           Text.Blaze.Renderer.XmlHtml() -- Just to get it in hpc
 import           Text.XmlHtml.OASISTest
-import           Test.HUnit hiding (Test)
 
 tests :: [Test]
 tests = [
@@ -30,6 +34,11 @@ tests = [
     testIt "elemWithText           " elemWithText,
     testIt "xmlDecl                " xmlDecl,
     testIt "procInst               " procInst,
+    testIt "badDoctype1            " badDoctype1,
+    testIt "badDoctype2            " badDoctype2,
+    testIt "badDoctype3            " badDoctype3,
+    testIt "badDoctype4            " badDoctype4,
+    testIt "badDoctype5            " badDoctype5,
 
     -- Repeat XML tests with HTML parser
     testIt "emptyDocumentHTML      " emptyDocumentHTML,
@@ -46,8 +55,13 @@ tests = [
     testIt "elemWithTextHTML       " elemWithTextHTML,
     testIt "xmlDeclHTML            " xmlDeclHTML,
     testIt "procInstHTML           " procInstHTML,
+    testIt "badDoctype1HTML        " badDoctype1HTML,
+    testIt "badDoctype2HTML        " badDoctype2HTML,
+    testIt "badDoctype3HTML        " badDoctype3HTML,
+    testIt "badDoctype4HTML        " badDoctype4HTML,
+    testIt "badDoctype5HTML        " badDoctype5HTML,
 
-    -- testIt HTML parser quirks
+    -- HTML parser quirks
     testIt "voidElem               " voidElem,
     testIt "caseInsDoctype1        " caseInsDoctype1,
     testIt "caseInsDoctype2        " caseInsDoctype2,
@@ -78,7 +92,47 @@ tests = [
     testIt "omitEndTR              " omitEndTR,
     testIt "omitEndTD              " omitEndTD,
     testIt "omitEndTH              " omitEndTH,
-    testIt "testNewRefs            " testNewRefs
+    testIt "testNewRefs            " testNewRefs,
+
+    -- XML Rendering Tests
+    testIt "renderByteOrderMark    " renderByteOrderMark,
+    testIt "singleQuoteInSysID     " singleQuoteInSysID,
+    testIt "doubleQuoteInSysID     " doubleQuoteInSysID,
+    testIt "bothQuotesInSysID      " bothQuotesInSysID,
+    testIt "doubleQuoteInPubID     " doubleQuoteInPubID,
+    testIt "doubleDashInComment    " doubleDashInComment,
+    testIt "trailingDashInComment  " trailingDashInComment,
+    testIt "renderEmptyText        " renderEmptyText,
+    testIt "singleQuoteInAttr      " singleQuoteInAttr,
+    testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
+    testIt "bothQuotesInAttr       " bothQuotesInAttr,
+
+    -- HTML Repeated Rendering Tests
+    testIt "hRenderByteOrderMark   " hRenderByteOrderMark,
+    testIt "hSingleQuoteInSysID    " hSingleQuoteInSysID,
+    testIt "hDoubleQuoteInSysID    " hDoubleQuoteInSysID,
+    testIt "hBothQuotesInSysID     " hBothQuotesInSysID,
+    testIt "hDoubleQuoteInPubID    " hDoubleQuoteInPubID,
+    testIt "hDoubleDashInComment   " hDoubleDashInComment,
+    testIt "hTrailingDashInComment " hTrailingDashInComment,
+    testIt "hRenderEmptyText       " hRenderEmptyText,
+    testIt "hSingleQuoteInAttr     " hSingleQuoteInAttr,
+    testIt "hDoubleQuoteInAttr     " hDoubleQuoteInAttr,
+    testIt "hBothQuotesInAttr      " hBothQuotesInAttr,
+
+    -- HTML Rendering Quirks
+    testIt "renderHTMLVoid         " renderHTMLVoid,
+    testIt "renderHTMLVoid2        " renderHTMLVoid2,
+    testIt "renderHTMLRaw          " renderHTMLRaw,
+    testIt "renderHTMLRawMult      " renderHTMLRawMult,
+    testIt "renderHTMLRaw2         " renderHTMLRaw2,
+    testIt "renderHTMLRaw3         " renderHTMLRaw3,
+    testIt "renderHTMLRaw4         " renderHTMLRaw4,
+    testIt "renderHTMLRcdata       " renderHTMLRcdata,
+    testIt "renderHTMLRcdataMult   " renderHTMLRcdataMult,
+    testIt "renderHTMLRcdata2      " renderHTMLRcdata2,
+    testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
+    testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2
     ]
     ++ testsOASIS
 
@@ -91,6 +145,10 @@ isLeft _        = False
 
 e :: Encoding
 e = UTF8
+
+------------------------------------------------------------------------------
+-- XML Parsing Tests ---------------------------------------------------------
+------------------------------------------------------------------------------
 
 emptyDocument :: Bool
 emptyDocument = parseXML "" ""
@@ -151,6 +209,25 @@ procInst :: Bool
 procInst      = parseXML "" "<?myPI This''is <not> parsed!?>"
     == Right (XmlDocument e Nothing [])
 
+badDoctype1 :: Bool
+badDoctype1    = isLeft $ parseXML "" "<!DOCTYPE>"
+
+badDoctype2 :: Bool
+badDoctype2    = isLeft $ parseXML "" "<!DOCTYPE html BAD>"
+
+badDoctype3 :: Bool
+badDoctype3    = isLeft $ parseXML "" "<!DOCTYPE html SYSTEM>"
+
+badDoctype4 :: Bool
+badDoctype4    = isLeft $ parseXML "" "<!DOCTYPE html PUBLIC \"foo\">"
+
+badDoctype5 :: Bool
+badDoctype5    = isLeft $ parseXML "" ("<!DOCTYPE html SYSTEM \"foo\" "
+                                       `B.append` "PUBLIC \"bar\" \"baz\">")
+
+------------------------------------------------------------------------------
+-- HTML Repetitions of XML Parsing Tests -------------------------------------
+------------------------------------------------------------------------------
 
 emptyDocumentHTML :: Bool
 emptyDocumentHTML = parseHTML "" ""
@@ -207,6 +284,26 @@ xmlDeclHTML       = parseHTML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
 procInstHTML :: Bool
 procInstHTML      = parseHTML "" "<?myPI This''is <not> parsed!?>"
     == Right (HtmlDocument e Nothing [])
+
+badDoctype1HTML :: Bool
+badDoctype1HTML    = isLeft $ parseHTML "" "<!DOCTYPE>"
+
+badDoctype2HTML :: Bool
+badDoctype2HTML    = isLeft $ parseHTML "" "<!DOCTYPE html BAD>"
+
+badDoctype3HTML :: Bool
+badDoctype3HTML    = isLeft $ parseHTML "" "<!DOCTYPE html SYSTEM>"
+
+badDoctype4HTML :: Bool
+badDoctype4HTML    = isLeft $ parseHTML "" "<!DOCTYPE html PUBLIC \"foo\">"
+
+badDoctype5HTML :: Bool
+badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
+                                       `B.append` "PUBLIC \"bar\" \"baz\">")
+
+------------------------------------------------------------------------------
+-- HTML Quirks Parsing Tests -------------------------------------------------
+------------------------------------------------------------------------------
 
 caseInsDoctype1 :: Bool
 caseInsDoctype1 = parseHTML "" "<!dOcTyPe html SyStEm 'foo'>"
@@ -336,4 +433,257 @@ omitEndTH     = parseHTML "" "<th><td>"
 testNewRefs :: Bool
 testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
     == Right (HtmlDocument e Nothing [TextNode "\x000B7\x02306\&fj"])
+
+------------------------------------------------------------------------------
+-- XML Rendering Tests -------------------------------------------------------
+------------------------------------------------------------------------------
+
+renderByteOrderMark :: Bool
+renderByteOrderMark =
+    toByteString (render (XmlDocument UTF16BE Nothing []))
+    == T.encodeUtf16BE "\xFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
+
+-- (Appears at the beginning of all XML output)
+utf8Decl = T.encodeUtf8 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+
+singleQuoteInSysID :: Bool
+singleQuoteInSysID =
+    toByteString (render (XmlDocument UTF8
+        (Just (DocType "html" (System "test\'ing") NoInternalSubset))
+        []))
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \"test\'ing\">"
+
+doubleQuoteInSysID :: Bool
+doubleQuoteInSysID =
+    toByteString (render (XmlDocument UTF8
+        (Just (DocType "html" (System "test\"ing") NoInternalSubset))
+        []))
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \'test\"ing\'>"
+
+bothQuotesInSysID :: Bool
+bothQuotesInSysID = isBottom $
+    toByteString (render (XmlDocument UTF8
+        (Just (DocType "html" (System "test\"\'ing") NoInternalSubset))
+        []))
+
+doubleQuoteInPubID :: Bool
+doubleQuoteInPubID = isBottom $
+    toByteString (render (XmlDocument UTF8
+        (Just (DocType "html" (Public "test\"ing" "foo") NoInternalSubset))
+        []))
+
+doubleDashInComment :: Bool
+doubleDashInComment = isBottom $
+    toByteString (render (XmlDocument UTF8 Nothing [
+        Comment "test--ing"
+        ]))
+
+trailingDashInComment :: Bool
+trailingDashInComment = isBottom $
+    toByteString (render (XmlDocument UTF8 Nothing [
+        Comment "testing-"
+        ]))
+
+renderEmptyText :: Bool
+renderEmptyText =
+    toByteString (render (XmlDocument UTF8 Nothing [
+        TextNode ""
+        ]))
+    == utf8Decl
+
+singleQuoteInAttr :: Bool
+singleQuoteInAttr =
+    toByteString (render (XmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\'ing")] []
+        ]))
+    == utf8Decl `B.append` "<foo bar=\"test\'ing\"/>"
+
+doubleQuoteInAttr :: Bool
+doubleQuoteInAttr =
+    toByteString (render (XmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\"ing")] []
+        ]))
+    == utf8Decl `B.append` "<foo bar=\'test\"ing\'/>"
+
+bothQuotesInAttr :: Bool
+bothQuotesInAttr =
+    toByteString (render (XmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\'\"ing")] []
+        ]))
+    == utf8Decl `B.append` "<foo bar=\"test\'&quot;ing\"/>"
+
+------------------------------------------------------------------------------
+-- HTML Repeats of XML Rendering Tests ---------------------------------------
+------------------------------------------------------------------------------
+
+hRenderByteOrderMark :: Bool
+hRenderByteOrderMark =
+    toByteString (render (HtmlDocument UTF16BE Nothing []))
+    == "\xFE\xFF"
+
+hSingleQuoteInSysID :: Bool
+hSingleQuoteInSysID =
+    toByteString (render (HtmlDocument UTF8
+        (Just (DocType "html" (System "test\'ing") NoInternalSubset))
+        []))
+    == "<!DOCTYPE html SYSTEM \"test\'ing\">"
+
+hDoubleQuoteInSysID :: Bool
+hDoubleQuoteInSysID =
+    toByteString (render (HtmlDocument UTF8
+        (Just (DocType "html" (System "test\"ing") NoInternalSubset))
+        []))
+    == "<!DOCTYPE html SYSTEM \'test\"ing\'>"
+
+hBothQuotesInSysID :: Bool
+hBothQuotesInSysID = isBottom $
+    toByteString (render (HtmlDocument UTF8
+        (Just (DocType "html" (System "test\"\'ing") NoInternalSubset))
+        []))
+
+hDoubleQuoteInPubID :: Bool
+hDoubleQuoteInPubID = isBottom $
+    toByteString (render (HtmlDocument UTF8
+        (Just (DocType "html" (Public "test\"ing" "foo") NoInternalSubset))
+        []))
+
+hDoubleDashInComment :: Bool
+hDoubleDashInComment = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Comment "test--ing"
+        ]))
+
+hTrailingDashInComment :: Bool
+hTrailingDashInComment = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Comment "testing-"
+        ]))
+
+hRenderEmptyText :: Bool
+hRenderEmptyText =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        TextNode ""
+        ]))
+    == ""
+
+hSingleQuoteInAttr :: Bool
+hSingleQuoteInAttr =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\'ing")] []
+        ]))
+    == "<foo bar=\"test\'ing\"></foo>"
+
+hDoubleQuoteInAttr :: Bool
+hDoubleQuoteInAttr =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\"ing")] []
+        ]))
+    == "<foo bar=\'test\"ing\'></foo>"
+
+hBothQuotesInAttr :: Bool
+hBothQuotesInAttr =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo" [("bar", "test\'\"ing")] []
+        ]))
+    == "<foo bar=\"test\'&quot;ing\"></foo>"
+
+------------------------------------------------------------------------------
+-- HTML Quirks Rendering Tests -----------------------------------------------
+------------------------------------------------------------------------------
+
+renderHTMLVoid :: Bool
+renderHTMLVoid =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "img" [("src", "foo")] []
+        ]))
+    == "<img src=\'foo\' />"
+
+renderHTMLVoid2 :: Bool
+renderHTMLVoid2 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "img" [] [TextNode "foo"]
+        ]))
+
+renderHTMLRaw :: Bool
+renderHTMLRaw =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "script" [("type", "text/javascript")] [
+            TextNode "<testing>/&+</foo>"
+            ]
+        ]))
+    == "<script type=\'text/javascript\'><testing>/&+</foo></script>"
+
+renderHTMLRawMult :: Bool
+renderHTMLRawMult =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "script" [("type", "text/javascript")] [
+            TextNode "foo",
+            TextNode "bar"
+            ]
+        ]))
+    == "<script type=\'text/javascript\'>foobar</script>"
+
+renderHTMLRaw2 :: Bool
+renderHTMLRaw2 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "script" [("type", "text/javascript")] [
+            TextNode "</script>"
+            ]
+        ]))
+
+renderHTMLRaw3 :: Bool
+renderHTMLRaw3 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "script" [("type", "text/javascript")] [
+            Comment "foo"
+            ]
+        ]))
+
+renderHTMLRaw4 :: Bool
+renderHTMLRaw4 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "script" [("type", "text/javascript")] [
+            TextNode "</scri",
+            TextNode "pt>"
+            ]
+        ]))
+
+renderHTMLRcdata :: Bool
+renderHTMLRcdata =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "title" [] [
+            TextNode "<testing>/&+</&quot;>"
+            ]
+        ]))
+    == "<title>&lt;testing>/&+&lt;/&amp;quot;></title>"
+
+renderHTMLRcdataMult :: Bool
+renderHTMLRcdataMult =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "title" [] [
+            TextNode "foo",
+            TextNode "bar"
+            ]
+        ]))
+    == "<title>foobar</title>"
+
+renderHTMLRcdata2 :: Bool
+renderHTMLRcdata2 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "title" [] [
+            Comment "foo"
+            ]
+        ]))
+
+renderHTMLAmpAttr1 :: Bool
+renderHTMLAmpAttr1 =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "body" [("foo", "a & b")] [] ]))
+    == "<body foo=\'a & b\'></body>"
+
+renderHTMLAmpAttr2 :: Bool
+renderHTMLAmpAttr2 =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "body" [("foo", "a &amp; b")] [] ]))
+    == "<body foo=\'a &amp;amp; b\'></body>"
 

@@ -95,6 +95,7 @@ node e (Element t a c)                     = element e t a c
 firstNode :: Encoding -> Node -> Builder
 firstNode e (Comment t)     = node e (Comment t)
 firstNode e (Element t a c) = node e (Element t a c)
+firstNode e (TextNode "")   = mempty
 firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
                               in escaped "<>& \t\r\n" e (T.singleton c)
                                  `mappend` node e (TextNode t')
