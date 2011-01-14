@@ -71,16 +71,15 @@ import           Text.XmlHtml
 
 ------------------------------------------------------------------------------
 -- | Data type representing just the tag of an element
-data Tag = Tag Text [(Text, Text)]
+data Tag = Tag Text [(Text, Text)] deriving (Eq)
 
 
 ------------------------------------------------------------------------------
 -- | Extracts the tag of a node, if it is an element.  Otherwise, gives
 -- 'Nothing'
-getTag :: Node -> Maybe Tag
-getTag (Element t a _) = Just (Tag t a)
-getTag _               = Nothing
-
+toTag :: Node -> Tag
+toTag (Element t a _) = Tag t a
+toTag _               = error "toTag on non-element"
 
 ------------------------------------------------------------------------------
 -- | Reconstructs an element from a tag and a list of its children.
@@ -96,6 +95,7 @@ data Cursor = Cursor {
     rights  :: ![Node],                 -- left to right
     parents :: ![([Node], Tag, [Node])] -- parent's tag and siblings
     }
+    deriving (Eq)
 
 
 ------------------------------------------------------------------------------
@@ -152,13 +152,12 @@ root = until isRoot (fromJust . parent)
 getChild :: Int -> Cursor -> Maybe Cursor
 getChild i (Cursor n ls rs ps) =
     let cs          = childNodes n
-        Just tag    = getTag n
         (lls, rest) = splitAt i cs
     in  if i < length cs
             then Just $ Cursor (head rest)
                                (reverse lls)
                                (tail rest)
-                               ((ls, tag, rs):ps)
+                               ((ls, toTag n, rs):ps)
             else Nothing
 
 

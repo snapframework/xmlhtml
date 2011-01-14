@@ -8,20 +8,68 @@ import           Blaze.ByteString.Builder
 import           Control.Exception as E
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
+import           Data.Maybe
 import           Data.Text ()                  -- for string instance
 import qualified Data.Text.Encoding as T
 import           System.IO.Unsafe
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
-import           Test.HUnit hiding (Test)
+import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze.Renderer.XmlHtml() -- Just to get it in hpc
 import           Text.XmlHtml
-import           Text.XmlHtml.Cursor()         -- Just to get it in hpc
+import           Text.XmlHtml.Cursor
 import           Text.XmlHtml.OASISTest
 
+
+------------------------------------------------------------------------------
+-- The master list of tests to run. ------------------------------------------
+------------------------------------------------------------------------------
+
 tests :: [Test]
-tests = [
-    -- XML parsing tests
+tests = xmlParsingTests
+     ++ htmlXMLParsingTests
+     ++ htmlParsingQuirkTests
+     ++ xmlRenderingTests
+     ++ htmlXMLRenderingTests
+     ++ htmlRenderingQuirkTests
+     ++ nodeTreeTests
+     ++ cursorTests
+     ++ blazeRenderTests
+     ++ testsOASIS
+
+
+------------------------------------------------------------------------------
+-- | Tests a simple Bool property.
+testIt :: TestName -> Bool -> Test
+testIt name b = testCase name $ assertBool name b
+
+
+------------------------------------------------------------------------------
+-- Code adapted from ChasingBottoms.
+--
+-- Adding an actual dependency isn't possible because Cabal refuses to build
+-- the package due to version conflicts.
+--
+-- isBottom is impossible to write, but very useful!  So we defy the
+-- impossible, and write it anyway.
+isBottom :: a -> Bool
+isBottom a = unsafePerformIO $
+    (E.evaluate a >> return False)
+    `E.catch` \ (_ :: ErrorCall)        -> return True
+    `E.catch` \ (_ :: PatternMatchFail) -> return True
+
+
+------------------------------------------------------------------------------
+isLeft :: Either a b -> Bool
+isLeft = either (const True) (const False)
+
+
+------------------------------------------------------------------------------
+-- XML Parsing Tests ---------------------------------------------------------
+------------------------------------------------------------------------------
+
+xmlParsingTests :: [Test]
+xmlParsingTests = [
     testIt "emptyDocument          " emptyDocument,
     testIt "publicDocType          " publicDocType,
     testIt "systemDocType          " systemDocType,
@@ -41,9 +89,91 @@ tests = [
     testIt "badDoctype2            " badDoctype2,
     testIt "badDoctype3            " badDoctype3,
     testIt "badDoctype4            " badDoctype4,
-    testIt "badDoctype5            " badDoctype5,
+    testIt "badDoctype5            " badDoctype5
+    ]
 
-    -- Repeat XML tests with HTML parser
+emptyDocument :: Bool
+emptyDocument = parseXML "" ""
+    == Right (XmlDocument UTF8 Nothing [])
+
+publicDocType :: Bool
+publicDocType = parseXML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
+    == Right (XmlDocument UTF8 (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
+
+systemDocType :: Bool
+systemDocType = parseXML "" "<!DOCTYPE tag SYSTEM \"foo\">"
+    == Right (XmlDocument UTF8 (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
+
+emptyDocType :: Bool
+emptyDocType  = parseXML "" "<!DOCTYPE tag >"
+    == Right (XmlDocument UTF8 (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
+
+textOnly :: Bool
+textOnly      = parseXML "" "sldhfsklj''a's s"
+    == Right (XmlDocument UTF8 Nothing [TextNode "sldhfsklj''a's s"])
+
+textWithRefs :: Bool
+textWithRefs  = parseXML "" "This is Bob&apos;s sled"
+    == Right (XmlDocument UTF8 Nothing [TextNode "This is Bob's sled"])
+
+untermRef :: Bool
+untermRef     = isLeft (parseXML "" "&#X6a")
+
+textWithCDATA :: Bool
+textWithCDATA = parseXML "" "Testing <![CDATA[with <some> c]data]]>"
+    == Right (XmlDocument UTF8 Nothing [TextNode "Testing with <some> c]data"])
+
+cdataOnly :: Bool
+cdataOnly     = parseXML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
+    == Right (XmlDocument UTF8 Nothing [TextNode " Testing <![CDATA[ test "])
+
+commentOnly :: Bool
+commentOnly   = parseXML "" "<!-- this <is> a \"comment -->"
+    == Right (XmlDocument UTF8 Nothing [Comment " this <is> a \"comment "])
+
+emptyElement :: Bool
+emptyElement  = parseXML "" "<myElement/>"
+    == Right (XmlDocument UTF8 Nothing [Element "myElement" [] []])
+
+emptyElement2 :: Bool
+emptyElement2  = parseXML "" "<myElement />"
+    == Right (XmlDocument UTF8 Nothing [Element "myElement" [] []])
+
+elemWithText :: Bool
+elemWithText  = parseXML "" "<myElement>text</myElement>"
+    == Right (XmlDocument UTF8 Nothing [Element "myElement" [] [TextNode "text"]])
+
+xmlDecl :: Bool
+xmlDecl       = parseXML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+    == Right (XmlDocument UTF8 Nothing [])
+
+procInst :: Bool
+procInst      = parseXML "" "<?myPI This''is <not> parsed!?>"
+    == Right (XmlDocument UTF8 Nothing [])
+
+badDoctype1 :: Bool
+badDoctype1    = isLeft $ parseXML "" "<!DOCTYPE>"
+
+badDoctype2 :: Bool
+badDoctype2    = isLeft $ parseXML "" "<!DOCTYPE html BAD>"
+
+badDoctype3 :: Bool
+badDoctype3    = isLeft $ parseXML "" "<!DOCTYPE html SYSTEM>"
+
+badDoctype4 :: Bool
+badDoctype4    = isLeft $ parseXML "" "<!DOCTYPE html PUBLIC \"foo\">"
+
+badDoctype5 :: Bool
+badDoctype5    = isLeft $ parseXML "" ("<!DOCTYPE html SYSTEM \"foo\" "
+                                       `B.append` "PUBLIC \"bar\" \"baz\">")
+
+
+------------------------------------------------------------------------------
+-- HTML Repetitions of XML Parsing Tests -------------------------------------
+------------------------------------------------------------------------------
+
+htmlXMLParsingTests :: [Test]
+htmlXMLParsingTests = [
     testIt "emptyDocumentHTML      " emptyDocumentHTML,
     testIt "publicDocTypeHTML      " publicDocTypeHTML,
     testIt "systemDocTypeHTML      " systemDocTypeHTML,
@@ -62,9 +192,88 @@ tests = [
     testIt "badDoctype2HTML        " badDoctype2HTML,
     testIt "badDoctype3HTML        " badDoctype3HTML,
     testIt "badDoctype4HTML        " badDoctype4HTML,
-    testIt "badDoctype5HTML        " badDoctype5HTML,
+    testIt "badDoctype5HTML        " badDoctype5HTML
+    ]
 
-    -- HTML parser quirks
+emptyDocumentHTML :: Bool
+emptyDocumentHTML = parseHTML "" ""
+    == Right (HtmlDocument UTF8 Nothing [])
+
+publicDocTypeHTML :: Bool
+publicDocTypeHTML = parseHTML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
+    == Right (HtmlDocument UTF8 (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
+
+systemDocTypeHTML :: Bool
+systemDocTypeHTML = parseHTML "" "<!DOCTYPE tag SYSTEM \"foo\">"
+    == Right (HtmlDocument UTF8 (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
+
+emptyDocTypeHTML :: Bool
+emptyDocTypeHTML  = parseHTML "" "<!DOCTYPE tag >"
+    == Right (HtmlDocument UTF8 (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
+
+textOnlyHTML :: Bool
+textOnlyHTML      = parseHTML "" "sldhfsklj''a's s"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "sldhfsklj''a's s"])
+
+textWithRefsHTML :: Bool
+textWithRefsHTML  = parseHTML "" "This is Bob&apos;s sled"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "This is Bob's sled"])
+
+textWithCDataHTML :: Bool
+textWithCDataHTML = parseHTML "" "Testing <![CDATA[with <some> c]data]]>"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "Testing with <some> c]data"])
+
+cdataOnlyHTML :: Bool
+cdataOnlyHTML     = parseHTML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
+    == Right (HtmlDocument UTF8 Nothing [TextNode " Testing <![CDATA[ test "])
+
+commentOnlyHTML :: Bool
+commentOnlyHTML   = parseHTML "" "<!-- this <is> a \"comment -->"
+    == Right (HtmlDocument UTF8 Nothing [Comment " this <is> a \"comment "])
+
+emptyElementHTML :: Bool
+emptyElementHTML  = parseHTML "" "<myElement/>"
+    == Right (HtmlDocument UTF8 Nothing [Element "myElement" [] []])
+
+emptyElement2HTML :: Bool
+emptyElement2HTML = parseHTML "" "<myElement />"
+    == Right (HtmlDocument UTF8 Nothing [Element "myElement" [] []])
+
+elemWithTextHTML :: Bool
+elemWithTextHTML  = parseHTML "" "<myElement>text</myElement>"
+    == Right (HtmlDocument UTF8 Nothing [Element "myElement" [] [TextNode "text"]])
+
+xmlDeclHTML :: Bool
+xmlDeclHTML       = parseHTML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+    == Right (HtmlDocument UTF8 Nothing [])
+
+procInstHTML :: Bool
+procInstHTML      = parseHTML "" "<?myPI This''is <not> parsed!?>"
+    == Right (HtmlDocument UTF8 Nothing [])
+
+badDoctype1HTML :: Bool
+badDoctype1HTML    = isLeft $ parseHTML "" "<!DOCTYPE>"
+
+badDoctype2HTML :: Bool
+badDoctype2HTML    = isLeft $ parseHTML "" "<!DOCTYPE html BAD>"
+
+badDoctype3HTML :: Bool
+badDoctype3HTML    = isLeft $ parseHTML "" "<!DOCTYPE html SYSTEM>"
+
+badDoctype4HTML :: Bool
+badDoctype4HTML    = isLeft $ parseHTML "" "<!DOCTYPE html PUBLIC \"foo\">"
+
+badDoctype5HTML :: Bool
+badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
+                                       `B.append` "PUBLIC \"bar\" \"baz\">")
+
+
+------------------------------------------------------------------------------
+-- HTML Quirks Parsing Tests -------------------------------------------------
+------------------------------------------------------------------------------
+
+htmlParsingQuirkTests :: [Test]
+htmlParsingQuirkTests = [
     testIt "voidElem               " voidElem,
     testIt "caseInsDoctype1        " caseInsDoctype1,
     testIt "caseInsDoctype2        " caseInsDoctype2,
@@ -95,9 +304,145 @@ tests = [
     testIt "omitEndTR              " omitEndTR,
     testIt "omitEndTD              " omitEndTD,
     testIt "omitEndTH              " omitEndTH,
-    testIt "testNewRefs            " testNewRefs,
+    testIt "testNewRefs            " testNewRefs
+    ]
 
-    -- XML Rendering Tests
+caseInsDoctype1 :: Bool
+caseInsDoctype1 = parseHTML "" "<!dOcTyPe html SyStEm 'foo'>"
+    == Right (HtmlDocument UTF8 (Just (DocType "html" (System "foo") NoInternalSubset)) [])
+
+caseInsDoctype2 :: Bool
+caseInsDoctype2 = parseHTML "" "<!dOcTyPe html PuBlIc 'foo' 'bar'>"
+    == Right (HtmlDocument UTF8 (Just (DocType "html" (Public "foo" "bar") NoInternalSubset)) [])
+
+voidElem :: Bool
+voidElem      = parseHTML "" "<img>"
+    == Right (HtmlDocument UTF8 Nothing [Element "img" [] []])
+
+voidEmptyElem :: Bool
+voidEmptyElem = parseHTML "" "<img/>"
+    == Right (HtmlDocument UTF8 Nothing [Element "img" [] []])
+
+rawTextElem :: Bool
+rawTextElem   = parseHTML "" "<script>This<is'\"a]]>test&amp;</script>"
+    == Right (HtmlDocument UTF8 Nothing [Element "script" [] [
+                    TextNode "This<is'\"a]]>test&amp;"]
+                    ])
+
+rcdataElem :: Bool
+rcdataElem    = parseHTML "" "<textarea>This<is>'\"a]]>test&amp;</textarea>"
+    == Right (HtmlDocument UTF8 Nothing [Element "textarea" [] [
+                    TextNode "This<is>'\"a]]>test&"]
+                    ])
+
+endTagCase :: Bool
+endTagCase    = parseHTML "" "<testing></TeStInG>"
+    == Right (HtmlDocument UTF8 Nothing [Element "testing" [] []])
+
+hexEntityCap :: Bool
+hexEntityCap  = parseHTML "" "&#X6a;"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "\x6a"])
+
+laxAttrName :: Bool
+laxAttrName   = parseHTML "" "<test val<fun=\"test\"></test>"
+    == Right (HtmlDocument UTF8 Nothing [Element "test" [("val<fun", "test")] []])
+
+emptyAttr :: Bool
+emptyAttr     = parseHTML "" "<test attr></test>"
+    == Right (HtmlDocument UTF8 Nothing [Element "test" [("attr", "")] []])
+
+unquotedAttr :: Bool
+unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"
+    == Right (HtmlDocument UTF8 Nothing [Element "test" [("attr", "you&me")] []])
+
+laxAttrVal :: Bool
+laxAttrVal    = parseHTML "" "<test attr=\"a &amp; d < b & c\"/>"
+    == Right (HtmlDocument UTF8 Nothing [Element "test" [("attr", "a & d < b & c")] []])
+
+ampersandInText :: Bool
+ampersandInText   = parseHTML "" "&#X6a"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "&#X6a"])
+
+omitOptionalEnds :: Bool
+omitOptionalEnds   = parseHTML "" "<html><body><p></html>"
+    == Right (HtmlDocument UTF8 Nothing [Element "html" [] [
+                Element "body" [] [ Element "p" [] []]]])
+
+omitEndHEAD :: Bool
+omitEndHEAD   = parseHTML "" "<head><body>"
+    == Right (HtmlDocument UTF8 Nothing [Element "head" [] [], Element "body" [] []])
+
+omitEndLI :: Bool
+omitEndLI     = parseHTML "" "<li><li>"
+    == Right (HtmlDocument UTF8 Nothing [Element "li" [] [], Element "li" [] []])
+
+omitEndDT :: Bool
+omitEndDT     = parseHTML "" "<dt><dd>"
+    == Right (HtmlDocument UTF8 Nothing [Element "dt" [] [], Element "dd" [] []])
+
+omitEndDD :: Bool
+omitEndDD     = parseHTML "" "<dd><dt>"
+    == Right (HtmlDocument UTF8 Nothing [Element "dd" [] [], Element "dt" [] []])
+
+omitEndP :: Bool
+omitEndP      = parseHTML "" "<p><h1></h1>"
+    == Right (HtmlDocument UTF8 Nothing [Element "p" [] [], Element "h1" [] []])
+
+omitEndRT :: Bool
+omitEndRT     = parseHTML "" "<rt><rp>"
+    == Right (HtmlDocument UTF8 Nothing [Element "rt" [] [], Element "rp" [] []])
+
+omitEndRP :: Bool
+omitEndRP     = parseHTML "" "<rp><rt>"
+    == Right (HtmlDocument UTF8 Nothing [Element "rp" [] [], Element "rt" [] []])
+
+omitEndOPTGRP :: Bool
+omitEndOPTGRP = parseHTML "" "<optgroup><optgroup>"
+    == Right (HtmlDocument UTF8 Nothing [Element "optgroup" [] [], Element "optgroup" [] []])
+
+omitEndOPTION :: Bool
+omitEndOPTION = parseHTML "" "<option><option>"
+    == Right (HtmlDocument UTF8 Nothing [Element "option" [] [], Element "option" [] []])
+
+omitEndCOLGRP :: Bool
+omitEndCOLGRP = parseHTML "" "<colgroup><tbody>"
+    == Right (HtmlDocument UTF8 Nothing [Element "colgroup" [] [], Element "tbody" [] []])
+
+omitEndTHEAD :: Bool
+omitEndTHEAD  = parseHTML "" "<thead><tbody>"
+    == Right (HtmlDocument UTF8 Nothing [Element "thead" [] [], Element "tbody" [] []])
+
+omitEndTBODY :: Bool
+omitEndTBODY  = parseHTML "" "<tbody><thead>"
+    == Right (HtmlDocument UTF8 Nothing [Element "tbody" [] [], Element "thead" [] []])
+
+omitEndTFOOT :: Bool
+omitEndTFOOT  = parseHTML "" "<tfoot><tbody>"
+    == Right (HtmlDocument UTF8 Nothing [Element "tfoot" [] [], Element "tbody" [] []])
+
+omitEndTR :: Bool
+omitEndTR     = parseHTML "" "<tr><tr>"
+    == Right (HtmlDocument UTF8 Nothing [Element "tr" [] [], Element "tr" [] []])
+
+omitEndTD :: Bool
+omitEndTD     = parseHTML "" "<td><td>"
+    == Right (HtmlDocument UTF8 Nothing [Element "td" [] [], Element "td" [] []])
+
+omitEndTH :: Bool
+omitEndTH     = parseHTML "" "<th><td>"
+    == Right (HtmlDocument UTF8 Nothing [Element "th" [] [], Element "td" [] []])
+
+testNewRefs :: Bool
+testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
+    == Right (HtmlDocument UTF8 Nothing [TextNode "\x000B7\x02306\&fj"])
+
+
+------------------------------------------------------------------------------
+-- XML Rendering Tests -------------------------------------------------------
+------------------------------------------------------------------------------
+
+xmlRenderingTests :: [Test]
+xmlRenderingTests = [
     testIt "renderByteOrderMark    " renderByteOrderMark,
     testIt "singleQuoteInSysID     " singleQuoteInSysID,
     testIt "doubleQuoteInSysID     " doubleQuoteInSysID,
@@ -108,355 +453,8 @@ tests = [
     testIt "renderEmptyText        " renderEmptyText,
     testIt "singleQuoteInAttr      " singleQuoteInAttr,
     testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
-    testIt "bothQuotesInAttr       " bothQuotesInAttr,
-
-    -- HTML Repeated Rendering Tests
-    testIt "hRenderByteOrderMark   " hRenderByteOrderMark,
-    testIt "hSingleQuoteInSysID    " hSingleQuoteInSysID,
-    testIt "hDoubleQuoteInSysID    " hDoubleQuoteInSysID,
-    testIt "hBothQuotesInSysID     " hBothQuotesInSysID,
-    testIt "hDoubleQuoteInPubID    " hDoubleQuoteInPubID,
-    testIt "hDoubleDashInComment   " hDoubleDashInComment,
-    testIt "hTrailingDashInComment " hTrailingDashInComment,
-    testIt "hRenderEmptyText       " hRenderEmptyText,
-    testIt "hSingleQuoteInAttr     " hSingleQuoteInAttr,
-    testIt "hDoubleQuoteInAttr     " hDoubleQuoteInAttr,
-    testIt "hBothQuotesInAttr      " hBothQuotesInAttr,
-
-    -- HTML Rendering Quirks
-    testIt "renderHTMLVoid         " renderHTMLVoid,
-    testIt "renderHTMLVoid2        " renderHTMLVoid2,
-    testIt "renderHTMLRaw          " renderHTMLRaw,
-    testIt "renderHTMLRawMult      " renderHTMLRawMult,
-    testIt "renderHTMLRaw2         " renderHTMLRaw2,
-    testIt "renderHTMLRaw3         " renderHTMLRaw3,
-    testIt "renderHTMLRaw4         " renderHTMLRaw4,
-    testIt "renderHTMLRcdata       " renderHTMLRcdata,
-    testIt "renderHTMLRcdataMult   " renderHTMLRcdataMult,
-    testIt "renderHTMLRcdata2      " renderHTMLRcdata2,
-    testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
-    testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2
+    testIt "bothQuotesInAttr       " bothQuotesInAttr
     ]
-    ++ testsOASIS
-
-testIt :: TestName -> Bool -> Test
-testIt name b = testCase name $ assertBool name b
-
-------------------------------------------------------------------------------
--- Code adapted from ChasingBottoms.
---
--- Adding an actual dependency isn't possible because Cabal refuses to build
--- the package due to version conflicts.
---
--- isBottom is impossible to write, but very useful!  So we defy the
--- impossible, and write it anyway.
-------------------------------------------------------------------------------
-
-isBottom :: a -> Bool
-isBottom a = unsafePerformIO $
-    (E.evaluate a >> return False)
-    `E.catch` \ (_ :: ErrorCall)        -> return True
-    `E.catch` \ (_ :: PatternMatchFail) -> return True
-
-------------------------------------------------------------------------------
-
-isLeft :: Either a b -> Bool
-isLeft = either (const True) (const False)
-
-e :: Encoding
-e = UTF8
-
-------------------------------------------------------------------------------
--- XML Parsing Tests ---------------------------------------------------------
-------------------------------------------------------------------------------
-
-emptyDocument :: Bool
-emptyDocument = parseXML "" ""
-    == Right (XmlDocument e Nothing [])
-
-publicDocType :: Bool
-publicDocType = parseXML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
-    == Right (XmlDocument e (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
-
-systemDocType :: Bool
-systemDocType = parseXML "" "<!DOCTYPE tag SYSTEM \"foo\">"
-    == Right (XmlDocument e (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
-
-emptyDocType :: Bool
-emptyDocType  = parseXML "" "<!DOCTYPE tag >"
-    == Right (XmlDocument e (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
-
-textOnly :: Bool
-textOnly      = parseXML "" "sldhfsklj''a's s"
-    == Right (XmlDocument e Nothing [TextNode "sldhfsklj''a's s"])
-
-textWithRefs :: Bool
-textWithRefs  = parseXML "" "This is Bob&apos;s sled"
-    == Right (XmlDocument e Nothing [TextNode "This is Bob's sled"])
-
-untermRef :: Bool
-untermRef     = isLeft (parseXML "" "&#X6a")
-
-textWithCDATA :: Bool
-textWithCDATA = parseXML "" "Testing <![CDATA[with <some> c]data]]>"
-    == Right (XmlDocument e Nothing [TextNode "Testing with <some> c]data"])
-
-cdataOnly :: Bool
-cdataOnly     = parseXML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
-    == Right (XmlDocument e Nothing [TextNode " Testing <![CDATA[ test "])
-
-commentOnly :: Bool
-commentOnly   = parseXML "" "<!-- this <is> a \"comment -->"
-    == Right (XmlDocument e Nothing [Comment " this <is> a \"comment "])
-
-emptyElement :: Bool
-emptyElement  = parseXML "" "<myElement/>"
-    == Right (XmlDocument e Nothing [Element "myElement" [] []])
-
-emptyElement2 :: Bool
-emptyElement2  = parseXML "" "<myElement />"
-    == Right (XmlDocument e Nothing [Element "myElement" [] []])
-
-elemWithText :: Bool
-elemWithText  = parseXML "" "<myElement>text</myElement>"
-    == Right (XmlDocument e Nothing [Element "myElement" [] [TextNode "text"]])
-
-xmlDecl :: Bool
-xmlDecl       = parseXML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-    == Right (XmlDocument e Nothing [])
-
-procInst :: Bool
-procInst      = parseXML "" "<?myPI This''is <not> parsed!?>"
-    == Right (XmlDocument e Nothing [])
-
-badDoctype1 :: Bool
-badDoctype1    = isLeft $ parseXML "" "<!DOCTYPE>"
-
-badDoctype2 :: Bool
-badDoctype2    = isLeft $ parseXML "" "<!DOCTYPE html BAD>"
-
-badDoctype3 :: Bool
-badDoctype3    = isLeft $ parseXML "" "<!DOCTYPE html SYSTEM>"
-
-badDoctype4 :: Bool
-badDoctype4    = isLeft $ parseXML "" "<!DOCTYPE html PUBLIC \"foo\">"
-
-badDoctype5 :: Bool
-badDoctype5    = isLeft $ parseXML "" ("<!DOCTYPE html SYSTEM \"foo\" "
-                                       `B.append` "PUBLIC \"bar\" \"baz\">")
-
-------------------------------------------------------------------------------
--- HTML Repetitions of XML Parsing Tests -------------------------------------
-------------------------------------------------------------------------------
-
-emptyDocumentHTML :: Bool
-emptyDocumentHTML = parseHTML "" ""
-    == Right (HtmlDocument e Nothing [])
-
-publicDocTypeHTML :: Bool
-publicDocTypeHTML = parseHTML "" "<!DOCTYPE tag PUBLIC \"foo\" \"bar\">"
-    == Right (HtmlDocument e (Just (DocType "tag" (Public "foo" "bar") NoInternalSubset)) [])
-
-systemDocTypeHTML :: Bool
-systemDocTypeHTML = parseHTML "" "<!DOCTYPE tag SYSTEM \"foo\">"
-    == Right (HtmlDocument e (Just (DocType "tag" (System "foo") NoInternalSubset)) [])
-
-emptyDocTypeHTML :: Bool
-emptyDocTypeHTML  = parseHTML "" "<!DOCTYPE tag >"
-    == Right (HtmlDocument e (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
-
-textOnlyHTML :: Bool
-textOnlyHTML      = parseHTML "" "sldhfsklj''a's s"
-    == Right (HtmlDocument e Nothing [TextNode "sldhfsklj''a's s"])
-
-textWithRefsHTML :: Bool
-textWithRefsHTML  = parseHTML "" "This is Bob&apos;s sled"
-    == Right (HtmlDocument e Nothing [TextNode "This is Bob's sled"])
-
-textWithCDataHTML :: Bool
-textWithCDataHTML = parseHTML "" "Testing <![CDATA[with <some> c]data]]>"
-    == Right (HtmlDocument e Nothing [TextNode "Testing with <some> c]data"])
-
-cdataOnlyHTML :: Bool
-cdataOnlyHTML     = parseHTML "" "<![CDATA[ Testing <![CDATA[ test ]]>"
-    == Right (HtmlDocument e Nothing [TextNode " Testing <![CDATA[ test "])
-
-commentOnlyHTML :: Bool
-commentOnlyHTML   = parseHTML "" "<!-- this <is> a \"comment -->"
-    == Right (HtmlDocument e Nothing [Comment " this <is> a \"comment "])
-
-emptyElementHTML :: Bool
-emptyElementHTML  = parseHTML "" "<myElement/>"
-    == Right (HtmlDocument e Nothing [Element "myElement" [] []])
-
-emptyElement2HTML :: Bool
-emptyElement2HTML = parseHTML "" "<myElement />"
-    == Right (HtmlDocument e Nothing [Element "myElement" [] []])
-
-elemWithTextHTML :: Bool
-elemWithTextHTML  = parseHTML "" "<myElement>text</myElement>"
-    == Right (HtmlDocument e Nothing [Element "myElement" [] [TextNode "text"]])
-
-xmlDeclHTML :: Bool
-xmlDeclHTML       = parseHTML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
-    == Right (HtmlDocument e Nothing [])
-
-procInstHTML :: Bool
-procInstHTML      = parseHTML "" "<?myPI This''is <not> parsed!?>"
-    == Right (HtmlDocument e Nothing [])
-
-badDoctype1HTML :: Bool
-badDoctype1HTML    = isLeft $ parseHTML "" "<!DOCTYPE>"
-
-badDoctype2HTML :: Bool
-badDoctype2HTML    = isLeft $ parseHTML "" "<!DOCTYPE html BAD>"
-
-badDoctype3HTML :: Bool
-badDoctype3HTML    = isLeft $ parseHTML "" "<!DOCTYPE html SYSTEM>"
-
-badDoctype4HTML :: Bool
-badDoctype4HTML    = isLeft $ parseHTML "" "<!DOCTYPE html PUBLIC \"foo\">"
-
-badDoctype5HTML :: Bool
-badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
-                                       `B.append` "PUBLIC \"bar\" \"baz\">")
-
-------------------------------------------------------------------------------
--- HTML Quirks Parsing Tests -------------------------------------------------
-------------------------------------------------------------------------------
-
-caseInsDoctype1 :: Bool
-caseInsDoctype1 = parseHTML "" "<!dOcTyPe html SyStEm 'foo'>"
-    == Right (HtmlDocument e (Just (DocType "html" (System "foo") NoInternalSubset)) [])
-
-caseInsDoctype2 :: Bool
-caseInsDoctype2 = parseHTML "" "<!dOcTyPe html PuBlIc 'foo' 'bar'>"
-    == Right (HtmlDocument e (Just (DocType "html" (Public "foo" "bar") NoInternalSubset)) [])
-
-voidElem :: Bool
-voidElem      = parseHTML "" "<img>"
-    == Right (HtmlDocument e Nothing [Element "img" [] []])
-
-voidEmptyElem :: Bool
-voidEmptyElem = parseHTML "" "<img/>"
-    == Right (HtmlDocument e Nothing [Element "img" [] []])
-
-rawTextElem :: Bool
-rawTextElem   = parseHTML "" "<script>This<is'\"a]]>test&amp;</script>"
-    == Right (HtmlDocument e Nothing [Element "script" [] [
-                    TextNode "This<is'\"a]]>test&amp;"]
-                    ])
-
-rcdataElem :: Bool
-rcdataElem    = parseHTML "" "<textarea>This<is>'\"a]]>test&amp;</textarea>"
-    == Right (HtmlDocument e Nothing [Element "textarea" [] [
-                    TextNode "This<is>'\"a]]>test&"]
-                    ])
-
-endTagCase :: Bool
-endTagCase    = parseHTML "" "<testing></TeStInG>"
-    == Right (HtmlDocument e Nothing [Element "testing" [] []])
-
-hexEntityCap :: Bool
-hexEntityCap  = parseHTML "" "&#X6a;"
-    == Right (HtmlDocument e Nothing [TextNode "\x6a"])
-
-laxAttrName :: Bool
-laxAttrName   = parseHTML "" "<test val<fun=\"test\"></test>"
-    == Right (HtmlDocument e Nothing [Element "test" [("val<fun", "test")] []])
-
-emptyAttr :: Bool
-emptyAttr     = parseHTML "" "<test attr></test>"
-    == Right (HtmlDocument e Nothing [Element "test" [("attr", "")] []])
-
-unquotedAttr :: Bool
-unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"
-    == Right (HtmlDocument e Nothing [Element "test" [("attr", "you&me")] []])
-
-laxAttrVal :: Bool
-laxAttrVal    = parseHTML "" "<test attr=\"a &amp; d < b & c\"/>"
-    == Right (HtmlDocument e Nothing [Element "test" [("attr", "a & d < b & c")] []])
-
-ampersandInText :: Bool
-ampersandInText   = parseHTML "" "&#X6a"
-    == Right (HtmlDocument e Nothing [TextNode "&#X6a"])
-
-omitOptionalEnds :: Bool
-omitOptionalEnds   = parseHTML "" "<html><body><p></html>"
-    == Right (HtmlDocument e Nothing [Element "html" [] [
-                Element "body" [] [ Element "p" [] []]]])
-
-omitEndHEAD :: Bool
-omitEndHEAD   = parseHTML "" "<head><body>"
-    == Right (HtmlDocument e Nothing [Element "head" [] [], Element "body" [] []])
-
-omitEndLI :: Bool
-omitEndLI     = parseHTML "" "<li><li>"
-    == Right (HtmlDocument e Nothing [Element "li" [] [], Element "li" [] []])
-
-omitEndDT :: Bool
-omitEndDT     = parseHTML "" "<dt><dd>"
-    == Right (HtmlDocument e Nothing [Element "dt" [] [], Element "dd" [] []])
-
-omitEndDD :: Bool
-omitEndDD     = parseHTML "" "<dd><dt>"
-    == Right (HtmlDocument e Nothing [Element "dd" [] [], Element "dt" [] []])
-
-omitEndP :: Bool
-omitEndP      = parseHTML "" "<p><h1></h1>"
-    == Right (HtmlDocument e Nothing [Element "p" [] [], Element "h1" [] []])
-
-omitEndRT :: Bool
-omitEndRT     = parseHTML "" "<rt><rp>"
-    == Right (HtmlDocument e Nothing [Element "rt" [] [], Element "rp" [] []])
-
-omitEndRP :: Bool
-omitEndRP     = parseHTML "" "<rp><rt>"
-    == Right (HtmlDocument e Nothing [Element "rp" [] [], Element "rt" [] []])
-
-omitEndOPTGRP :: Bool
-omitEndOPTGRP = parseHTML "" "<optgroup><optgroup>"
-    == Right (HtmlDocument e Nothing [Element "optgroup" [] [], Element "optgroup" [] []])
-
-omitEndOPTION :: Bool
-omitEndOPTION = parseHTML "" "<option><option>"
-    == Right (HtmlDocument e Nothing [Element "option" [] [], Element "option" [] []])
-
-omitEndCOLGRP :: Bool
-omitEndCOLGRP = parseHTML "" "<colgroup><tbody>"
-    == Right (HtmlDocument e Nothing [Element "colgroup" [] [], Element "tbody" [] []])
-
-omitEndTHEAD :: Bool
-omitEndTHEAD  = parseHTML "" "<thead><tbody>"
-    == Right (HtmlDocument e Nothing [Element "thead" [] [], Element "tbody" [] []])
-
-omitEndTBODY :: Bool
-omitEndTBODY  = parseHTML "" "<tbody><thead>"
-    == Right (HtmlDocument e Nothing [Element "tbody" [] [], Element "thead" [] []])
-
-omitEndTFOOT :: Bool
-omitEndTFOOT  = parseHTML "" "<tfoot><tbody>"
-    == Right (HtmlDocument e Nothing [Element "tfoot" [] [], Element "tbody" [] []])
-
-omitEndTR :: Bool
-omitEndTR     = parseHTML "" "<tr><tr>"
-    == Right (HtmlDocument e Nothing [Element "tr" [] [], Element "tr" [] []])
-
-omitEndTD :: Bool
-omitEndTD     = parseHTML "" "<td><td>"
-    == Right (HtmlDocument e Nothing [Element "td" [] [], Element "td" [] []])
-
-omitEndTH :: Bool
-omitEndTH     = parseHTML "" "<th><td>"
-    == Right (HtmlDocument e Nothing [Element "th" [] [], Element "td" [] []])
-
-testNewRefs :: Bool
-testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
-    == Right (HtmlDocument e Nothing [TextNode "\x000B7\x02306\&fj"])
-
-------------------------------------------------------------------------------
--- XML Rendering Tests -------------------------------------------------------
-------------------------------------------------------------------------------
 
 renderByteOrderMark :: Bool
 renderByteOrderMark =
@@ -533,9 +531,25 @@ bothQuotesInAttr =
         ]))
     == utf8Decl `B.append` "<foo bar=\"test\'&quot;ing\"/>"
 
+
 ------------------------------------------------------------------------------
 -- HTML Repeats of XML Rendering Tests ---------------------------------------
 ------------------------------------------------------------------------------
+
+htmlXMLRenderingTests :: [Test]
+htmlXMLRenderingTests = [
+    testIt "hRenderByteOrderMark   " hRenderByteOrderMark,
+    testIt "hSingleQuoteInSysID    " hSingleQuoteInSysID,
+    testIt "hDoubleQuoteInSysID    " hDoubleQuoteInSysID,
+    testIt "hBothQuotesInSysID     " hBothQuotesInSysID,
+    testIt "hDoubleQuoteInPubID    " hDoubleQuoteInPubID,
+    testIt "hDoubleDashInComment   " hDoubleDashInComment,
+    testIt "hTrailingDashInComment " hTrailingDashInComment,
+    testIt "hRenderEmptyText       " hRenderEmptyText,
+    testIt "hSingleQuoteInAttr     " hSingleQuoteInAttr,
+    testIt "hDoubleQuoteInAttr     " hDoubleQuoteInAttr,
+    testIt "hBothQuotesInAttr      " hBothQuotesInAttr
+    ]
 
 hRenderByteOrderMark :: Bool
 hRenderByteOrderMark =
@@ -608,9 +622,26 @@ hBothQuotesInAttr =
         ]))
     == "<foo bar=\"test\'&quot;ing\"></foo>"
 
+
 ------------------------------------------------------------------------------
 -- HTML Quirks Rendering Tests -----------------------------------------------
 ------------------------------------------------------------------------------
+
+htmlRenderingQuirkTests :: [Test]
+htmlRenderingQuirkTests = [
+    testIt "renderHTMLVoid         " renderHTMLVoid,
+    testIt "renderHTMLVoid2        " renderHTMLVoid2,
+    testIt "renderHTMLRaw          " renderHTMLRaw,
+    testIt "renderHTMLRawMult      " renderHTMLRawMult,
+    testIt "renderHTMLRaw2         " renderHTMLRaw2,
+    testIt "renderHTMLRaw3         " renderHTMLRaw3,
+    testIt "renderHTMLRaw4         " renderHTMLRaw4,
+    testIt "renderHTMLRcdata       " renderHTMLRcdata,
+    testIt "renderHTMLRcdataMult   " renderHTMLRcdataMult,
+    testIt "renderHTMLRcdata2      " renderHTMLRcdata2,
+    testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
+    testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2
+    ]
 
 renderHTMLVoid :: Bool
 renderHTMLVoid =
@@ -707,4 +738,352 @@ renderHTMLAmpAttr2 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "body" [("foo", "a &amp; b")] [] ]))
     == "<body foo=\'a &amp;amp; b\'></body>"
+
+
+------------------------------------------------------------------------------
+-- Tests of manipulating the Node tree ---------------------------------------
+------------------------------------------------------------------------------
+
+nodeTreeTests :: [Test]
+nodeTreeTests = [
+    testIt "isTextNodeYes          " $ isTextNode someTextNode,
+    testIt "isTextNodeNo           " $ not $ isTextNode someComment,
+    testIt "isTextNodeNo2          " $ not $ isTextNode someElement,
+    testIt "isCommentYes           " $ isComment someComment,
+    testIt "isCommentNo            " $ not $ isComment someTextNode,
+    testIt "isCommentNo2           " $ not $ isComment someElement,
+    testIt "isElementYes           " $ isElement someElement,
+    testIt "isElementNo            " $ not $ isElement someTextNode,
+    testIt "isElementNo2           " $ not $ isElement someComment,
+    testIt "tagNameElement         " $ tagName someElement == Just "baz",
+    testIt "tagNameText            " $ tagName someTextNode == Nothing,
+    testIt "tagNameComment         " $ tagName someComment == Nothing,
+    testIt "getAttributePresent    " $ getAttribute "fiz" someElement
+                                            == Just "buzz",
+    testIt "getAttributeMissing    " $ getAttribute "baz" someElement
+                                            == Nothing,
+    testIt "getAttributeWrongType  " $ getAttribute "fix" someTextNode
+                                            == Nothing,
+    testIt "hasAttributePresent    " $ hasAttribute "fiz" someElement,
+    testIt "hasAttributeMissing    " $ not $ hasAttribute "baz" someElement,
+    testIt "hasAttributeWrongType  " $ not $ hasAttribute "fix" someTextNode,
+    testIt "setAttributeNew        " $ setAttributeNew,
+    testIt "setAttributeReplace    " $ setAttributeReplace,
+    testIt "setAttributeWrongType  " $ setAttributeWrongType,
+    testIt "nestedNodeText         " $ nestedNodeText,
+    testIt "childNodesElem         " $ childNodesElem,
+    testIt "childNodesOther        " $ childNodesOther,
+    testIt "childElemsTest         " $ childElemsTest,
+    testIt "childElemsTagTest      " $ childElemsTagTest,
+    testIt "childElemTagExists     " $ childElemTagExists,
+    testIt "childElemTagNotExists  " $ childElemTagNotExists,
+    testIt "childElemTagOther      " $ childElemTagOther,
+    testIt "descNodesElem          " $ descNodesElem,
+    testIt "descNodesOther         " $ descNodesOther,
+    testIt "descElemsTest          " $ descElemsTest,
+    testIt "descElemsTagTest       " $ descElemsTagTest,
+    testIt "descElemTagExists      " $ descElemTagExists,
+    testIt "descElemTagDFS         " $ descElemTagDFS,
+    testIt "descElemTagNotExists   " $ descElemTagNotExists,
+    testIt "descElemTagOther       " $ descElemTagOther
+    ]
+
+someTextNode :: Node
+someTextNode = TextNode "foo"
+
+someComment :: Node
+someComment = Comment "bar"
+
+someElement :: Node
+someElement = Element "baz" [("fiz","buzz")] [TextNode "content"]
+
+someTree :: Node
+someTree = Element "department" [("code", "A17")] [
+    Element "employee" [("name", "bob")] [
+        Comment "My best friend",
+        Element "address" [] [
+            TextNode "123 My Road"
+            ]
+        ],
+    Element "employee" [("name", "alice")] [
+        Element "address" [] [
+            TextNode "124 My Road"
+            ],
+        Element "phone" [] [
+            TextNode "555-1234"
+            ]
+        ]
+    ]
+
+setAttributeNew :: Bool
+setAttributeNew =
+    let e = setAttribute "flo" "friz" someElement
+    in  length (elementAttrs e) == 2
+        && getAttribute "fiz" e == Just "buzz"
+        && getAttribute "flo" e == Just "friz"
+
+setAttributeReplace :: Bool
+setAttributeReplace =
+    let e = setAttribute "fiz" "bat" someElement
+    in  length (elementAttrs e) == 1
+        && getAttribute "fiz" e == Just "bat"
+
+setAttributeWrongType :: Bool
+setAttributeWrongType =
+    setAttribute "fuss" "plus" someTextNode == someTextNode
+    && setAttribute "fuss" "plus" someComment == someComment
+
+nestedNodeText :: Bool
+nestedNodeText = nodeText someTree == "123 My Road124 My Road555-1234"
+
+childNodesElem :: Bool
+childNodesElem = length (childNodes n) == 3
+    where n = Element "foo" [] [ TextNode "bar",
+                                 Comment  "baz",
+                                 Element  "bat" [] [] ]
+
+childNodesOther :: Bool
+childNodesOther = childNodes (TextNode "foo") == []
+               && childNodes (Comment "bar")  == []
+
+childElemsTest :: Bool
+childElemsTest = length (childElements n) == 1
+    where n = Element "foo" [] [ TextNode "bar",
+                                 Comment  "baz",
+                                 Element  "bat" [] [] ]
+
+childElemsTagTest :: Bool
+childElemsTagTest = length (childElementsTag "good" n) == 2
+    where n = Element "parent" [] [
+                Element "good" [] [],
+                TextNode "foo",
+                Comment "bar",
+                Element "bad" [] [],
+                Element "good" [] [],
+                Element "bad" [] []
+              ]
+
+childElemTagExists :: Bool
+childElemTagExists = childElementTag "b" n == Just (Element "b" [] [])
+    where n = Element "parent" [] [
+                Element "a" [] [],
+                Element "b" [] [],
+                Element "c" [] []
+              ]
+
+childElemTagNotExists :: Bool
+childElemTagNotExists = childElementTag "b" n == Nothing
+    where n = Element "parent" [] [
+                Element "a" [] [],
+                Element "c" [] []
+              ]
+
+childElemTagOther :: Bool
+childElemTagOther = childElementTag "b" n == Nothing
+    where n = TextNode ""
+
+
+descNodesElem :: Bool
+descNodesElem = length (descendantNodes n) == 3
+    where n = Element "foo" [] [ TextNode "bar",
+                                 Element  "bat" [] [ Comment  "baz" ] ]
+
+descNodesOther :: Bool
+descNodesOther = descendantNodes (TextNode "foo") == []
+              && descendantNodes (Comment "bar")  == []
+
+descElemsTest :: Bool
+descElemsTest = length (descendantElements n) == 1
+    where n = Element "foo" [] [ TextNode "bar",
+                                 Element  "bat" [] [ Comment  "baz" ] ]
+
+descElemsTagTest :: Bool
+descElemsTagTest = length (descendantElementsTag "good" n) == 2
+    where n = Element "parent" [] [
+                TextNode "foo",
+                Element "good" [] [],
+                Comment "bar",
+                Element "parent" [] [ Element "good" [] [] ],
+                Element "bad" [] []
+              ]
+
+descElemTagExists :: Bool
+descElemTagExists = descendantElementTag "b" n == Just (Element "b" [] [])
+    where n = Element "parent" [] [
+                Element "a" [] [ Element "b" [] [] ],
+                Element "c" [] []
+              ]
+
+descElemTagDFS :: Bool
+descElemTagDFS = descendantElementTag "b" n == Just (Element "b" [] [])
+    where n = Element "parent" [] [
+                Element "a" [] [ Element "b" [] [] ],
+                Element "b" [("wrong", "")] [],
+                Element "c" [] []
+              ]
+
+descElemTagNotExists :: Bool
+descElemTagNotExists = descendantElementTag "b" n == Nothing
+    where n = Element "parent" [] [
+                Element "a" [] [],
+                Element "c" [] [ Element "d" [] [] ]
+              ]
+
+descElemTagOther :: Bool
+descElemTagOther = descendantElementTag "b" n == Nothing
+    where n = TextNode ""
+
+
+------------------------------------------------------------------------------
+-- Tests of navigating with the Cursor type ----------------------------------
+------------------------------------------------------------------------------
+
+cursorTests :: [Test]
+cursorTests = [
+    testIt   "fromNodeAndCurrent     " $ fromNodeAndCurrent,
+    testIt   "fromNodesAndSiblings   " $ fromNodesAndSiblings,
+    testIt   "leftSiblings           " $ leftSiblings,
+    testIt   "emptyFromNodes         " $ emptyFromNodes,
+    testCase "cursorNavigation       " $ cursorNavigation
+    ]
+
+fromNodeAndCurrent :: Bool
+fromNodeAndCurrent = all (\n -> n == current (fromNode n)) ns
+    where ns = [
+            TextNode "foo",
+            Comment "bar",
+            Element "foo" [] [],
+            Element "root" [] [
+                TextNode "foo",
+                Comment "bar",
+                Element "foo" [] []
+                ]
+            ]
+
+fromNodesAndSiblings :: Bool
+fromNodesAndSiblings = n == siblings (fromJust $ fromNodes n)
+    where n = [
+            TextNode "foo",
+            Comment "bar",
+            Element "foo" [] [],
+            Element "root" [] [
+                TextNode "foo",
+                Comment "bar",
+                Element "foo" [] []
+                ]
+            ]
+
+leftSiblings :: Bool
+leftSiblings = fromJust $ do
+        r <- do
+            c1 <- fromNodes n
+            c2 <- right c1
+            c3 <- right c2
+            return c3
+        return (n == siblings r)
+    where n = [
+            TextNode "foo",
+            Comment "bar",
+            Element "foo" [] [],
+            Element "root" [] [
+                TextNode "foo",
+                Comment "bar",
+                Element "foo" [] []
+                ]
+            ]
+
+emptyFromNodes :: Bool
+emptyFromNodes = isNothing (fromNodes [])
+
+-- Sample node structure for running cursor tests.
+cursorTestTree :: Node
+cursorTestTree = Element "department" [("code", "A17")] [
+    Element "employee" [("name", "bob")] [
+        Comment "My best friend",
+        Element "address" [] [
+            TextNode "123 My Road"
+            ],
+        Element "temp" [] []
+        ],
+    Element "employee" [("name", "alice")] [
+        Element "address" [] [
+            TextNode "124 My Road"
+            ],
+        Element "phone" [] [
+            TextNode "555-1234"
+            ]
+        ],
+    Element "employee" [("name", "camille")] [
+        Element "phone" [] [
+            TextNode "800-888-8888"
+            ]
+        ]
+    ]
+
+cursorNavigation :: Assertion
+cursorNavigation = do
+    let r = fromNode cursorTestTree
+
+    assertBool "rootElem" $ isElement (current r)
+    assertBool "parent of root" $ isNothing (parent r)
+
+    let Just e1 = firstChild r
+    let Just e2 = getChild 1 r
+    let Just e3 = lastChild r
+
+    assertBool "getChild bounds" $ isNothing (getChild 3 r)
+    assertBool "firstChild"      $
+        getAttribute "name" (current e1) == Just "bob"
+    assertBool "childAt 1 "      $
+        getAttribute "name" (current e2) == Just "alice"
+    assertBool "lastChild "      $
+        getAttribute "name" (current e3) == Just "camille"
+
+    do let Just a = lastChild e1
+       assertBool "firstChild on empty element" $ isNothing (firstChild a)
+       assertBool "getChild on empty element"   $ isNothing (getChild 0 a)
+       assertBool "lastChild on empty element"  $ isNothing (lastChild a)
+
+    do let Just a = right e1
+       let Just b = right a
+       assertBool "two paths #1" $ a == e2
+       assertBool "two paths #2" $ b == e3
+       assertBool "right off end" $ isNothing (right b)
+
+       let Just c = left e3
+       let Just d = left e2
+       assertBool "two paths #3" $ c == e2
+       assertBool "two paths #4" $ d == e1
+       assertBool  "left off end" $ isNothing (left d)
+
+    do let Just r1 = parent e2
+       assertEqual "child -> parent" (current r) (current r1)
+
+    do let Just cmt = firstChild e1
+       assertBool  "topNode"  $ tagName (topNode cmt) == Just "department"
+       assertBool  "topNodes" $ map tagName (topNodes cmt) == [ Just "department" ]
+
+       assertBool "first child of comment" $ isNothing (firstChild cmt)
+       assertBool "last  child of comment" $ isNothing (lastChild cmt)
+
+    do assertBool "nextDF down" $ nextDF r == Just e1
+
+       let Just cmt = firstChild e1
+       assertBool "nextDF right" $ nextDF cmt == right cmt
+
+       let Just em = lastChild e1
+       assertBool "nextDF up-right" $ nextDF em == Just e2
+       
+       let Just pelem = lastChild e3
+       let Just ptext = lastChild pelem
+       assertBool "nextDF end" $ isNothing (nextDF ptext)
+
+
+------------------------------------------------------------------------------
+-- Tests of rendering from the blaze-html package ----------------------------
+------------------------------------------------------------------------------
+
+blazeRenderTests :: [Test]
+blazeRenderTests = [
+    ]
 
