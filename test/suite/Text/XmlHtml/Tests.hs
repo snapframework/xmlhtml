@@ -1024,12 +1024,12 @@ cursorNavigation :: Assertion
 cursorNavigation = do
     let r = fromNode cursorTestTree
 
-    assertBool "rootElem" $ isElement (current r)
-    assertBool "parent of root" $ isNothing (parent r)
-
     let Just e1 = firstChild r
     let Just e2 = getChild 1 r
     let Just e3 = lastChild r
+
+    assertBool "rootElem" $ isElement (current r)
+    assertBool "parent of root" $ isNothing (parent r)
 
     assertBool "getChild bounds" $ isNothing (getChild 3 r)
     assertBool "firstChild"      $
