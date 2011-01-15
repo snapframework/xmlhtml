@@ -9,13 +9,18 @@ import           Control.Exception as E
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import           Data.Maybe
+import           Data.Monoid
+import           Data.String
 import           Data.Text ()                  -- for string instance
 import qualified Data.Text.Encoding as T
 import           System.IO.Unsafe
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.HUnit hiding (Test, Node)
-import           Text.Blaze.Renderer.XmlHtml() -- Just to get it in hpc
+import           Text.Blaze
+import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
+import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
 import           Text.XmlHtml.Cursor
 import           Text.XmlHtml.OASISTest
@@ -1085,5 +1090,56 @@ cursorNavigation = do
 
 blazeRenderTests :: [Test]
 blazeRenderTests = [
+    testIt   "blazeTestString        " blazeTestString,
+    testIt   "blazeTestText          " blazeTestText,
+    testIt   "blazeTestBS            " blazeTestBS,
+    testIt   "blazeTestPre           " blazeTestPre,
+    testIt   "blazeTestExternal      " blazeTestExternal,
+    testIt   "blazeTestCustom        " blazeTestCustom,
+    testIt   "blazeTestMulti         " blazeTestMulti,
+    testIt   "blazeTestEmpty         " blazeTestEmpty
     ]
+
+blazeTestIsString :: (IsString t1, IsString t) =>
+     (t -> AttributeValue) -> (t1 -> Html) -> Bool
+blazeTestIsString valFunc tagFunc = renderHtml html == result
+  where
+    html = H.div ! A.class_ (valFunc "foo") $ tagFunc "hello world"
+    result = HtmlDocument UTF8 Nothing [Element "div" [("class", "foo")] [TextNode "hello world"]]
+
+blazeTestString = blazeTestIsString H.stringValue H.string
+blazeTestText = blazeTestIsString H.textValue H.text
+blazeTestBS = blazeTestIsString H.unsafeByteStringValue H.unsafeByteString
+blazeTestPre = blazeTestIsString H.preEscapedStringValue H.preEscapedString
+
+blazeTestExternal :: Bool
+blazeTestExternal = renderHtml html == result
+  where
+    html = do
+        H.script $ H.string "alert('hello world');"
+    result = HtmlDocument UTF8 Nothing [Element "script" [] [TextNode "alert('hello world');"]]
+
+blazeTestCustom :: Bool
+blazeTestCustom = renderHtml html == result
+  where
+    html = do
+        H.select ! H.customAttribute "dojoType" (mappend "select " "this") $ "foo"
+    result = HtmlDocument UTF8 Nothing [Element "select" [("dojoType", "select this")] [TextNode "foo"]]
+
+blazeTestMulti :: Bool
+blazeTestMulti = renderHtml (selectCustom `mappend` html) == result
+  where
+    html = do
+        H.link ! A.rel "stylesheet"
+    result = HtmlDocument UTF8 Nothing
+        [ Element "select" [("dojoType", "select")] [TextNode "foo ", TextNode "bar"]
+        , Element "link" [("rel", "stylesheet")] []
+        ]
+
+blazeTestEmpty :: Bool
+blazeTestEmpty = renderHtml mempty == HtmlDocument UTF8 Nothing []
+
+selectCustom = H.select ! H.customAttribute "dojoType" "select" $ (mappend "foo " "bar")
+
+
 
