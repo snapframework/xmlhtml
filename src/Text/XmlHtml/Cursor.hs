@@ -75,13 +75,6 @@ data Tag = Tag Text [(Text, Text)] deriving (Eq)
 
 
 ------------------------------------------------------------------------------
--- | Extracts the tag of a node, if it is an element.  Otherwise, gives
--- 'Nothing'
-toTag :: Node -> Tag
-toTag (Element t a _) = Tag t a
-toTag _               = error "toTag on non-element"
-
-------------------------------------------------------------------------------
 -- | Reconstructs an element from a tag and a list of its children.
 fromTag :: Tag -> [Node] -> Node
 fromTag (Tag t a) c = Element t a c
@@ -151,14 +144,15 @@ root = until isRoot (fromJust . parent)
 -- | Navigates a 'Cursor' down to the indicated child index.
 getChild :: Int -> Cursor -> Maybe Cursor
 getChild i (Cursor n ls rs ps) =
-    let cs          = childNodes n
-        (lls, rest) = splitAt i cs
-    in  if i < length cs
-            then Just $ Cursor (head rest)
+    case n of
+      Element t a cs -> let (lls, rest) = splitAt i cs in
+          if i >= length cs
+            then Nothing
+            else Just $ Cursor (head rest)
                                (reverse lls)
                                (tail rest)
-                               ((ls, toTag n, rs):ps)
-            else Nothing
+                               ((ls, Tag t a, rs):ps)
+      _              -> Nothing
 
 
 ------------------------------------------------------------------------------
