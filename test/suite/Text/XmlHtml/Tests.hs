@@ -1,28 +1,21 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE ScopedTypeVariables       #-}
 
 module Text.XmlHtml.Tests (tests) where
 
 import           Blaze.ByteString.Builder
-import           Control.Exception as E
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Text ()                  -- for string instance
 import qualified Data.Text.Encoding as T
-import           System.IO.Unsafe
 import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
-import           Text.XmlHtml.Cursor
 import           Text.XmlHtml.CursorTests
 import           Text.XmlHtml.TestCommon
 import           Text.XmlHtml.OASISTest
@@ -43,26 +36,6 @@ tests = xmlParsingTests
      ++ cursorTests
      ++ blazeRenderTests
      ++ testsOASIS
-
-
-------------------------------------------------------------------------------
--- Code adapted from ChasingBottoms.
---
--- Adding an actual dependency isn't possible because Cabal refuses to build
--- the package due to version conflicts.
---
--- isBottom is impossible to write, but very useful!  So we defy the
--- impossible, and write it anyway.
-isBottom :: a -> Bool
-isBottom a = unsafePerformIO $
-    (E.evaluate a >> return False)
-    `E.catch` \ (_ :: ErrorCall)        -> return True
-    `E.catch` \ (_ :: PatternMatchFail) -> return True
-
-
-------------------------------------------------------------------------------
-isLeft :: Either a b -> Bool
-isLeft = either (const True) (const False)
 
 
 ------------------------------------------------------------------------------
@@ -958,9 +931,16 @@ blazeTestIsString valFunc tagFunc = renderHtml html == result
     html = H.div ! A.class_ (valFunc "foo") $ tagFunc "hello world"
     result = HtmlDocument UTF8 Nothing [Element "div" [("class", "foo")] [TextNode "hello world"]]
 
+blazeTestString :: Bool
 blazeTestString = blazeTestIsString H.stringValue H.string
+
+blazeTestText :: Bool
 blazeTestText = blazeTestIsString H.textValue H.text
+
+blazeTestBS :: Bool
 blazeTestBS = blazeTestIsString H.unsafeByteStringValue H.unsafeByteString
+
+blazeTestPre :: Bool
 blazeTestPre = blazeTestIsString H.preEscapedStringValue H.preEscapedString
 
 blazeTestExternal :: Bool
@@ -990,6 +970,7 @@ blazeTestMulti = renderHtml (selectCustom `mappend` html) == result
 blazeTestEmpty :: Bool
 blazeTestEmpty = renderHtml mempty == HtmlDocument UTF8 Nothing []
 
+selectCustom :: Html
 selectCustom = H.select ! H.customAttribute "dojoType" "select" $ (mappend "foo " "bar")
 
 
