@@ -19,16 +19,18 @@ import           Text.XmlHtml
 -- directories inside of @test/resources@.  This test reads them, parses them,
 -- and ensures that they behave as expected:
 --
--- * If there is a file in the same directory named /filename/@.result@,
---   it is expected to be the result of 'Show' on a 'Document' value.  This
---   is expected to be the result of (successful) parsing.  Otherwise, the
---   remaining cases apply.
+-- * If there is a file in the same directory named /filename/@.correct@
+--   or /filename/@.incorrect@, the parsing is expected to either succeed
+--   or fail, as indicated.  Otherwise, the remaining cases apply.
 --
 -- * For those tests marked @not-wf@, the test expects an error message.
 --
 -- * For tests marked @valid@ or @invalid@ (there is no distinction since
 --   @xmlhtml@ is not a validating parser), the test expects a successful
 --   parse, but does not verify the parse result.
+--
+-- For tests that should succeed as XML but not HTML, or vice versa, files
+-- can be named /filename/@.xml.correct@, and so on (all 4 combinations).
 
 testsOASIS :: [Test]
 testsOASIS = [
@@ -51,77 +53,70 @@ testsOASIS = [
     ]
 
 
-data Type = Result String | WF | NotWF
-
-
 oasisP :: String -> Assertion
 oasisP name = do
     tests <- getOASIS ".xml" name
     forM_ tests $ \(fn, ty) -> case ty of
-        Result rn -> oasisResult fn rn
-        WF        -> oasisWF fn
-        NotWF     -> oasisNotWF fn
+        True  -> oasisWF fn
+        False -> oasisNotWF fn
 
 
 oasisR :: String -> Assertion
 oasisR name = do
     tests <- getOASIS ".xml" name
     forM_ tests $ \(fn, ty) -> case ty of
-        Result _ -> oasisRerender fn
-        WF       -> oasisRerender fn
-        _        -> return ()
+        True  -> oasisRerender fn
+        False -> return ()
 
 
 oasisHP :: String -> Assertion
 oasisHP name = do
     tests <- getOASIS ".html" name
     forM_ tests $ \(fn, ty) -> case ty of
-        Result rn -> hOasisResult fn rn
-        WF        -> hOasisWF fn
-        NotWF     -> hOasisNotWF fn
+        True  -> hOasisWF fn
+        False -> hOasisNotWF fn
 
 
 oasisHR :: String -> Assertion
 oasisHR name = do
     tests <- getOASIS ".html" name
     forM_ tests $ \(fn, ty) -> case ty of
-        Result _ -> hOasisRerender fn
-        WF       -> hOasisRerender fn
-        _        -> return ()
+        True  -> hOasisRerender fn
+        False -> return ()
 
 
-getOASIS :: String -> String -> IO [(String, Type)]
+getOASIS :: String -> String -> IO [(String, Bool)]
 getOASIS sub name = do
     testListSrc <- B.readFile ("resources/" ++ name)
     let Right (XmlDocument _ _ ns) = parseXML name testListSrc
     let Just c = listToMaybe (filter isElement ns)
     oasisTestCases sub name c
 
-oasisTestCases :: String -> String -> Node -> IO [(String, Type)]
+
+oasisTestCases :: String -> String -> Node -> IO [(String, Bool)]
 oasisTestCases sub name n = do
     fmap concat $ forM (childElements n) $ \t -> case tagName t of
         Just "TESTCASES" -> oasisTestCases sub name t
         Just "TEST"      -> oasisTest sub name t
         _                -> error (show t)
 
-oasisTest :: String -> String -> Node -> IO [(String, Type)]
+
+oasisTest :: String -> String -> Node -> IO [(String, Bool)]
 oasisTest sub name t = do
     let fn = file $ fromJust $ getAttribute "URI" t
     fe <- doesFileExist fn
-    re <- doesFileExist (fn ++ sub ++ ".result")
     ce <- (||) <$> doesFileExist (fn ++ ".correct")
                <*> doesFileExist (fn ++ sub ++ ".correct")
     ie <- (||) <$> doesFileExist (fn ++ ".incorrect")
                <*> doesFileExist (fn ++ sub ++ ".incorrect")
     let ty = getAttribute "TYPE" t
     if fe then case () of
-        () | re                   -> return [(fn, Result (fn ++ sub ++ ".result"))]
-           | ce                   -> return [(fn, WF)]
-           | ie                   -> return [(fn, NotWF)]
-           | ty == Just "not-wf"  -> return [(fn, NotWF)]
-           | ty == Just "invalid" -> return [(fn, WF)]
-           | ty == Just "valid"   -> return [(fn, WF)]
-           | otherwise            -> return [(fn, WF)]
+        () | ce                   -> return [(fn, True)]
+           | ie                   -> return [(fn, False)]
+           | ty == Just "not-wf"  -> return [(fn, False)]
+           | ty == Just "invalid" -> return [(fn, True)]
+           | ty == Just "valid"   -> return [(fn, True)]
+           | otherwise            -> return [(fn, True)]
       else return []
   where
     file f        = "resources/" ++ toLastSlash name ++ T.unpack f
@@ -131,14 +126,6 @@ oasisTest sub name t = do
                           in  if found then (True, c:ccs)
                               else if c == '/' then (True, "/")
                               else (False, c:cs)
-
-
-oasisResult :: String -> String -> Assertion
-oasisResult name correctFN = do
-    expected <- fmap read (readFile correctFN)
-    src <- B.readFile name
-    assertBool ("result parse " ++ name) $
-        Right expected == parseXML name src
 
 
 oasisNotWF :: String -> Assertion
@@ -166,14 +153,6 @@ oasisRerender name = do
     let src2     = toByteString (render d)
     let Right d2 = parseXML "" src2
     assertEqual ("rerender " ++ name) d d2
-
-
-hOasisResult :: String -> String -> Assertion
-hOasisResult name correctFN = do
-    expected <- fmap read (readFile (correctFN ++ ".html"))
-    src <- B.readFile name
-    assertBool ("result parse " ++ name) $
-        Right expected == parseHTML name src
 
 
 hOasisNotWF :: String -> Assertion

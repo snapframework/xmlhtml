@@ -28,7 +28,7 @@ data Document = XmlDocument  {
                     docType     :: !(Maybe DocType),
                     docContent  :: ![Node]
                 }
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ data Node = TextNode !Text
                 elementAttrs    :: ![(Text, Text)],
                 elementChildren :: ![Node]
             }
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ descendantElementTag tag = listToMaybe . descendantElementsTag tag
 -- | A document type declaration.  Note that DTD internal subsets are
 -- currently unimplemented.
 data DocType = DocType !Text !ExternalID !InternalSubset
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
@@ -172,7 +172,7 @@ data DocType = DocType !Text !ExternalID !InternalSubset
 data ExternalID = Public !Text !Text
                 | System !Text
                 | NoExternalID
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
@@ -180,13 +180,13 @@ data ExternalID = Public !Text !Text
 -- wanted.
 data InternalSubset = InternalText !Text
                     | NoInternalSubset
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
 -- | The character encoding of a document.  Currently only the required
 -- character encodings are implemented.
-data Encoding = UTF8 | UTF16BE | UTF16LE deriving (Eq, Show, Read)
+data Encoding = UTF8 | UTF16BE | UTF16LE deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------

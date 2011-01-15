@@ -116,7 +116,6 @@ entity :: Encoding -> Char -> Builder
 entity e '&'  = fromText e "&amp;"
 entity e '<'  = fromText e "&lt;"
 entity e '>'  = fromText e "&gt;"
-entity e '\'' = fromText e "&apos;"
 entity e '\"' = fromText e "&quot;"
 entity e c    = fromText e "&#"
                 `mappend` fromText e (T.pack (show (ord c)))
@@ -144,7 +143,7 @@ attribute :: Encoding -> (Text, Text) -> Builder
 attribute e (n,v) | not ("\'" `T.isInfixOf` v) = fromText e " "
                                        `mappend` fromText e n
                                        `mappend` fromText e "=\'"
-                                       `mappend` escaped "<&\'" e v
+                                       `mappend` escaped "<&" e v
                                        `mappend` fromText e "\'"
                   | otherwise                  = fromText e " "
                                        `mappend` fromText e n

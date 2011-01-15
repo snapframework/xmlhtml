@@ -55,9 +55,7 @@ escaped bad e t  =
 ------------------------------------------------------------------------------
 node :: Encoding -> Node -> Builder
 node e (TextNode t)                        = escaped "<>&" e t
-node e (Comment t) | ">"  `T.isPrefixOf` t = error "Invalid comment"
-                   | "->" `T.isPrefixOf` t = error "Invalid comment"
-                   | "--" `T.isInfixOf`  t = error "Invalid comment"
+node e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
                    | "-"  `T.isSuffixOf` t = error "Invalid comment"
                    | otherwise             = fromText e "<!--"
                                              `mappend` fromText e t
@@ -139,7 +137,7 @@ attribute e (n,v)
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e "=\'"
-        `mappend` escaped "&\'" e v
+        `mappend` escaped "&" e v
         `mappend` fromText e "\'"
     | otherwise                  =
         fromText e " "

@@ -70,14 +70,14 @@ import           Data.Text (Text)
 import           Text.XmlHtml
 
 ------------------------------------------------------------------------------
--- | Data type representing just the tag of an element
-data Tag = Tag Text [(Text, Text)] deriving (Eq)
+-- | Just the tag of an element
+type Tag = (Text, [(Text, Text)])
 
 
 ------------------------------------------------------------------------------
 -- | Reconstructs an element from a tag and a list of its children.
 fromTag :: Tag -> [Node] -> Node
-fromTag (Tag t a) c = Element t a c
+fromTag (t,a) c = Element t a c
 
 
 ------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ getChild i (Cursor n ls rs ps) =
             else Just $ Cursor (head rest)
                                (reverse lls)
                                (tail rest)
-                               ((ls, Tag t a, rs):ps)
+                               ((ls, (t,a), rs):ps)
       _              -> Nothing
 
 
@@ -166,7 +166,7 @@ firstChild = getChild 0
 lastChild :: Cursor -> Maybe Cursor
 lastChild (Cursor (Element t a c) ls rs ps) | not (null c)
     = let rc = reverse c
-      in  Just $ Cursor (head rc) (tail rc) [] ((ls, Tag t a, rs):ps)
+      in  Just $ Cursor (head rc) (tail rc) [] ((ls, (t,a), rs):ps)
 lastChild _
     = Nothing
 
@@ -401,7 +401,7 @@ removeGoRight _                       = Nothing
 ------------------------------------------------------------------------------
 -- | Removes the current 'Node', and moves the Cursor to its parent, if any.
 removeGoUp :: Cursor -> Maybe Cursor
-removeGoUp (Cursor _ ls rs ((lls, Tag t a, rrs):ps))
+removeGoUp (Cursor _ ls rs ((lls, (t,a), rrs):ps))
     = Just (Cursor (Element t a children) lls rrs ps)
   where
     children = foldl (flip (:)) (rs) ls
