@@ -23,10 +23,14 @@ testIt name b = testCase name $ assertBool name b
 -- impossible, and write it anyway.
 isBottom :: a -> Bool
 isBottom a = unsafePerformIO $
-    (E.evaluate a >> return False)
-    `E.catch` \ (_ :: ErrorCall)        -> return True
-    `E.catch` \ (_ :: PatternMatchFail) -> return True
-
+    (E.evaluate a >> return False) `E.catches` [
+        E.Handler $ \ (_ :: PatternMatchFail) -> return True,
+        E.Handler $ \ (_ :: ErrorCall)        -> return True,
+        E.Handler $ \ (_ :: NoMethodError)    -> return True,
+        E.Handler $ \ (_ :: RecConError)      -> return True,
+        E.Handler $ \ (_ :: RecUpdError)      -> return True,
+        E.Handler $ \ (_ :: RecSelError)      -> return True
+        ]
 
 ------------------------------------------------------------------------------
 isLeft :: Either a b -> Bool

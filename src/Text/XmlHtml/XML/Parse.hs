@@ -265,11 +265,10 @@ processingInstruction = do
         P.manyTill P.anyChar (P.try $ text "?>")
 
 ------------------------------------------------------------------------------
-piTarget :: Parser Text
+piTarget :: Parser ()
 piTarget = do
     n <- name
     when (T.map toLower n == "xml") $ fail "xml declaration can't occur here"
-    return n
 
 
 ------------------------------------------------------------------------------
@@ -302,28 +301,28 @@ prolog = do
 
 ------------------------------------------------------------------------------
 -- | Return value is the encoding, if present.
-xmlDecl :: Parser (Text, Maybe Text)
+xmlDecl :: Parser (Maybe Text)
 xmlDecl = do
     _ <- text "<?xml"
-    v <- versionInfo
+    _ <- versionInfo
     e <- optional encodingDecl
     _ <- optional sdDecl
     _ <- optional whiteSpace
     _ <- text "?>"
-    return (v,e)
+    return e
 
 
 ------------------------------------------------------------------------------
-versionInfo :: Parser Text
+versionInfo :: Parser ()
 versionInfo = do
     whiteSpace *> text "version" *> eq *> (singleQuoted <|> doubleQuoted)
   where
     singleQuoted = P.char '\'' *> versionNum <* P.char '\''
     doubleQuoted = P.char '\"' *> versionNum <* P.char '\"'
     versionNum   = do
-        a <- text "1."
-        b <- fmap T.pack $ some (P.satisfy (\c -> c >= '0' && c <= '9'))
-        return (T.append a b)
+        _ <- text "1."
+        _ <- some (P.satisfy (\c -> c >= '0' && c <= '9'))
+        return ()
 
 
 ------------------------------------------------------------------------------
@@ -369,7 +368,7 @@ data InternalDoctypeState = IDSStart
 -- | Internal DOCTYPE subset.  We don't actually parse this; just scan through
 -- and look for the end, and store it in a block of text.
 internalDoctype :: Parser InternalSubset
-internalDoctype = InternalText <$> T.pack <$> fst <$> scanText (dfa IDSStart)
+internalDoctype = InternalText <$> T.pack <$> scanText (dfa IDSStart)
               <|> return NoInternalSubset
   where dfa IDSStart '[' = ScanNext (dfa (IDSScanning 0))
         dfa IDSStart _   = ScanFail "Not a DOCTYPE internal subset"
@@ -377,28 +376,28 @@ internalDoctype = InternalText <$> T.pack <$> fst <$> scanText (dfa IDSStart)
           | c == d                = ScanNext (dfa (IDSScanning n))
           | otherwise             = ScanNext (dfa (IDSInQuote n c))
         dfa (IDSScanning n) '['   = ScanNext (dfa (IDSScanning (n+1)))
-        dfa (IDSScanning 0) ']'   = ScanFinish ()
+        dfa (IDSScanning 0) ']'   = ScanFinish
         dfa (IDSScanning n) ']'   = ScanNext (dfa (IDSScanning (n-1)))
         dfa (IDSScanning n) '\''  = ScanNext (dfa (IDSInQuote n '\''))
         dfa (IDSScanning n) '\"'  = ScanNext (dfa (IDSInQuote n '\"'))
         dfa (IDSScanning n) '<'   = ScanNext (dfa (IDSCommentS1 n))
         dfa (IDSScanning n) _     = ScanNext (dfa (IDSScanning n))
         dfa (IDSCommentS1 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
-        dfa (IDSCommentS1 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS1 0) ']'  = ScanFinish
         dfa (IDSCommentS1 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
         dfa (IDSCommentS1 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
         dfa (IDSCommentS1 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
         dfa (IDSCommentS1 n) '!'  = ScanNext (dfa (IDSCommentS2 n))
         dfa (IDSCommentS1 n) _    = ScanNext (dfa (IDSScanning n))
         dfa (IDSCommentS2 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
-        dfa (IDSCommentS2 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS2 0) ']'  = ScanFinish
         dfa (IDSCommentS2 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
         dfa (IDSCommentS2 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
         dfa (IDSCommentS2 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))
         dfa (IDSCommentS2 n) '-'  = ScanNext (dfa (IDSCommentS3 n))
         dfa (IDSCommentS2 n) _    = ScanNext (dfa (IDSScanning n))
         dfa (IDSCommentS3 n) '['  = ScanNext (dfa (IDSScanning (n+1)))
-        dfa (IDSCommentS3 0) ']'  = ScanFinish ()
+        dfa (IDSCommentS3 0) ']'  = ScanFinish
         dfa (IDSCommentS3 n) ']'  = ScanNext (dfa (IDSScanning (n-1)))
         dfa (IDSCommentS3 n) '\'' = ScanNext (dfa (IDSInQuote n '\''))
         dfa (IDSCommentS3 n) '\"' = ScanNext (dfa (IDSInQuote n '\"'))

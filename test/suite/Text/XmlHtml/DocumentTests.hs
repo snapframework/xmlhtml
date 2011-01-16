@@ -27,6 +27,9 @@ documentTests = [
     -- Silly tests just to exercise the Show instances on types.
     testCase "exerciseShows          " $ exerciseShows,
 
+    -- Exercise the accessors for Document and Node
+    testCase "docNodeAccessors       " $ docNodeAccessors,
+
     testIt   "isTextNodeYes          " $ isTextNode someTextNode,
     testIt   "isTextNodeNo           " $ not $ isTextNode someComment,
     testIt   "isTextNodeNo2          " $ not $ isTextNode someElement,
@@ -97,6 +100,32 @@ exerciseShows = do
     assertBool "4" $ length (showList [TextNode ""] "") > 0
     assertBool "5" $ length (showList [XmlDocument UTF8 Nothing []] "") > 0
     assertBool "6" $ length (showList [UTF8] "") > 0
+
+docNodeAccessors :: Assertion
+docNodeAccessors = do
+    let hdoc = HtmlDocument UTF8 Nothing []
+    assertEqual "html enc"  (docEncoding hdoc) UTF8
+    assertEqual "html type" (docType hdoc) Nothing
+    assertEqual "html nodes" (docContent hdoc) []
+
+    let xdoc = XmlDocument UTF8 Nothing []
+    assertEqual "xml enc"  (docEncoding xdoc) UTF8
+    assertEqual "xml type" (docType xdoc) Nothing
+    assertEqual "xml nodes" (docContent xdoc) []
+
+    let elm = Element  "foo" [] []
+    let txt = TextNode ""
+    let cmt = Comment  ""
+    assertEqual "elm tag"   (elementTag      elm) "foo"
+    assertEqual "elm attr"  (elementAttrs    elm) []
+    assertEqual "elm child" (elementChildren elm) []
+    assertBool  "txt tag"   $ isBottom (elementTag      txt)
+    assertBool  "txt attr"  $ isBottom (elementAttrs    txt)
+    assertBool  "txt child" $ isBottom (elementChildren txt)
+    assertBool  "cmt tag"   $ isBottom (elementTag      cmt)
+    assertBool  "cmt attr"  $ isBottom (elementAttrs    cmt)
+    assertBool  "cmt child" $ isBottom (elementChildren cmt)
+
 
 someTextNode :: Node
 someTextNode = TextNode "foo"

@@ -106,24 +106,20 @@ text t = P.try $ P.string (T.unpack t) *> return t
 ------------------------------------------------------------------------------
 -- | Represents the state of a text scanner, for use with the 'scanText'
 -- parser combinator.
-data ScanState a = ScanNext (Char -> ScanState a)
-                 | ScanFinish a
-                 | ScanFail String
+data ScanState = ScanNext (Char -> ScanState)
+               | ScanFinish
+               | ScanFail String
 
 
 ------------------------------------------------------------------------------
 -- | Scans text and progresses through a DFA, collecting the complete matching
 -- text as it goes.
-scanText :: (Char -> ScanState a) -> Parser (String, a)
+scanText :: (Char -> ScanState) -> Parser String
 scanText f = do
-    (c,r) <- P.try $ do
+    P.try $ do
         c <- P.anyChar
         case f c of
-            ScanNext f'  -> return (c, Left f')
-            ScanFinish x -> return (c, Right x)
+            ScanNext f'  -> (c:) `fmap` scanText f'
+            ScanFinish   -> return [c]
             ScanFail err -> fail err
-    case r of
-        Left f' -> do (t,x) <- scanText f'
-                      return (c:t, x)
-        Right x -> return ([c], x)
 

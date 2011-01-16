@@ -18,7 +18,6 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
-import           Text.XmlHtml.Common
 import           Text.XmlHtml.CursorTests
 import           Text.XmlHtml.DocumentTests
 import           Text.XmlHtml.TestCommon
@@ -76,13 +75,13 @@ xmlParsingTests = [
 byteOrderMark :: Assertion
 byteOrderMark = do
     assertEqual "BOM UTF16BE" (Right $ XmlDocument UTF16BE Nothing [])
-        (parseXML "" $ encoder UTF16BE "\xFEFF")
+        (parseXML "" $ T.encodeUtf16BE "\xFEFF")
     assertEqual "BOM UTF16LE" (Right $ XmlDocument UTF16LE Nothing [])
-        (parseXML "" $ encoder UTF16LE "\xFEFF")
+        (parseXML "" $ T.encodeUtf16LE "\xFEFF")
     assertEqual "BOM UTF8" (Right $ XmlDocument UTF8 Nothing [])
-        (parseXML "" $ encoder UTF8 "\xFEFF")
+        (parseXML "" $ T.encodeUtf8 "\xFEFF")
     assertEqual "BOM None" (Right $ XmlDocument UTF8 Nothing [])
-        (parseXML "" $ encoder UTF8 "")
+        (parseXML "" $ T.encodeUtf8 "")
 
 emptyDocument :: Bool
 emptyDocument = parseXML "" ""
@@ -538,6 +537,7 @@ testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
 xmlRenderingTests :: [Test]
 xmlRenderingTests = [
     testIt "renderByteOrderMark    " renderByteOrderMark,
+    testIt "renderByteOrderMarkLE  " renderByteOrderMarkLE,
     testIt "singleQuoteInSysID     " singleQuoteInSysID,
     testIt "doubleQuoteInSysID     " doubleQuoteInSysID,
     testIt "bothQuotesInSysID      " bothQuotesInSysID,
@@ -554,6 +554,11 @@ renderByteOrderMark :: Bool
 renderByteOrderMark =
     toByteString (render (XmlDocument UTF16BE Nothing []))
     == T.encodeUtf16BE "\xFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
+
+renderByteOrderMarkLE :: Bool
+renderByteOrderMarkLE =
+    toByteString (render (XmlDocument UTF16LE Nothing []))
+    == T.encodeUtf16LE "\xFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
 
 -- (Appears at the beginning of all XML output)
 utf8Decl :: ByteString
