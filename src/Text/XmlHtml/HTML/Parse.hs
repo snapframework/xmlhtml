@@ -223,9 +223,7 @@ attrName = takeWhile1 isAttrName
 -- | From 8.2.2.3 of the HTML 5 spec, omitting the very high control
 -- characters because they are unlikely to occur and I got tired of typing.
 isControlChar :: Char -> Bool
-isControlChar c | c >= '\x0001' && c <= '\x0008' = True
-                | c >= '\x000E' && c <= '\x001F' = True
-                | c >= '\x007F' && c <= '\x009F' = True
+isControlChar c | c >= '\x007F' && c <= '\x009F' = True
                 | c >= '\xFDD0' && c <= '\xFDEF' = True
                 | otherwise                      = False
 

@@ -11,11 +11,14 @@ import           Data.String
 import           Data.Text ()                  -- for string instance
 import qualified Data.Text.Encoding as T
 import           Test.Framework
+import           Test.Framework.Providers.HUnit
+import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
+import           Text.XmlHtml.Common
 import           Text.XmlHtml.CursorTests
 import           Text.XmlHtml.DocumentTests
 import           Text.XmlHtml.TestCommon
@@ -45,27 +48,41 @@ tests = xmlParsingTests
 
 xmlParsingTests :: [Test]
 xmlParsingTests = [
-    testIt "emptyDocument          " emptyDocument,
-    testIt "publicDocType          " publicDocType,
-    testIt "systemDocType          " systemDocType,
-    testIt "emptyDocType           " emptyDocType,
-    testIt "textOnly               " textOnly,
-    testIt "textWithRefs           " textWithRefs,
-    testIt "untermRef              " untermRef,
-    testIt "textWithCDATA          " textWithCDATA,
-    testIt "cdataOnly              " cdataOnly,
-    testIt "commentOnly            " commentOnly,
-    testIt "emptyElement           " emptyElement,
-    testIt "emptyElement2          " emptyElement2,
-    testIt "elemWithText           " elemWithText,
-    testIt "xmlDecl                " xmlDecl,
-    testIt "procInst               " procInst,
-    testIt "badDoctype1            " badDoctype1,
-    testIt "badDoctype2            " badDoctype2,
-    testIt "badDoctype3            " badDoctype3,
-    testIt "badDoctype4            " badDoctype4,
-    testIt "badDoctype5            " badDoctype5
+    testCase "byteOrderMark          " byteOrderMark,
+    testIt   "emptyDocument          " emptyDocument,
+    testIt   "publicDocType          " publicDocType,
+    testIt   "systemDocType          " systemDocType,
+    testIt   "emptyDocType           " emptyDocType,
+    testCase "dtdInternalScan        " dtdInternalScan,
+    testIt   "textOnly               " textOnly,
+    testIt   "textWithRefs           " textWithRefs,
+    testIt   "untermRef              " untermRef,
+    testIt   "textWithCDATA          " textWithCDATA,
+    testIt   "cdataOnly              " cdataOnly,
+    testIt   "commentOnly            " commentOnly,
+    testIt   "emptyElement           " emptyElement,
+    testIt   "emptyElement2          " emptyElement2,
+    testIt   "elemWithText           " elemWithText,
+    testIt   "xmlDecl                " xmlDecl,
+    testIt   "procInst               " procInst,
+    testIt   "badDoctype1            " badDoctype1,
+    testIt   "badDoctype2            " badDoctype2,
+    testIt   "badDoctype3            " badDoctype3,
+    testIt   "badDoctype4            " badDoctype4,
+    testIt   "badDoctype5            " badDoctype5,
+    testCase "tagNames               " tagNames
     ]
+
+byteOrderMark :: Assertion
+byteOrderMark = do
+    assertEqual "BOM UTF16BE" (Right $ XmlDocument UTF16BE Nothing [])
+        (parseXML "" $ encoder UTF16BE "\xFEFF")
+    assertEqual "BOM UTF16LE" (Right $ XmlDocument UTF16LE Nothing [])
+        (parseXML "" $ encoder UTF16LE "\xFEFF")
+    assertEqual "BOM UTF8" (Right $ XmlDocument UTF8 Nothing [])
+        (parseXML "" $ encoder UTF8 "\xFEFF")
+    assertEqual "BOM None" (Right $ XmlDocument UTF8 Nothing [])
+        (parseXML "" $ encoder UTF8 "")
 
 emptyDocument :: Bool
 emptyDocument = parseXML "" ""
@@ -82,6 +99,51 @@ systemDocType = parseXML "" "<!DOCTYPE tag SYSTEM \"foo\">"
 emptyDocType :: Bool
 emptyDocType  = parseXML "" "<!DOCTYPE tag >"
     == Right (XmlDocument UTF8 (Just (DocType "tag" NoExternalID NoInternalSubset)) [])
+
+dtdInternalScan :: Assertion
+dtdInternalScan = do
+    assertEqual "empty" (parseXML "" "<!DOCTYPE a []>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[]" ))) []))
+    assertBool "bad brackets" (isLeft $ parseXML "" "<!DOCTYPE a ()>")
+    assertEqual "quoted" (parseXML "" "<!DOCTYPE a [\"]\"]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[\"]\"]" ))) []))
+    assertBool "bad quote" (isLeft $ parseXML "" "<!DOCTYPE a [\"]>")
+    assertEqual "nested brackets" (parseXML "" "<!DOCTYPE a [[[]]]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[[[]]]" ))) []))
+    assertEqual "part comment 1" (parseXML "" "<!DOCTYPE a [<]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<]" ))) []))
+    assertEqual "part comment 2" (parseXML "" "<!DOCTYPE a [[<]]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[[<]]" ))) []))
+    assertEqual "part comment 3" (parseXML "" "<!DOCTYPE a [<[]]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<[]]" ))) []))
+    assertEqual "part comment 4" (parseXML "" "<!DOCTYPE a [<!]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<!]" ))) []))
+    assertEqual "part comment 5" (parseXML "" "<!DOCTYPE a [[<!]]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[[<!]]" ))) []))
+    assertEqual "part comment 6" (parseXML "" "<!DOCTYPE a [<!-]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<!-]" ))) []))
+    assertEqual "comment" (parseXML "" "<!DOCTYPE a [<!--foo-->]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<!--foo-->]" ))) []))
+    assertEqual "docint 1" (parseXML "" "<!DOCTYPE a [<''<\"\"<!''<!\"\">]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<''<\"\"<!''<!\"\">]" ))) []))
+    assertEqual "docint2" (parseXML "" "<!DOCTYPE a [<![<!-[<!-]<!-''<!-\"\"]]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<![<!-[<!-]<!-''<!-\"\"]]" ))) []))
+    assertEqual "docint3" (parseXML "" "<!DOCTYPE a [<!- ]>")
+        (Right (XmlDocument UTF8 (Just (DocType "a" NoExternalID (InternalText
+            "[<!- ]" ))) []))
+    assertBool "bad comment" (isLeft $ parseXML "" "<!DOCTYPE a [<!-- -- -->]>")
 
 textOnly :: Bool
 textOnly      = parseXML "" "sldhfsklj''a's s"
@@ -141,6 +203,49 @@ badDoctype4    = isLeft $ parseXML "" "<!DOCTYPE html PUBLIC \"foo\">"
 badDoctype5 :: Bool
 badDoctype5    = isLeft $ parseXML "" ("<!DOCTYPE html SYSTEM \"foo\" "
                                        `B.append` "PUBLIC \"bar\" \"baz\">")
+
+tagNames :: Assertion
+tagNames = do
+    assertBool "tag name 0"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<foo />")
+    assertBool "tag name 1"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xc0\&foo />")
+    assertBool "tag name 2"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xd8\&foo />")
+    assertBool "tag name 3"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xf8\&foo />")
+    assertBool "tag name 4"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x370\&foo />")
+    assertBool "tag name 5"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x37f\&foo />")
+    assertBool "tag name 6"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x200c\&foo />")
+    assertBool "tag name 7"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x2070\&foo />")
+    assertBool "tag name 8"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x2c00\&foo />")
+    assertBool "tag name 9"  $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x3001\&foo />")
+    assertBool "tag name 10" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xf900\&foo />")
+    assertBool "tag name 11" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xfdf0\&foo />")
+    assertBool "tag name 12" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\x10000\&foo />")
+    assertBool "tag name 13" $ id  $
+        isLeft $ parseXML "" (T.encodeUtf8 "<\xd7\&foo />")
+    assertBool "tag name 14" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f-oo />")
+    assertBool "tag name 15" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f.oo />")
+    assertBool "tag name 16" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f\xb7\&oo />")
+    assertBool "tag name 17" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f3oo />")
+    assertBool "tag name 18" $ not $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f\x203f\&oo />")
+    assertBool "tag name 19" $ id  $
+        isLeft $ parseXML "" (T.encodeUtf8 "<f\x2041\&oo />")
 
 
 ------------------------------------------------------------------------------
@@ -249,37 +354,38 @@ badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
 
 htmlParsingQuirkTests :: [Test]
 htmlParsingQuirkTests = [
-    testIt "voidElem               " voidElem,
-    testIt "caseInsDoctype1        " caseInsDoctype1,
-    testIt "caseInsDoctype2        " caseInsDoctype2,
-    testIt "voidEmptyElem          " voidEmptyElem,
-    testIt "rawTextElem            " rawTextElem,
-    testIt "rcdataElem             " rcdataElem,
-    testIt "endTagCase             " endTagCase,
-    testIt "hexEntityCap           " hexEntityCap,
-    testIt "laxAttrName            " laxAttrName,
-    testIt "emptyAttr              " emptyAttr,
-    testIt "unquotedAttr           " unquotedAttr,
-    testIt "laxAttrVal             " laxAttrVal,
-    testIt "ampersandInText        " ampersandInText,
-    testIt "omitOptionalEnds       " omitOptionalEnds,
-    testIt "omitEndHEAD            " omitEndHEAD,
-    testIt "omitEndLI              " omitEndLI,
-    testIt "omitEndDT              " omitEndDT,
-    testIt "omitEndDD              " omitEndDD,
-    testIt "omitEndP               " omitEndP,
-    testIt "omitEndRT              " omitEndRT,
-    testIt "omitEndRP              " omitEndRP,
-    testIt "omitEndOPTGRP          " omitEndOPTGRP,
-    testIt "omitEndOPTION          " omitEndOPTION,
-    testIt "omitEndCOLGRP          " omitEndCOLGRP,
-    testIt "omitEndTHEAD           " omitEndTHEAD,
-    testIt "omitEndTBODY           " omitEndTBODY,
-    testIt "omitEndTFOOT           " omitEndTFOOT,
-    testIt "omitEndTR              " omitEndTR,
-    testIt "omitEndTD              " omitEndTD,
-    testIt "omitEndTH              " omitEndTH,
-    testIt "testNewRefs            " testNewRefs
+    testIt   "voidElem               " voidElem,
+    testIt   "caseInsDoctype1        " caseInsDoctype1,
+    testIt   "caseInsDoctype2        " caseInsDoctype2,
+    testIt   "voidEmptyElem          " voidEmptyElem,
+    testIt   "rawTextElem            " rawTextElem,
+    testIt   "rcdataElem             " rcdataElem,
+    testIt   "endTagCase             " endTagCase,
+    testIt   "hexEntityCap           " hexEntityCap,
+    testIt   "laxAttrName            " laxAttrName,
+    testCase "badAttrName            " badAttrName,
+    testIt   "emptyAttr              " emptyAttr,
+    testIt   "unquotedAttr           " unquotedAttr,
+    testIt   "laxAttrVal             " laxAttrVal,
+    testIt   "ampersandInText        " ampersandInText,
+    testIt   "omitOptionalEnds       " omitOptionalEnds,
+    testIt   "omitEndHEAD            " omitEndHEAD,
+    testIt   "omitEndLI              " omitEndLI,
+    testIt   "omitEndDT              " omitEndDT,
+    testIt   "omitEndDD              " omitEndDD,
+    testIt   "omitEndP               " omitEndP,
+    testIt   "omitEndRT              " omitEndRT,
+    testIt   "omitEndRP              " omitEndRP,
+    testIt   "omitEndOPTGRP          " omitEndOPTGRP,
+    testIt   "omitEndOPTION          " omitEndOPTION,
+    testIt   "omitEndCOLGRP          " omitEndCOLGRP,
+    testIt   "omitEndTHEAD           " omitEndTHEAD,
+    testIt   "omitEndTBODY           " omitEndTBODY,
+    testIt   "omitEndTFOOT           " omitEndTFOOT,
+    testIt   "omitEndTR              " omitEndTR,
+    testIt   "omitEndTD              " omitEndTD,
+    testIt   "omitEndTH              " omitEndTH,
+    testIt   "testNewRefs            " testNewRefs
     ]
 
 caseInsDoctype1 :: Bool
@@ -321,6 +427,19 @@ hexEntityCap  = parseHTML "" "&#X6a;"
 laxAttrName :: Bool
 laxAttrName   = parseHTML "" "<test val<fun=\"test\"></test>"
     == Right (HtmlDocument UTF8 Nothing [Element "test" [("val<fun", "test")] []])
+
+badAttrName :: Assertion
+badAttrName = do
+    assertBool "attr name 0"  $ not $
+        isLeft $ parseHTML "" (T.encodeUtf8 "<foo attr/>")
+    assertBool "attr name 1"  $
+        isLeft $ parseHTML "" (T.encodeUtf8 "<foo \x0002\&ttr/>")
+    assertBool "attr name 2"  $
+        isLeft $ parseHTML "" (T.encodeUtf8 "<foo \x000F\&ttr/>")
+    assertBool "attr name 3"  $
+        isLeft $ parseHTML "" (T.encodeUtf8 "<foo \x007F\&ttr/>")
+    assertBool "attr name 4"  $
+        isLeft $ parseHTML "" (T.encodeUtf8 "<foo \xFDD0\&ttr/>")
 
 emptyAttr :: Bool
 emptyAttr     = parseHTML "" "<test attr></test>"
