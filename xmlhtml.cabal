@@ -46,6 +46,6 @@ Library
                        bytestring == 0.9.*,
                        containers >= 0.3 && <0.5,
                        parsec >= 3.0 && < 3.2,
-                       text >= 0.10 && < 0.12
+                       text >= 0.11 && < 0.12
 
   Ghc-options:         -Wall -fwarn-tabs
