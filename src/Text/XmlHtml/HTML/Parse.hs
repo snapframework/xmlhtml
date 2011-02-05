@@ -39,7 +39,7 @@ docFragment e = do
 {-
     The following are the differences between this code and the straight XML
     parsing code.
-    
+
     1. HTML void tags (area, base, etc.) are always treated as empty tags,
        regardless of whether they have the empty-tag slash.
 
@@ -63,12 +63,12 @@ docFragment e = do
     7. Empty attribute syntax is allowed (an attribute not followed by an eq).
        In this case, the attribute value is considered to be the empty string.
 
-    8. Quoted attribute syntax is relaxed to allow any character except for the
-       matching quote.  References are allowed.
+    8. Quoted attribute syntax is relaxed to allow any character except for
+       the matching quote.  References are allowed.
 
-    9. Attribute values may be unquoted.  In this case, the attribute value may
-       not contain space, single or double quotes, '=', '<', '>', or '`', and
-       may not be the empty string.  It can still contain references.
+    9. Attribute values may be unquoted.  In this case, the attribute value
+       may not contain space, single or double quotes, '=', '<', '>', or '`',
+       and may not be the empty string.  It can still contain references.
 
     10. There are many more character references available.
 
@@ -148,14 +148,14 @@ rcdata cs end = TextNode <$> T.concat <$> P.manyTill part end
 
 ------------------------------------------------------------------------------
 -- | When parsing an element, three things can happen (besides failure):
--- 
+--
 -- (1) The end tag matches the start tag.  This is a Matched.
--- 
+--
 -- (2) The end tag does not match, but the element has an end tag that can be
 -- omitted when there is no more content in its parent.  This is an
 -- ImplicitLast.  In this case, we need to remember the tag name of the
 -- end tag that we did find, so as to match it later.
--- 
+--
 -- (3) A start tag is found such that it implicitly ends the current element.
 -- This is an ImplicitNext.  In this case, we parse and remember the
 -- entire element that comes next, so that it can be inserted after the
@@ -179,7 +179,7 @@ finishElement t a b = do
             c <- rcdata "&<" $ P.try (endTag t)
             return (Element t a [c], Matched)
         | T.map toLower t `S.member` endOmittableLast = tagContents optional
-        | otherwise                                   = tagContents (fmap Just)
+        | otherwise = tagContents (fmap Just)
     tagContents modifier = do
         (c,r1) <- content (Just t)
         case r1 of

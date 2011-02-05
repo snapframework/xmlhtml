@@ -30,9 +30,9 @@ docFragment e = do
     return $ XmlDocument e dt (nodes1 ++ nodes2)
 
 
--------------------------------------------------------------------------------
--- Everything from here forward is translated from the XML specification.    --
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Everything from here forward is translated from the XML specification.   --
+------------------------------------------------------------------------------
 
 {-
     Map from numbered productions in the XML specification to symbols here:
@@ -126,8 +126,8 @@ docFragment e = do
     [89]  Extender                                 {5}
 
     Notes:
-        {1} - These productions match single characters, and so are implemented
-              as predicates instead of parsers.
+        {1} - These productions match single characters, and so are
+              implemented as predicates instead of parsers.
         {3} - Denotes a production which is not exposed as a top-level symbol
               because it is trivial and included in another definition.
         {4} - This module does not contain a parser for the DTD subsets, so

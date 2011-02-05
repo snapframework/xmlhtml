@@ -1,10 +1,11 @@
 -- | Renderer that supports rendering to xmlhtml forests.  This is a port of
 -- the Hexpat renderer.
 --
--- Warning: because this renderer doesn't directly create the output, but rather
--- an XML tree representation, it is impossible to render pre-escaped text. This
--- means that @preEscapedString@ will produce the same output as @string@. This
--- also applies to the functions @preEscapedText@, @preEscapedTextValue@...
+-- Warning: because this renderer doesn't directly create the output, but
+-- rather an XML tree representation, it is impossible to render pre-escaped
+-- text. This means that @preEscapedString@ will produce the same output as
+-- @string@. This also applies to the functions @preEscapedText@,
+-- @preEscapedTextValue@...
 --
 module Text.Blaze.Renderer.XmlHtml (renderHtml) where
 
@@ -59,7 +60,8 @@ renderNodes = go []
     go attrs (AddAttribute key _ value content) =
         go ((getText key, fromChoiceStringText value) : attrs) content
     go attrs (AddCustomAttribute key _ value content) =
-        go ((fromChoiceStringText key, fromChoiceStringText value) : attrs) content
+        go ((fromChoiceStringText key, fromChoiceStringText value) : attrs)
+           content
     go _ (Content content) = fromChoiceString content
     go attrs (Append h1 h2) = go attrs h1 . go attrs h2
     go _ Empty = id

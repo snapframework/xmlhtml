@@ -12,7 +12,8 @@
 --
 --   * Since DTDs are not parsed, the XML parser fails on entity references,
 --     except for those defined internally.  You cannot use this library for
---     parsing XML documents with entity references outside the predefined set.
+--     parsing XML documents with entity references outside the predefined
+--     set.
 --
 --   * The HTML 5 parser is not a compliant HTML parser.  Instead, it is a
 --     parser for valid HTML 5 content.  It should only be used on content

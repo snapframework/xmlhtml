@@ -55,7 +55,7 @@ module Text.XmlHtml.Cursor (
     insertManyLastChild,
     insertGoLeft,
     insertGoRight,
-    
+
     -- * Deletions
     removeLeft,
     removeRight,
@@ -220,7 +220,8 @@ findLeft p cur = search p left =<< left cur
 
 
 ------------------------------------------------------------------------------
--- | Navigates a 'Cursor' to the nearest right sibling that matches a predicate.
+-- | Navigates a 'Cursor' to the nearest right sibling that matches a
+-- predicate.
 findRight :: (Cursor -> Bool) -> Cursor -> Maybe Cursor
 findRight p cur = search p right =<< right cur
 
