@@ -48,4 +48,4 @@ Library
                        parsec >= 3.0 && < 3.2,
                        text >= 0.11 && < 0.12
 
-  Ghc-options:         -Wall -fwarn-tabs
+  Ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
