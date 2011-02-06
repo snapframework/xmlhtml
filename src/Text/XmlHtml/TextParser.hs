@@ -69,7 +69,7 @@ isValidChar c | c < '\x9'                     = False
 -- | Parses a 'Text' value and gives back the result.  The parser is expected
 -- to match the entire string.
 parseText :: Parser a         -- ^ The parser to match
-          -> String           -- ^ Name of the source file (can be @""@)
+          -> String           -- ^ Name of the source file (can be @\"\"@)
           -> Text             -- ^ Text to parse
           -> Either String a  -- Either an error message or the result
 parseText p src t = inLeft show (P.parse p src t)
