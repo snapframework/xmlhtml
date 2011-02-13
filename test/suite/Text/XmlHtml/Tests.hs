@@ -358,7 +358,6 @@ htmlParsingQuirkTests = [
     testIt   "caseInsDoctype2        " caseInsDoctype2,
     testIt   "voidEmptyElem          " voidEmptyElem,
     testIt   "rawTextElem            " rawTextElem,
-    testIt   "rcdataElem             " rcdataElem,
     testIt   "endTagCase             " endTagCase,
     testIt   "hexEntityCap           " hexEntityCap,
     testIt   "laxAttrName            " laxAttrName,
@@ -407,12 +406,6 @@ rawTextElem :: Bool
 rawTextElem   = parseHTML "" "<script>This<is'\"a]]>test&amp;</script>"
     == Right (HtmlDocument UTF8 Nothing [Element "script" [] [
                     TextNode "This<is'\"a]]>test&amp;"]
-                    ])
-
-rcdataElem :: Bool
-rcdataElem    = parseHTML "" "<textarea>This<is>'\"a]]>test&amp;</textarea>"
-    == Right (HtmlDocument UTF8 Nothing [Element "textarea" [] [
-                    TextNode "This<is>'\"a]]>test&"]
                     ])
 
 endTagCase :: Bool
@@ -735,12 +728,16 @@ htmlRenderingQuirkTests = [
     testIt "renderHTMLRaw2         " renderHTMLRaw2,
     testIt "renderHTMLRaw3         " renderHTMLRaw3,
     testIt "renderHTMLRaw4         " renderHTMLRaw4,
-    testIt "renderHTMLRcdata       " renderHTMLRcdata,
-    testIt "renderHTMLRcdataMult   " renderHTMLRcdataMult,
-    testIt "renderHTMLRcdata2      " renderHTMLRcdata2,
     testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
     testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2,
-    testIt "renderHTMLAmpAttr3     " renderHTMLAmpAttr3
+    testIt "renderHTMLAmpAttr3     " renderHTMLAmpAttr3,
+    testIt "renderHTMLQVoid        " renderHTMLQVoid,
+    testIt "renderHTMLQVoid2       " renderHTMLQVoid2,
+    testIt "renderHTMLQRaw         " renderHTMLQRaw,
+    testIt "renderHTMLQRawMult     " renderHTMLQRawMult,
+    testIt "renderHTMLQRaw2        " renderHTMLQRaw2,
+    testIt "renderHTMLQRaw3        " renderHTMLQRaw3,
+    testIt "renderHTMLQRaw4        " renderHTMLQRaw4
     ]
 
 renderHTMLVoid :: Bool
@@ -800,33 +797,6 @@ renderHTMLRaw4 = isBottom $
             ]
         ]))
 
-renderHTMLRcdata :: Bool
-renderHTMLRcdata =
-    toByteString (render (HtmlDocument UTF8 Nothing [
-        Element "title" [("foo", "bar")] [
-            TextNode "<testing>/&+</&quot;>"
-            ]
-        ]))
-    == "<title foo=\'bar\'>&lt;testing>/&+&lt;/&amp;quot;></title>"
-
-renderHTMLRcdataMult :: Bool
-renderHTMLRcdataMult =
-    toByteString (render (HtmlDocument UTF8 Nothing [
-        Element "title" [] [
-            TextNode "foo",
-            TextNode "bar"
-            ]
-        ]))
-    == "<title>foobar</title>"
-
-renderHTMLRcdata2 :: Bool
-renderHTMLRcdata2 = isBottom $
-    toByteString (render (HtmlDocument UTF8 Nothing [
-        Element "title" [] [
-            Comment "foo"
-            ]
-        ]))
-
 renderHTMLAmpAttr1 :: Bool
 renderHTMLAmpAttr1 =
     toByteString (render (HtmlDocument UTF8 Nothing [
@@ -844,6 +814,63 @@ renderHTMLAmpAttr3 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "body" [("foo", "a &#x65; b")] [] ]))
     == "<body foo=\'a &amp;#x65; b\'></body>"
+
+renderHTMLQVoid :: Bool
+renderHTMLQVoid =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:img" [("src", "foo")] []
+        ]))
+    == "<foo:img src=\'foo\' />"
+
+renderHTMLQVoid2 :: Bool
+renderHTMLQVoid2 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:img" [] [TextNode "foo"]
+        ]))
+
+renderHTMLQRaw :: Bool
+renderHTMLQRaw =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:script" [("type", "text/javascript")] [
+            TextNode "<testing>/&+</foo>"
+            ]
+        ]))
+    == "<foo:script type=\'text/javascript\'><testing>/&+</foo></foo:script>"
+
+renderHTMLQRawMult :: Bool
+renderHTMLQRawMult =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:script" [("type", "text/javascript")] [
+            TextNode "foo",
+            TextNode "bar"
+            ]
+        ]))
+    == "<foo:script type=\'text/javascript\'>foobar</foo:script>"
+
+renderHTMLQRaw2 :: Bool
+renderHTMLQRaw2 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:script" [("type", "text/javascript")] [
+            TextNode "</foo:script>"
+            ]
+        ]))
+
+renderHTMLQRaw3 :: Bool
+renderHTMLQRaw3 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:script" [("type", "text/javascript")] [
+            Comment "foo"
+            ]
+        ]))
+
+renderHTMLQRaw4 :: Bool
+renderHTMLQRaw4 = isBottom $
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "foo:script" [("type", "text/javascript")] [
+            TextNode "</foo:scri",
+            TextNode "pt>"
+            ]
+        ]))
 
 
 ------------------------------------------------------------------------------

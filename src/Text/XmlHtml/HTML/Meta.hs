@@ -23,9 +23,6 @@ voidTags = S.fromAscList [
 rawTextTags :: Set Text
 rawTextTags = S.fromAscList [ "script", "style" ]
 
-rcdataTags :: Set Text
-rcdataTags = S.fromAscList [ "textarea", "title" ]
-
 ------------------------------------------------------------------------------
 -- | Tags which can be implicitly ended in case they are the last element in
 -- their parent.  This list actually includes all of the elements that have

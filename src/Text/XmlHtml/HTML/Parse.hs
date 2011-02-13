@@ -47,37 +47,33 @@ docFragment e = do
        with neither markup nor references, except that they end at the first
        syntactically valid matching end tag.
 
-    3. HTML RCDATA tags (textarea and title) are parsed as text and references
-       but no other markup, except that they end at the first syntactically
-       valid matching end tag.
-
-    4. End tags need only match their corresponding start tags in a case
+    3. End tags need only match their corresponding start tags in a case
        insensitive comparison.  In case they are different, the start tag is
        used for the element tag name.
 
-    5. Hexadecimal char references may use &#X...; (capital X)  -- DONE
+    4. Hexadecimal char references may use &#X...; (capital X)  -- DONE
 
-    6. Attribute names are allowed to consist of any text except for control
+    5. Attribute names are allowed to consist of any text except for control
        characters, space, '\"', '\'', '>', '/', or '='.
 
-    7. Empty attribute syntax is allowed (an attribute not followed by an eq).
+    6. Empty attribute syntax is allowed (an attribute not followed by an eq).
        In this case, the attribute value is considered to be the empty string.
 
-    8. Quoted attribute syntax is relaxed to allow any character except for
+    7. Quoted attribute syntax is relaxed to allow any character except for
        the matching quote.  References are allowed.
 
-    9. Attribute values may be unquoted.  In this case, the attribute value
+    8. Attribute values may be unquoted.  In this case, the attribute value
        may not contain space, single or double quotes, '=', '<', '>', or '`',
        and may not be the empty string.  It can still contain references.
 
-    10. There are many more character references available.
+    9. There are many more character references available.
 
-    11. Only "ambiguous" ampersands are prohibited in character data.  This
+    10. Only "ambiguous" ampersands are prohibited in character data.  This
         means ampersands that parse like character or entity references.
 
-    12. Omittable end tags are inserted automatically.
+    11. Omittable end tags are inserted automatically.
 
-    13. DOCTYPE tags matched with case insensitive keywords.
+    12. DOCTYPE tags matched with case insensitive keywords.
 -}
 
 
@@ -136,17 +132,6 @@ externalID = do
 
 
 ------------------------------------------------------------------------------
--- | Reads text and references, up until the passed-in parser succeeds.
--- (Generally, the passed in parser should be an end tag parser for the
--- RCDATA element.)
-rcdata :: [Char] -> Parser a -> Parser Node
-rcdata cs end = TextNode <$> T.concat <$> P.manyTill part end
-  where part = takeWhile1 (not . (`elem` cs))
-             <|> reference
-             <|> T.singleton <$> P.anyChar
-
-
-------------------------------------------------------------------------------
 -- | When parsing an element, three things can happen (besides failure):
 --
 -- (1) The end tag matches the start tag.  This is a Matched.
@@ -162,51 +147,50 @@ rcdata cs end = TextNode <$> T.concat <$> P.manyTill part end
 -- element being parsed.
 data ElemResult = Matched
                 | ImplicitLast Text
-                | ImplicitNext Text [(Text, Text)] Bool
+                | ImplicitNext Text Text [(Text, Text)] Bool
 
 
 ------------------------------------------------------------------------------
-finishElement :: Text -> [(Text, Text)] -> Bool -> Parser (Node, ElemResult)
-finishElement t a b = do
+finishElement :: Text -> Text -> [(Text, Text)] -> Bool
+              -> Parser (Node, ElemResult)
+finishElement t tbase a b = do
     if b then return (Element t a [], Matched)
          else nonEmptyElem
   where
     nonEmptyElem
-        | T.map toLower t `S.member` rawTextTags = do
+        | tbase `S.member` rawTextTags = do
             c <- XML.cdata  "<"  $ P.try (endTag t)
             return (Element t a [c], Matched)
-        | T.map toLower t `S.member` rcdataTags = do
-            c <- rcdata "&<" $ P.try (endTag t)
-            return (Element t a [c], Matched)
-        | T.map toLower t `S.member` endOmittableLast = tagContents optional
+        | tbase `S.member` endOmittableLast = tagContents optional
         | otherwise = tagContents (fmap Just)
     tagContents modifier = do
-        (c,r1) <- content (Just t)
+        (c,r1) <- content (Just tbase)
         case r1 of
             Matched -> do
                 r2 <- modifier (endTag t)
                 case r2 of
                     Nothing -> return (Element t a c, Matched)
                     Just rr -> return (Element t a c, rr)
-            ImplicitLast tag | T.map toLower tag == T.map toLower t -> do
+            ImplicitLast tag | T.toCaseFold tag == T.toCaseFold t -> do
                 return (Element t a c, Matched)
             end -> do
                 return (Element t a c, end)
 
 
 ------------------------------------------------------------------------------
-emptyOrStartTag :: Parser (Text, [(Text, Text)], Bool)
+emptyOrStartTag :: Parser (Text, Text, [(Text, Text)], Bool)
 emptyOrStartTag = do
     t <- P.try $ P.char '<' *> XML.name
+    let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
     a <- many $ P.try $ do
         XML.whiteSpace
         attribute
     when (hasDups a) $ fail "Duplicate attribute names in element"
     _ <- optional XML.whiteSpace
     e <- fmap isJust $ optional (P.char '/')
-    let e' = e || (T.map toLower t `S.member` voidTags)
+    let e' = e || (tbase `S.member` voidTags)
     _ <- P.char '>'
-    return (t, a, e')
+    return (t, tbase, a, e')
   where
     hasDups a = length (nub (map fst a)) < length a
 
@@ -268,9 +252,10 @@ endTag :: Text -> Parser ElemResult
 endTag s = do
     _ <- text "</"
     t <- XML.name
-    r <- if (T.map toLower s == T.map toLower t)
+    let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
+    r <- if (T.toCaseFold s == T.toCaseFold t)
             then return Matched
-            else if T.map toLower s `S.member` endOmittableLast
+            else if tbase `S.member` endOmittableLast
                 then return (ImplicitLast t)
                 else fail $ "mismatched tags: </" ++ T.unpack t ++
                             "> found inside <" ++ T.unpack s ++ "> tag"
@@ -306,17 +291,17 @@ content parent = do
                 return (n, end)
 
     doElement = do
-        (t,a,b) <- emptyOrStartTag
-        handle t a b
+        (t,tb, a,b) <- emptyOrStartTag
+        handle t tb a b
 
-    handle t a b = do
-        if breaksTag t parent
-            then return ([Nothing], ImplicitNext t a b)
+    handle t tb a b = do
+        if breaksTag tb parent
+            then return ([Nothing], ImplicitNext t tb a b)
             else do
-                (n,end) <- finishElement t a b
+                (n,end) <- finishElement t tb a b
                 case end of
-                    ImplicitNext t' a' b' -> do
-                        (ns,end') <- handle t' a' b'
+                    ImplicitNext t' tb' a' b' -> do
+                        (ns,end') <- handle t' tb' a' b'
                         return (Just n : ns, end')
                     _ -> return ([Just n], end)
 

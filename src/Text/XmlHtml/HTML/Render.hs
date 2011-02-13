@@ -60,7 +60,9 @@ node e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
                    | otherwise             = fromText e "<!--"
                                              `mappend` fromText e t
                                              `mappend` fromText e "-->"
-node e (Element t a c)                     = element e t a c
+node e (Element t a c)                     =
+    let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
+    in  element e t tbase a c
 
 
 ------------------------------------------------------------------------------
@@ -78,16 +80,16 @@ firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
 ------------------------------------------------------------------------------
 -- XXX: Should do something to avoid concatting large CDATA sections before
 -- writing them to the output.
-element :: Encoding -> Text -> [(Text, Text)] -> [Node] -> Builder
-element e t a c
-    | t `S.member` voidTags && null c         =
+element :: Encoding -> Text -> Text -> [(Text, Text)] -> [Node] -> Builder
+element e t tb a c
+    | tb `S.member` voidTags && null c         =
         fromText e "<"
         `mappend` fromText e t
         `mappend` (mconcat $ map (attribute e) a)
         `mappend` fromText e " />"
-    | t `S.member` voidTags                   =
+    | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
-    | t `S.member` rawTextTags,
+    | tb `S.member` rawTextTags,
       all isTextNode c,
       let s = T.concat (map nodeText c),
       not ("</" `T.append` t `T.isInfixOf` s) =
@@ -99,22 +101,10 @@ element e t a c
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"
-    | t `S.member` rawTextTags,
+    | tb `S.member` rawTextTags,
       [ TextNode _ ] <- c                     =
         error $ T.unpack t ++ " cannot contain text looking like its end tag"
-    | t `S.member` rawTextTags                =
-        error $ T.unpack t ++ " cannot contain child elements or comments"
-    | t `S.member` rcdataTags,
-      all isTextNode c                        =
-        fromText e "<"
-        `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
-        `mappend` fromText e ">"
-        `mappend` mconcat (map (escaped "<&" e . nodeText) c)
-        `mappend` fromText e "</"
-        `mappend` fromText e t
-        `mappend` fromText e ">"
-    | t `S.member` rcdataTags                 =
+    | tb `S.member` rawTextTags                =
         error $ T.unpack t ++ " cannot contain child elements or comments"
     | otherwise =
         fromText e "<"
