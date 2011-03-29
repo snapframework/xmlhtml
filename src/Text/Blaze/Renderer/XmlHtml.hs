@@ -7,7 +7,7 @@
 -- @string@. This also applies to the functions @preEscapedText@,
 -- @preEscapedTextValue@...
 --
-module Text.Blaze.Renderer.XmlHtml (renderHtml, renderHtml_) where
+module Text.Blaze.Renderer.XmlHtml (renderHtml, renderHtmlNodes) where
 
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -76,5 +76,5 @@ renderHtml html = HtmlDocument UTF8 Nothing (renderNodes html [])
 
 -- | Render HTML to a list of xmlhtml nodes
 --
-renderHtml_ :: Html -> [Node]
-renderHtml_ = flip renderNodes []
+renderHtmlNodes :: Html -> [Node]
+renderHtmlNodes = flip renderNodes []
