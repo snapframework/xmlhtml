@@ -7,7 +7,7 @@
 -- @string@. This also applies to the functions @preEscapedText@,
 -- @preEscapedTextValue@...
 --
-module Text.Blaze.Renderer.XmlHtml (renderHtml) where
+module Text.Blaze.Renderer.XmlHtml (renderHtml, renderHtmlNodes) where
 
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -68,9 +68,15 @@ renderNodes = go []
     {-# NOINLINE go #-}
 {-# INLINE renderNodes #-}
 
--- | Render HTML to an xmlhtml Document
+-- | Render HTML to an xmlhtml 'Document'
 --
 renderHtml :: Html -> Document
 renderHtml html = HtmlDocument UTF8 Nothing (renderNodes html [])
 {-# INLINE renderHtml #-}
+
+-- | Render HTML to an xmlhtml list of 'Node's
+--
+renderHtmlNodes :: Html -> [Node]
+renderHtmlNodes html = renderNodes html []
+{-# INLINE renderHtmlNodes #-}
 
