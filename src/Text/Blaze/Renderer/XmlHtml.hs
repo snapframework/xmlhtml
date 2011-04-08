@@ -74,9 +74,7 @@ renderHtml :: Html -> Document
 renderHtml html = HtmlDocument UTF8 Nothing (renderNodes html [])
 {-# INLINE renderHtml #-}
 
--- | Render HTML to an xmlhtml list of 'Node's
+-- | Render HTML to a list of xmlhtml nodes
 --
 renderHtmlNodes :: Html -> [Node]
-renderHtmlNodes html = renderNodes html []
-{-# INLINE renderHtmlNodes #-}
-
+renderHtmlNodes = flip renderNodes []
