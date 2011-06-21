@@ -39,7 +39,7 @@ docTypeDecl e (Just (DocType tag ext int)) = fromText e "<!DOCTYPE "
                                    `mappend` fromText e tag
                                    `mappend` externalID e ext
                                    `mappend` internalSubset e int
-                                   `mappend` fromText e ">"
+                                   `mappend` fromText e ">\n"
 
 
 ------------------------------------------------------------------------------
