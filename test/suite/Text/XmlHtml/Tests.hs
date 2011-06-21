@@ -562,14 +562,14 @@ singleQuoteInSysID =
     toByteString (render (XmlDocument UTF8
         (Just (DocType "html" (System "test\'ing") NoInternalSubset))
         []))
-    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \"test\'ing\">"
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \"test\'ing\">\n"
 
 doubleQuoteInSysID :: Bool
 doubleQuoteInSysID =
     toByteString (render (XmlDocument UTF8
         (Just (DocType "html" (System "test\"ing") NoInternalSubset))
         []))
-    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \'test\"ing\'>"
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \'test\"ing\'>\n"
 
 bothQuotesInSysID :: Bool
 bothQuotesInSysID = isBottom $
@@ -653,14 +653,14 @@ hSingleQuoteInSysID =
     toByteString (render (HtmlDocument UTF8
         (Just (DocType "html" (System "test\'ing") NoInternalSubset))
         []))
-    == "<!DOCTYPE html SYSTEM \"test\'ing\">"
+    == "<!DOCTYPE html SYSTEM \"test\'ing\">\n"
 
 hDoubleQuoteInSysID :: Bool
 hDoubleQuoteInSysID =
     toByteString (render (HtmlDocument UTF8
         (Just (DocType "html" (System "test\"ing") NoInternalSubset))
         []))
-    == "<!DOCTYPE html SYSTEM \'test\"ing\'>"
+    == "<!DOCTYPE html SYSTEM \'test\"ing\'>\n"
 
 hBothQuotesInSysID :: Bool
 hBothQuotesInSysID = isBottom $
