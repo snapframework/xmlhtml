@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.1.5.1
+Version:             0.1.5.2
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures wo that
