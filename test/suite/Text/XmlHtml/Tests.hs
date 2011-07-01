@@ -383,7 +383,9 @@ htmlParsingQuirkTests = [
     testIt   "omitEndTR              " omitEndTR,
     testIt   "omitEndTD              " omitEndTD,
     testIt   "omitEndTH              " omitEndTH,
-    testIt   "testNewRefs            " testNewRefs
+    testIt   "testNewRefs            " testNewRefs,
+    testIt   "errorImplicitClose     " errorImplicitClose,
+    testIt   "weirdScriptThing       " weirdScriptThing
     ]
 
 caseInsDoctype1 :: Bool
@@ -522,6 +524,18 @@ testNewRefs :: Bool
 testNewRefs   = parseHTML "" "&CenterDot;&doublebarwedge;&fjlig;"
     == Right (HtmlDocument UTF8 Nothing [TextNode "\x000B7\x02306\&fj"])
 
+errorImplicitClose :: Bool
+errorImplicitClose = isLeft $ parseHTML "" "<p><pre>foo</pre></p>"
+
+weirdScriptThing :: Bool
+weirdScriptThing = parseHTML "" "<div><script type=\"text/javascript\">selector.append('<option>'+name+'</option>');</script></div>"
+    == Right (HtmlDocument UTF8 Nothing [
+        Element "div" [] [
+            Element "script" [("type", "text/javascript")] [
+                TextNode "selector.append('<option>'+name+'</option>');"
+                ]
+            ]
+        ])
 
 ------------------------------------------------------------------------------
 -- XML Rendering Tests -------------------------------------------------------

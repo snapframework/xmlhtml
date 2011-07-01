@@ -252,10 +252,10 @@ endTag :: Text -> Parser ElemResult
 endTag s = do
     _ <- text "</"
     t <- XML.name
-    let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
+    let sbase = T.toLower $ snd $ T.breakOnEnd ":" s
     r <- if (T.toCaseFold s == T.toCaseFold t)
             then return Matched
-            else if tbase `S.member` endOmittableLast
+            else if sbase `S.member` endOmittableLast
                 then return (ImplicitLast t)
                 else fail $ "mismatched tags: </" ++ T.unpack t ++
                             "> found inside <" ++ T.unpack s ++ "> tag"
