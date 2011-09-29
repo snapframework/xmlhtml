@@ -86,7 +86,7 @@ element e t tb a c
         fromText e "<"
         `mappend` fromText e t
         `mappend` (mconcat $ map (attribute e) a)
-        `mappend` fromText e " />"
+        `mappend` fromText e ">"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
     | tb `S.member` rawTextTags,
