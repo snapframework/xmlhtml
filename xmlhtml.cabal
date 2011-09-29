@@ -799,6 +799,10 @@ Extra-source-files:
              test/resources/oasis/p44pass1.xml,
              test/resources/oasis/p27fail1.xml
 
+Source-repository head
+  Type:     git
+  Location: https://github.com/snapframework/xmlhtml.git
+
 Library
   Hs-source-dirs:      src
   Exposed-modules:     Text.XmlHtml,
