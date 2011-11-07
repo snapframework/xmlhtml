@@ -947,7 +947,7 @@ blazeTestMulti = renderHtml (selectCustom `mappend` html) == result
         ]
 
 blazeTestEmpty :: Bool
-blazeTestEmpty = renderHtml mempty == HtmlDocument UTF8 Nothing []
+blazeTestEmpty = renderHtmlNodes mempty == []
 
 selectCustom :: Html
 selectCustom = H.select ! H.customAttribute "dojoType" "select" $ (mappend "foo " "bar")
