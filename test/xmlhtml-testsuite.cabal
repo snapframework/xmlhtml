@@ -8,19 +8,20 @@ Executable testsuite
   main-is:         TestSuite.hs
 
   build-depends:
-    HUnit == 1.2.*,
-    directory == 1.0.*,
-    QuickCheck >= 2.3.0.2,
-    base == 4.*,
-    blaze-builder >= 0.2 && <0.4,
-    blaze-html >= 0.3.2 && < 0.5,
-    bytestring == 0.9.*,
-    containers >= 0.3 && <0.5,
-    parsec >= 3.0 && < 3.2,
-    test-framework >= 0.3.1 && <0.4,
-    test-framework-hunit >= 0.2.5 && <0.3,
+    HUnit                      == 1.2.*,
+    directory                  == 1.0.*,
+    QuickCheck                 >= 2.3.0.2,
+    base                       == 4.*,
+    blaze-builder              >= 0.2   && < 0.4,
+    blaze-html                 >= 0.3.2 && < 0.5,
+    bytestring                 == 0.9.*,
+    containers                 >= 0.3   && < 0.5,
+    parsec                     >= 3.0   && < 3.2,
+    test-framework             >= 0.3.1 && < 0.4,
+    test-framework-hunit       >= 0.2.5 && < 0.3,
     test-framework-quickcheck2 >= 0.2.6 && < 0.3,
-    text >= 0.11 && < 0.12
-    
+    text                       >= 0.11  && < 0.12,
+    unordered-containers       >= 0.1.4 && < 0.2
+
   ghc-options: -O2 -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
