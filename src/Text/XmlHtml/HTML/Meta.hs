@@ -1,27 +1,29 @@
 {-# OPTIONS_GHC -O0 -fno-case-merge -fno-strictness -fno-cse #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings           #-}
 
 module Text.XmlHtml.HTML.Meta where
 
 import           Data.Monoid
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Data.Set (Set)
-import qualified Data.Set as S
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
+import           Data.HashSet (HashSet)
+import qualified Data.HashSet as S
 import           Data.Text (Text)
 
 ------------------------------------------------------------------------------
 -- Metadata used for HTML5 quirks mode.                                     --
 ------------------------------------------------------------------------------
 
-voidTags :: Set Text
-voidTags = S.fromAscList [
+{-# NOINLINE voidTags #-}
+voidTags :: HashSet Text
+voidTags = S.fromList [
     "area", "base", "br", "col", "command", "embed", "hr", "img", "input",
     "keygen", "link", "meta", "param", "source", "track", "wbr"
     ]
 
-rawTextTags :: Set Text
-rawTextTags = S.fromAscList [ "script", "style" ]
+{-# NOINLINE rawTextTags #-}
+rawTextTags :: HashSet Text
+rawTextTags = S.fromList [ "script", "style" ]
 
 ------------------------------------------------------------------------------
 -- | Tags which can be implicitly ended in case they are the last element in
@@ -31,8 +33,9 @@ rawTextTags = S.fromAscList [ "script", "style" ]
 -- because in a complete document it isn't expected to ever be the last thing
 -- in its parent.  We aren't interested in enforcing element structure rules,
 -- so we'll allow it anyway.
-endOmittableLast :: Set Text
-endOmittableLast = S.fromAscList [
+{-# NOINLINE endOmittableLast #-}
+endOmittableLast :: HashSet Text
+endOmittableLast = S.fromList [
     "body", "colgroup", "dd", "dt", "head", "html", "li", "optgroup",
     "option", "p", "rp", "rt", "tbody", "td", "tfoot", "th", "thead", "tr"
     ]
@@ -40,33 +43,35 @@ endOmittableLast = S.fromAscList [
 ------------------------------------------------------------------------------
 -- | Tags which should be considered automatically ended in case one of a
 -- certain set of tags pops up.
-endOmittableNext :: Map Text (Set Text)
-endOmittableNext = M.fromAscList [
-    ("colgroup", S.fromAscList ["caption", "colgroup", "tbody",
-                                "thead", "tfoot", "tr"]),
-    ("dd",       S.fromAscList ["dd", "dt"]),
-    ("dt",       S.fromAscList ["dd", "dt"]),
-    ("head",     S.fromAscList ["body"]),
-    ("li",       S.fromAscList ["li"]),
-    ("optgroup", S.fromAscList ["optgroup"]),
-    ("option",   S.fromAscList ["optgroup", "option"]),
-    ("p",        S.fromAscList ["address", "article", "aside", "blockquote",
-                                "dir", "div", "dl", "fieldset", "footer",
-                                "form", "h1", "h2", "h3", "h4", "h5", "h6",
-                                "header", "hgroup", "hr", "menu", "nav", "ol",
-                                "p", "pre", "section", "table", "ul"]),
-    ("rp",       S.fromAscList ["rp", "rt"]),
-    ("rt",       S.fromAscList ["rp", "rt"]),
-    ("tbody",    S.fromAscList ["tbody", "tfoot", "thead"]),
-    ("td",       S.fromAscList ["td", "th"]),
-    ("tfoot",    S.fromAscList ["tbody", "tfoot", "thead"]),
-    ("th",       S.fromAscList ["td", "th"]),
-    ("thead",    S.fromAscList ["tbody", "tfoot", "thead"]),
-    ("tr",       S.fromAscList ["tr"])
+{-# NOINLINE endOmittableNext #-}
+endOmittableNext :: HashMap Text (HashSet Text)
+endOmittableNext = M.fromList [
+    ("colgroup", S.fromList ["caption", "colgroup", "tbody",
+                             "thead", "tfoot", "tr"]),
+    ("dd",       S.fromList ["dd", "dt"]),
+    ("dt",       S.fromList ["dd", "dt"]),
+    ("head",     S.fromList ["body"]),
+    ("li",       S.fromList ["li"]),
+    ("optgroup", S.fromList ["optgroup"]),
+    ("option",   S.fromList ["optgroup", "option"]),
+    ("p",        S.fromList ["address", "article", "aside", "blockquote",
+                             "dir", "div", "dl", "fieldset", "footer",
+                             "form", "h1", "h2", "h3", "h4", "h5", "h6",
+                             "header", "hgroup", "hr", "menu", "nav", "ol",
+                             "p", "pre", "section", "table", "ul"]),
+    ("rp",       S.fromList ["rp", "rt"]),
+    ("rt",       S.fromList ["rp", "rt"]),
+    ("tbody",    S.fromList ["tbody", "tfoot", "thead"]),
+    ("td",       S.fromList ["td", "th"]),
+    ("tfoot",    S.fromList ["tbody", "tfoot", "thead"]),
+    ("th",       S.fromList ["td", "th"]),
+    ("thead",    S.fromList ["tbody", "tfoot", "thead"]),
+    ("tr",       S.fromList ["tr"])
     ]
 
-predefinedRefs :: Map Text Text
-predefinedRefs = mconcat $ map M.fromAscList [
+{-# NOINLINE predefinedRefs #-}
+predefinedRefs :: HashMap Text Text
+predefinedRefs = mconcat $ map M.fromList [
       reftab1
     , reftab2
     , reftab3
@@ -127,6 +132,7 @@ predefinedRefs = mconcat $ map M.fromAscList [
     , reftab58 ]
 
 
+{-# NOINLINE reftab1 #-}
 reftab1 :: [(Text,Text)]
 reftab1 =
   [ ("AElig", "\x000C6"),
@@ -167,6 +173,7 @@ reftab1 =
     ("CapitalDifferentialD", "\x02145"),
     ("Cayleys", "\x0212D") ]
 
+{-# NOINLINE reftab2 #-}
 reftab2 :: [(Text,Text)]
 reftab2 =
   [ ("Ccaron", "\x0010C"),
@@ -207,6 +214,7 @@ reftab2 =
     ("Dashv", "\x02AE4"),
     ("Dcaron", "\x0010E") ]
 
+{-# NOINLINE reftab3 #-}
 reftab3 :: [(Text,Text)]
 reftab3 =
   [ ("Dcy", "\x00414"),
@@ -247,6 +255,7 @@ reftab3 =
     ("DownLeftVector", "\x021BD"),
     ("DownLeftVectorBar", "\x02956") ]
 
+{-# NOINLINE reftab4 #-}
 reftab4 :: [(Text,Text)]
 reftab4 =
   [ ("DownRightTeeVector", "\x0295F"),
@@ -287,6 +296,7 @@ reftab4 =
     ("FilledSmallSquare", "\x025FC"),
     ("FilledVerySmallSquare", "\x025AA") ]
 
+{-# NOINLINE reftab5 #-}
 reftab5 :: [(Text,Text)]
 reftab5 =
   [ ("Fopf", "\x1D53D"),
@@ -327,6 +337,7 @@ reftab5 =
     ("HumpDownHump", "\x0224E"),
     ("HumpEqual", "\x0224F") ]
 
+{-# NOINLINE reftab6 #-}
 reftab6 :: [(Text,Text)]
 reftab6 =
   [ ("IEcy", "\x00415"),
@@ -367,6 +378,7 @@ reftab6 =
     ("Kcedil", "\x00136"),
     ("Kcy", "\x0041A") ]
 
+{-# NOINLINE reftab7 #-}
 reftab7 :: [(Text,Text)]
 reftab7 =
   [ ("Kfr", "\x1D50E"),
@@ -407,6 +419,7 @@ reftab7 =
     ("LeftVector", "\x021BC"),
     ("LeftVectorBar", "\x02952") ]
 
+{-# NOINLINE reftab8 #-}
 reftab8 :: [(Text,Text)]
 reftab8 =
   [ ("Leftarrow", "\x021D0"),
@@ -447,6 +460,7 @@ reftab8 =
     ("Nacute", "\x00143"),
     ("Ncaron", "\x00147") ]
 
+{-# NOINLINE reftab9 #-}
 reftab9 :: [(Text,Text)]
 reftab9 =
   [ ("Ncedil", "\x00145"),
@@ -487,6 +501,7 @@ reftab9 =
     ("NotLessGreater", "\x02278"),
     ("NotLessLess", "\x0226A\x00338") ]
 
+{-# NOINLINE reftab10 #-}
 reftab10 :: [(Text,Text)]
 reftab10 =
   [ ("NotLessSlantEqual", "\x02A7D\x00338"),
@@ -527,6 +542,7 @@ reftab10 =
     ("Odblac", "\x00150"),
     ("Ofr", "\x1D512") ]
 
+{-# NOINLINE reftab11 #-}
 reftab11 :: [(Text,Text)]
 reftab11 =
   [ ("Ograve", "\x000D2"),
@@ -567,6 +583,7 @@ reftab11 =
     ("Psi", "\x003A8"),
     ("QUOT", "\x00022") ]
 
+{-# NOINLINE reftab12 #-}
 reftab12 :: [(Text,Text)]
 reftab12 =
   [ ("Qfr", "\x1D514"),
@@ -607,6 +624,7 @@ reftab12 =
     ("RightUpTeeVector", "\x0295C"),
     ("RightUpVector", "\x021BE") ]
 
+{-# NOINLINE reftab13 #-}
 reftab13 :: [(Text,Text)]
 reftab13 =
   [ ("RightUpVectorBar", "\x02954"),
@@ -647,6 +665,7 @@ reftab13 =
     ("Sscr", "\x1D4AE"),
     ("Star", "\x022C6") ]
 
+{-# NOINLINE reftab14 #-}
 reftab14 :: [(Text,Text)]
 reftab14 =
   [ ("Sub", "\x022D0"),
@@ -687,6 +706,7 @@ reftab14 =
     ("Uacute", "\x000DA"),
     ("Uarr", "\x0219F") ]
 
+{-# NOINLINE reftab15 #-}
 reftab15 :: [(Text,Text)]
 reftab15 =
   [ ("Uarrocir", "\x02949"),
@@ -727,6 +747,7 @@ reftab15 =
     ("Vbar", "\x02AEB"),
     ("Vcy", "\x00412") ]
 
+{-# NOINLINE reftab16 #-}
 reftab16 :: [(Text,Text)]
 reftab16 =
   [ ("Vdash", "\x022A9"),
@@ -767,6 +788,7 @@ reftab16 =
     ("Zcaron", "\x0017D"),
     ("Zcy", "\x00417") ]
 
+{-# NOINLINE reftab17 #-}
 reftab17 :: [(Text,Text)]
 reftab17 =
   [ ("Zdot", "\x0017B"),
@@ -807,6 +829,7 @@ reftab17 =
     ("angmsdac", "\x029AA"),
     ("angmsdad", "\x029AB") ]
 
+{-# NOINLINE reftab18 #-}
 reftab18 :: [(Text,Text)]
 reftab18 =
   [ ("angmsdae", "\x029AC"),
@@ -847,6 +870,7 @@ reftab18 =
     ("barvee", "\x022BD"),
     ("barwed", "\x02305") ]
 
+{-# NOINLINE reftab19 #-}
 reftab19 :: [(Text,Text)]
 reftab19 =
   [ ("barwedge", "\x02305"),
@@ -887,6 +911,7 @@ reftab19 =
     ("blank", "\x02423"),
     ("blk12", "\x02592") ]
 
+{-# NOINLINE reftab20 #-}
 reftab20 :: [(Text,Text)]
 reftab20 =
   [ ("blk14", "\x02591"),
@@ -927,6 +952,7 @@ reftab20 =
     ("boxh", "\x02500"),
     ("boxhD", "\x02565") ]
 
+{-# NOINLINE reftab21 #-}
 reftab21 :: [(Text,Text)]
 reftab21 =
   [ ("boxhU", "\x02568"),
@@ -967,6 +993,7 @@ reftab21 =
     ("capand", "\x02A44"),
     ("capbrcup", "\x02A49") ]
 
+{-# NOINLINE reftab22 #-}
 reftab22 :: [(Text,Text)]
 reftab22 =
   [ ("capcap", "\x02A4B"),
@@ -1007,6 +1034,7 @@ reftab22 =
     ("cirmid", "\x02AEF"),
     ("cirscir", "\x029C2") ]
 
+{-# NOINLINE reftab23 #-}
 reftab23 :: [(Text,Text)]
 reftab23 =
   [ ("clubs", "\x02663"),
@@ -1047,6 +1075,7 @@ reftab23 =
     ("cupcup", "\x02A4A"),
     ("cupdot", "\x0228D") ]
 
+{-# NOINLINE reftab24 #-}
 reftab24 :: [(Text,Text)]
 reftab24 =
   [ ("cupor", "\x02A45"),
@@ -1087,6 +1116,7 @@ reftab24 =
     ("dfr", "\x1D521"),
     ("dharl", "\x021C3") ]
 
+{-# NOINLINE reftab25 #-}
 reftab25 :: [(Text,Text)]
 reftab25 =
   [ ("dharr", "\x021C2"),
@@ -1127,6 +1157,7 @@ reftab25 =
     ("dtdot", "\x022F1"),
     ("dtri", "\x025BF") ]
 
+{-# NOINLINE reftab26 #-}
 reftab26 :: [(Text,Text)]
 reftab26 =
   [ ("dtrif", "\x025BE"),
@@ -1167,6 +1198,7 @@ reftab26 =
     ("eng", "\x0014B"),
     ("ensp", "\x02002") ]
 
+{-# NOINLINE reftab27 #-}
 reftab27 :: [(Text,Text)]
 reftab27 =
   [ ("eogon", "\x00119"),
@@ -1207,6 +1239,7 @@ reftab27 =
     ("fflig", "\x0FB00"),
     ("ffllig", "\x0FB04") ]
 
+{-# NOINLINE reftab28 #-}
 reftab28 :: [(Text,Text)]
 reftab28 =
   [ ("ffr", "\x1D523"),
@@ -1247,6 +1280,7 @@ reftab28 =
     ("gap", "\x02A86"),
     ("gbreve", "\x0011F") ]
 
+{-# NOINLINE reftab29 #-}
 reftab29 :: [(Text,Text)]
 reftab29 =
   [ ("gcirc", "\x0011D"),
@@ -1287,6 +1321,7 @@ reftab29 =
     ("gsime", "\x02A8E"),
     ("gsiml", "\x02A90") ]
 
+{-# NOINLINE reftab30 #-}
 reftab30 :: [(Text,Text)]
 reftab30 =
   [ ("gt", "\x0003E"),
@@ -1327,6 +1362,7 @@ reftab30 =
     ("hookrightarrow", "\x021AA"),
     ("hopf", "\x1D559") ]
 
+{-# NOINLINE reftab31 #-}
 reftab31 :: [(Text,Text)]
 reftab31 =
   [ ("horbar", "\x02015"),
@@ -1367,6 +1403,7 @@ reftab31 =
     ("integers", "\x02124"),
     ("intercal", "\x022BA") ]
 
+{-# NOINLINE reftab32 #-}
 reftab32 :: [(Text,Text)]
 reftab32 =
   [ ("intlarhk", "\x02A17"),
@@ -1407,6 +1444,7 @@ reftab32 =
     ("kopf", "\x1D55C"),
     ("kscr", "\x1D4C0") ]
 
+{-# NOINLINE reftab33 #-}
 reftab33 :: [(Text,Text)]
 reftab33 =
   [ ("lAarr", "\x021DA"),
@@ -1447,6 +1485,7 @@ reftab33 =
     ("lbrkslu", "\x0298D"),
     ("lcaron", "\x0013E") ]
 
+{-# NOINLINE reftab34 #-}
 reftab34 :: [(Text,Text)]
 reftab34 =
   [ ("lcedil", "\x0013C"),
@@ -1487,6 +1526,7 @@ reftab34 =
     ("lesseqqgtr", "\x02A8B"),
     ("lessgtr", "\x02276") ]
 
+{-# NOINLINE reftab35 #-}
 reftab35 :: [(Text,Text)]
 reftab35 =
   [ ("lesssim", "\x02272"),
@@ -1527,6 +1567,7 @@ reftab35 =
     ("lopar", "\x02985"),
     ("lopf", "\x1D55D") ]
 
+{-# NOINLINE reftab36 #-}
 reftab36 :: [(Text,Text)]
 reftab36 =
   [ ("loplus", "\x02A2D"),
@@ -1567,6 +1608,7 @@ reftab36 =
     ("ltrie", "\x022B4"),
     ("ltrif", "\x025C2") ]
 
+{-# NOINLINE reftab37 #-}
 reftab37 :: [(Text,Text)]
 reftab37 =
   [ ("lurdshar", "\x0294A"),
@@ -1607,6 +1649,7 @@ reftab37 =
     ("mp", "\x02213"),
     ("mscr", "\x1D4C2") ]
 
+{-# NOINLINE reftab38 #-}
 reftab38 :: [(Text,Text)]
 reftab38 =
   [ ("mstpos", "\x0223E"),
@@ -1647,6 +1690,7 @@ reftab38 =
     ("ncy", "\x0043D"),
     ("ndash", "\x02013") ]
 
+{-# NOINLINE reftab39 #-}
 reftab39 :: [(Text,Text)]
 reftab39 =
   [ ("ne", "\x02260"),
@@ -1687,6 +1731,7 @@ reftab39 =
     ("nleftrightarrow", "\x021AE"),
     ("nleq", "\x02270") ]
 
+{-# NOINLINE reftab40 #-}
 reftab40 :: [(Text,Text)]
 reftab40 =
   [ ("nleqq", "\x02266\x00338"),
@@ -1727,6 +1772,7 @@ reftab40 =
     ("nrightarrow", "\x0219B"),
     ("nrtri", "\x022EB") ]
 
+{-# NOINLINE reftab41 #-}
 reftab41 :: [(Text,Text)]
 reftab41 =
   [ ("nrtrie", "\x022ED"),
@@ -1767,6 +1813,7 @@ reftab41 =
     ("nu", "\x003BD"),
     ("num", "\x00023") ]
 
+{-# NOINLINE reftab42 #-}
 reftab42 :: [(Text,Text)]
 reftab42 =
   [ ("numero", "\x02116"),
@@ -1807,6 +1854,7 @@ reftab42 =
     ("ogon", "\x002DB"),
     ("ograve", "\x000F2") ]
 
+{-# NOINLINE reftab43 #-}
 reftab43 :: [(Text,Text)]
 reftab43 =
   [ ("ogt", "\x029C1"),
@@ -1847,6 +1895,7 @@ reftab43 =
     ("ouml", "\x000F6"),
     ("ovbar", "\x0233D") ]
 
+{-# NOINLINE reftab44 #-}
 reftab44 :: [(Text,Text)]
 reftab44 =
   [ ("par", "\x02225"),
@@ -1887,6 +1936,7 @@ reftab44 =
     ("popf", "\x1D561"),
     ("pound", "\x000A3") ]
 
+{-# NOINLINE reftab45 #-}
 reftab45 :: [(Text,Text)]
 reftab45 =
   [ ("pr", "\x0227A"),
@@ -1927,6 +1977,7 @@ reftab45 =
     ("quatint", "\x02A16"),
     ("quest", "\x0003F") ]
 
+{-# NOINLINE reftab46 #-}
 reftab46 :: [(Text,Text)]
 reftab46 =
   [ ("questeq", "\x0225F"),
@@ -1967,6 +2018,7 @@ reftab46 =
     ("rbrke", "\x0298C"),
     ("rbrksld", "\x0298E") ]
 
+{-# NOINLINE reftab47 #-}
 reftab47 :: [(Text,Text)]
 reftab47 =
   [ ("rbrkslu", "\x02990"),
@@ -2007,6 +2059,7 @@ reftab47 =
     ("risingdotseq", "\x02253"),
     ("rlarr", "\x021C4") ]
 
+{-# NOINLINE reftab48 #-}
 reftab48 :: [(Text,Text)]
 reftab48 =
   [ ("rlhar", "\x021CC"),
@@ -2047,6 +2100,7 @@ reftab48 =
     ("scaron", "\x00161"),
     ("sccue", "\x0227D") ]
 
+{-# NOINLINE reftab49 #-}
 reftab49 :: [(Text,Text)]
 reftab49 =
   [ ("sce", "\x02AB0"),
@@ -2087,6 +2141,7 @@ reftab49 =
     ("sime", "\x02243"),
     ("simeq", "\x02243") ]
 
+{-# NOINLINE reftab50 #-}
 reftab50 :: [(Text,Text)]
 reftab50 =
   [ ("simg", "\x02A9E"),
@@ -2127,6 +2182,7 @@ reftab50 =
     ("sqsupseteq", "\x02292"),
     ("squ", "\x025A1") ]
 
+{-# NOINLINE reftab51 #-}
 reftab51 :: [(Text,Text)]
 reftab51 =
   [ ("square", "\x025A1"),
@@ -2167,6 +2223,7 @@ reftab51 =
     ("succnapprox", "\x02ABA"),
     ("succneqq", "\x02AB6") ]
 
+{-# NOINLINE reftab52 #-}
 reftab52 :: [(Text,Text)]
 reftab52 =
   [ ("succnsim", "\x022E9"),
@@ -2207,6 +2264,7 @@ reftab52 =
     ("tau", "\x003C4"),
     ("tbrk", "\x023B4") ]
 
+{-# NOINLINE reftab53 #-}
 reftab53 :: [(Text,Text)]
 reftab53 =
   [ ("tcaron", "\x00165"),
@@ -2247,6 +2305,7 @@ reftab53 =
     ("trianglelefteq", "\x022B4"),
     ("triangleq", "\x0225C") ]
 
+{-# NOINLINE reftab54 #-}
 reftab54 :: [(Text,Text)]
 reftab54 =
   [ ("triangleright", "\x025B9"),
@@ -2287,6 +2346,7 @@ reftab54 =
     ("ulcrop", "\x0230F"),
     ("ultri", "\x025F8") ]
 
+{-# NOINLINE reftab55 #-}
 reftab55 :: [(Text,Text)]
 reftab55 =
   [ ("umacr", "\x0016B"),
@@ -2327,6 +2387,7 @@ reftab55 =
     ("varpi", "\x003D6"),
     ("varpropto", "\x0221D") ]
 
+{-# NOINLINE reftab56 #-}
 reftab56 :: [(Text,Text)]
 reftab56 =
   [ ("varr", "\x02195"),
@@ -2367,6 +2428,7 @@ reftab56 =
     ("weierp", "\x02118"),
     ("wfr", "\x1D534") ]
 
+{-# NOINLINE reftab57 #-}
 reftab57 :: [(Text,Text)]
 reftab57 =
   [ ("wopf", "\x1D568"),
@@ -2407,6 +2469,7 @@ reftab57 =
     ("yicy", "\x00457"),
     ("yopf", "\x1D56A") ]
 
+{-# NOINLINE reftab58 #-}
 reftab58 :: [(Text,Text)]
 reftab58 =
   [ ("yscr", "\x1D4CE"),

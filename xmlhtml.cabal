@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.1.5.3
+Version:             0.1.6.0
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures wo that
@@ -805,9 +805,11 @@ Source-repository head
 
 Library
   Hs-source-dirs:      src
+
   Exposed-modules:     Text.XmlHtml,
                        Text.XmlHtml.Cursor,
                        Text.Blaze.Renderer.XmlHtml
+
   Other-modules:       Text.XmlHtml.Common,
                        Text.XmlHtml.TextParser,
                        Text.XmlHtml.XML.Parse,
@@ -815,13 +817,15 @@ Library
                        Text.XmlHtml.HTML.Meta,
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
-  Build-depends:       base == 4.*,
-                       blaze-builder >= 0.2 && <0.4,
-                       blaze-html >= 0.3.2 && < 0.5,
-                       bytestring == 0.9.*,
-                       containers >= 0.3 && <0.5,
-                       parsec >= 3.0 && < 3.2,
-                       text >= 0.11 && < 0.12
+
+  Build-depends:       base                 >= 4     && < 5,
+                       blaze-builder        >= 0.2   && < 0.4,
+                       blaze-html           >= 0.3.2 && < 0.5,
+                       bytestring           >= 0.9   && < 0.10,
+                       containers           >= 0.3   && < 0.5,
+                       parsec               >= 3.0   && < 3.2,
+                       text                 >= 0.11  && < 0.12,
+                       unordered-containers >= 0.1.4 && < 0.2
 
   extensions:
     OverloadedStrings,

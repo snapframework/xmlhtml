@@ -15,8 +15,8 @@ import qualified Text.XmlHtml.XML.Parse as XML
 
 import qualified Text.Parsec as P
 
-import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.HashSet as S
+import qualified Data.HashMap.Strict as M
 
 import           Data.Text (Text)
 import qualified Data.Text as T
