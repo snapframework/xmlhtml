@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.1.6.0
+Version:             0.1.6.1
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures wo that
@@ -837,3 +837,4 @@ Library
     ExistentialQuantification
 
   Ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
+  ghc-prof-options:    -prof -auto-all
