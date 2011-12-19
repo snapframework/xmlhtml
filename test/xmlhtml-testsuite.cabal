@@ -9,13 +9,14 @@ Executable testsuite
 
   build-depends:
     HUnit                      == 1.2.*,
-    directory                  == 1.0.*,
     QuickCheck                 >= 2.3.0.2,
+    attoparsec                 >= 0.10  && < 0.11,
     base                       == 4.*,
     blaze-builder              >= 0.2   && < 0.4,
     blaze-html                 >= 0.3.2 && < 0.5,
     bytestring                 == 0.9.*,
     containers                 >= 0.3   && < 0.5,
+    directory                  == 1.0.*,
     parsec                     >= 3.0   && < 3.2,
     test-framework             >= 0.3.1 && < 0.4,
     test-framework-hunit       >= 0.2.5 && < 0.3,
@@ -25,3 +26,28 @@ Executable testsuite
 
   ghc-options: -O2 -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
+
+  ghc-prof-options: -prof -auto-all
+
+
+Executable benchmark
+  hs-source-dirs: benchmark ../src
+  main-is: Benchmark.hs
+
+  ghc-options: -O2 -Wall -fwarn-tabs -funbox-strict-fields -threaded
+               -fno-warn-unused-do-bind
+
+  ghc-prof-options: -prof -auto-all
+
+  build-depends:
+    attoparsec                 >= 0.10  && < 0.11,
+    base                       == 4.*,
+    blaze-builder              >= 0.2   && < 0.4,
+    blaze-html                 >= 0.3.2 && < 0.5,
+    bytestring                 == 0.9.*,
+    containers                 >= 0.3   && < 0.5,
+    criterion                  >= 0.6   && < 0.7,
+    directory                  == 1.0.*,
+    parsec                     >= 3.0   && < 3.2,
+    text                       >= 0.11  && < 0.12,
+    unordered-containers       >= 0.1.4 && < 0.2

@@ -1,13 +1,18 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards     #-}
 
 module Text.XmlHtml.HTML.Render where
 
 import           Blaze.ByteString.Builder
+import           Blaze.ByteString.Builder.Char8 (fromChar)
 import           Control.Applicative
+import qualified Data.Attoparsec.Text as AP
+import           Data.Char
+import           Data.List (foldl')
 import           Data.Maybe
 import           Data.Monoid
-import qualified Text.Parsec as P
+import qualified Text.Parsec as PP
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
 import           Text.XmlHtml.HTML.Meta
@@ -32,9 +37,77 @@ render e dt ns = byteOrder
                     `mappend` (mconcat $ map (node e) (tail ns))
 
 
+{-
 ------------------------------------------------------------------------------
 -- | HTML allows & so long as it is not "ambiguous" (i.e., looks like an
 -- entity).  So we have a special case for that.
+escaped :: [Char] -> Encoding -> Text -> Builder
+escaped badChars enc = fullyParse (go mempty)
+  where
+    go !bldr = do
+        txt <- AP.takeWhile isNotBad
+        let !bldr' = bldr `mappend` fromText enc txt
+
+        (AP.endOfInput *> pure bldr') <|> ampersand bldr' <|> otherEntity bldr'
+
+
+    ampersand bldr = do
+        _ <- AP.char '&'
+        ambiguous <|> go (bldr `mappend` fromChar '&')
+
+      where
+        ambiguous = do
+            txt <- finishCharRef <|> finishEntityRef
+            go $ mconcat [bldr, entity enc '&', fromText enc txt]
+
+    otherEntity bldr = do
+        c  <- AP.anyChar
+        go $ bldr `mappend` entity enc c
+
+    fullyParse p t = case AP.feed (AP.parse p t) "" of
+                       (AP.Done _ res)   -> res
+                       (AP.Partial _)    -> error "impossible!"
+                       (AP.Fail _ ctx e) -> error $ "impossible! " ++ show ctx
+                                                    ++ ":" ++ e
+
+    isNotBad = AP.notInClass badChars
+
+    finishEntityRef = do
+        t <- name
+        _ <- AP.char ';'
+        return $ T.snoc t ';'
+
+    finishCharRef = do
+        _   <- AP.char '#'
+        txt <- (hexCharRef <|> decCharRef)
+        return $ T.cons '#' txt
+
+      where
+        decCharRef = do
+            ds <- AP.takeWhile1 (\c -> c >= '0' && c <= '9')
+            _  <- AP.char ';'
+            return $! T.snoc ds ';'
+
+        hexCharRef = do
+            x  <- AP.satisfy (\x -> x == 'x' || x == 'X')
+            ds <- AP.takeWhile1 isHex
+            _  <- AP.char ';'
+            return $ T.concat [ T.singleton x
+                              , ds
+                              , T.singleton ';' ]
+
+        isHex = AP.inClass $ ['0'..'9'] ++ ['A'..'F'] ++ ['a'..'f']
+
+    name = do
+        c <- AP.satisfy P.isNameStartChar
+        r <- AP.takeWhile P.isNameChar
+        return $ T.cons c r
+
+-}
+
+------------------------------------------------------------------------------
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 escaped :: [Char] -> Encoding -> Text -> Builder
 escaped _   _ "" = mempty
 escaped bad e t  =
@@ -48,9 +121,12 @@ escaped bad e t  =
             Just (c,ss)
                 -> entity e c `mappend` escaped bad e ss
   where isLeft   = either (const True) (const False)
-        ambigAmp = P.char '&' *>
+        ambigAmp = PP.char '&' *>
             (P.finishCharRef *> return () <|> P.finishEntityRef *> return ())
 
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
 node :: Encoding -> Node -> Builder
