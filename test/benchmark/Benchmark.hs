@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -7,38 +8,29 @@ import           Criterion
 import           Criterion.Main
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder
+import qualified Data.ByteString as B
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Text.XmlHtml
-import qualified Text.XmlHtml.HTML.Render as Render
 
 ------------------------------------------------------------------------------
 main :: IO ()
-main = defaultMain [ renderBenchmarks ]
+main = do
+    exampleHTML <- parseExample
+    !_ <- return $! length $! show exampleHTML
+
+    defaultMain [
+         bench "renderHtml" $ renderHtmlBenchmark exampleHTML
+       ]
 
 
 ------------------------------------------------------------------------------
-renderBenchmarks :: Benchmark
-renderBenchmarks = bgroup "render"
-                       [ bench "escaped" escapedBench
---                       , bench "element" elementBench
-                       ]
+parseExample :: IO Document
+parseExample = do
+    bytes <- B.readFile "resources/benchmarks/haddock-example.html"
+    either error return $ parseHTML "haddock-example.html" bytes
+
 
 ------------------------------------------------------------------------------
-escapedCorpus :: Text
-escapedCorpus = T.concat $ take 100 $
-                cycle [ "the qui>ck & brown <fox> jump&gted&gt;over the brown "
-                      , "f&o&xxx; & fox foo://bar.com/?bar=baz&quux=quux&...&&"
-                      , "\r\n\t\t\t\r\n\t\t\t&&<><><><"
-                      ]
-
-escapedBench :: Pure
-escapedBench = whnf test escapedCorpus
-  where
-    test txt = let !bld = Render.escaped "<>& \t\r\n" UTF8 txt
-                   !out = toByteString bld
-               in out
-
-------------------------------------------------------------------------------
-
---elementBench = escapedBench
+renderHtmlBenchmark :: Document -> Pure
+renderHtmlBenchmark = whnf (toByteString . render)

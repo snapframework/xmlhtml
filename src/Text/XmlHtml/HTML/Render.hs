@@ -6,108 +6,225 @@ module Text.XmlHtml.HTML.Render where
 
 import           Blaze.ByteString.Builder
 import           Blaze.ByteString.Builder.Char8 (fromChar)
-import           Control.Applicative
-import qualified Data.Attoparsec.Text as AP
+import qualified Blaze.ByteString.Builder.Html.Utf8 as Utf
+import           Blaze.ByteString.Builder.Internal
 import           Data.Char
-import           Data.List (foldl')
 import           Data.Maybe
 import           Data.Monoid
-import qualified Text.Parsec as PP
 import           Text.XmlHtml.Common
-import           Text.XmlHtml.TextParser
 import           Text.XmlHtml.HTML.Meta
-import qualified Text.XmlHtml.HTML.Parse as P
+import qualified Text.XmlHtml.XML.Parse as P
 import           Text.XmlHtml.XML.Render (docTypeDecl, entity)
 
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
 
 import qualified Data.HashSet as S
 
 ------------------------------------------------------------------------------
--- | And, the rendering code.
+-- | Render a node list into a builder using the given encoding.
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
-render e dt ns = byteOrder
-       `mappend` docTypeDecl e dt
-       `mappend` nodes
-    where byteOrder | isUTF16 e = fromText e "\xFEFF" -- byte order mark
-                    | otherwise = mempty
-          nodes | null ns   = mempty
-                | otherwise = firstNode e (head ns)
-                    `mappend` (mconcat $ map (node e) (tail ns))
+render e dt ns = case e of
+                   UTF8 -> utf8Render dt ns
+                   _    -> utf16Render e dt ns
 
 
-{-
 ------------------------------------------------------------------------------
--- | HTML allows & so long as it is not "ambiguous" (i.e., looks like an
--- entity).  So we have a special case for that.
-escaped :: [Char] -> Encoding -> Text -> Builder
-escaped badChars enc = fullyParse (go mempty)
+utf8Render :: Maybe DocType -> [Node] -> Builder
+utf8Render dt ns = docTypeDecl UTF8 dt `mappend` nodes
   where
-    go !bldr = do
-        txt <- AP.takeWhile isNotBad
-        let !bldr' = bldr `mappend` fromText enc txt
+    nodes = case ns of
+              [] -> mempty
+              (z:zs) -> utf8FirstNode z `mappend`
+                        foldr (\x b -> utf8Node x `mappend` b) mempty zs
+{-# INLINE utf8Render #-}
 
-        (AP.endOfInput *> pure bldr') <|> ampersand bldr' <|> otherEntity bldr'
-
-
-    ampersand bldr = do
-        _ <- AP.char '&'
-        ambiguous <|> go (bldr `mappend` fromChar '&')
-
-      where
-        ambiguous = do
-            txt <- finishCharRef <|> finishEntityRef
-            go $ mconcat [bldr, entity enc '&', fromText enc txt]
-
-    otherEntity bldr = do
-        c  <- AP.anyChar
-        go $ bldr `mappend` entity enc c
-
-    fullyParse p t = case AP.feed (AP.parse p t) "" of
-                       (AP.Done _ res)   -> res
-                       (AP.Partial _)    -> error "impossible!"
-                       (AP.Fail _ ctx e) -> error $ "impossible! " ++ show ctx
-                                                    ++ ":" ++ e
-
-    isNotBad = AP.notInClass badChars
-
-    finishEntityRef = do
-        t <- name
-        _ <- AP.char ';'
-        return $ T.snoc t ';'
-
-    finishCharRef = do
-        _   <- AP.char '#'
-        txt <- (hexCharRef <|> decCharRef)
-        return $ T.cons '#' txt
-
-      where
-        decCharRef = do
-            ds <- AP.takeWhile1 (\c -> c >= '0' && c <= '9')
-            _  <- AP.char ';'
-            return $! T.snoc ds ';'
-
-        hexCharRef = do
-            x  <- AP.satisfy (\x -> x == 'x' || x == 'X')
-            ds <- AP.takeWhile1 isHex
-            _  <- AP.char ';'
-            return $ T.concat [ T.singleton x
-                              , ds
-                              , T.singleton ';' ]
-
-        isHex = AP.inClass $ ['0'..'9'] ++ ['A'..'F'] ++ ['a'..'f']
-
-    name = do
-        c <- AP.satisfy P.isNameStartChar
-        r <- AP.takeWhile P.isNameChar
-        return $ T.cons c r
-
--}
 
 ------------------------------------------------------------------------------
--- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+utf16Render :: Encoding -> Maybe DocType -> [Node] -> Builder
+utf16Render e dt ns =
+    fromText e "\xFEFF" `mappend` docTypeDecl e dt `mappend` nodes
+  where
+    nodes = foldr (\x b -> utf16Node e x `mappend` b) mempty ns
 
+
+------------------------------------------------------------------------------
+utf8Node :: Node -> Builder
+utf8Node (TextNode t)    = Utf.fromHtmlEscapedText t
+
+utf8Node (Comment t)
+    | commentIsInvalid t = error "invalid comment"
+    | otherwise          = mconcat [ Utf.fromString "<!--"
+                                   , Utf.fromText t
+                                   , Utf.fromString "-->" ]
+
+utf8Node (Element t a c) = utf8Element t tbase a c
+  where
+    tbase = T.toLower $ snd $ T.breakOnEnd ":" t
+
+
+------------------------------------------------------------------------------
+utf8FirstNode :: Node -> Builder
+utf8FirstNode (TextNode "") = mempty
+utf8FirstNode (TextNode t)  = let (c, t') = fromJust $ T.uncons t
+                              in escaped "<>& \t\r\n" UTF8 (T.singleton c)
+                                 `mappend` utf8Node (TextNode t')
+utf8FirstNode n = utf8Node n
+
+
+------------------------------------------------------------------------------
+commentIsInvalid :: Text -> Bool
+commentIsInvalid t
+    | "--" `T.isInfixOf` t  = True
+    | "-"  `T.isSuffixOf` t = True
+    | otherwise             = False
+
+
+utf8Element :: Text -> Text -> [(Text, Text)] -> [Node] -> Builder
+utf8Element t tbase a c
+    | tbase `S.member` voidTags    = voidTag
+    | tbase `S.member` rawTextTags = rawTag
+    | otherwise                    = normalTag
+
+  where
+    --------------------------------------------------------------------------
+    tbuild     = Utf.fromText t
+    attributes = foldr (\x b -> utf8Attribute x `mappend` b) mempty a
+
+    --------------------------------------------------------------------------
+    voidTag = if null c
+                then mconcat [ fromChar '<'
+                             , tbuild
+                             , attributes
+                             , Utf.fromString " />" ]
+
+                else error $ T.unpack t ++ " must be empty"
+
+    --------------------------------------------------------------------------
+    rawTag = if (all isTextNode c) && ok
+               then mconcat [ fromChar '<'
+                            , tbuild
+                            , attributes
+                            , fromChar '>'
+                            , Utf.fromLazyText haystack
+                            , fromChar '<'
+                            , fromChar '/'
+                            , tbuild
+                            , fromChar '>' ]
+
+               else error $ concat [
+                          T.unpack t
+                        , " cannot contain non-text children or text looking "
+                        , "like its end tag." ]
+      where
+        ok       = not (needle `LT.isInfixOf` haystack)
+        needle   = LT.fromChunks [ "</", t ]
+        haystack = LT.fromChunks $ map nodeText c
+
+    --------------------------------------------------------------------------
+    normalTag = mconcat [ fromChar '<'
+                        , tbuild
+                        , attributes
+                        , fromChar '>'
+                        , foldr (\x b -> utf8Node x `mappend` b) mempty c
+                        , fromChar '<'
+                        , fromChar '/'
+                        , tbuild
+                        , fromChar '>' ]
+
+
+------------------------------------------------------------------------------
+utf8Attribute :: (Text, Text) -> Builder
+utf8Attribute (n, v) | T.null v = fromChar ' ' `mappend` nbuild
+                     | not ("\'" `T.isInfixOf` v) =
+                         mconcat [ fromChar ' '
+                                 , nbuild
+                                 , fromChar '='
+                                 , fromChar '\''
+                                 , sqEscape v
+                                 , fromChar '\''
+                                 ]
+                     | otherwise =
+                         mconcat [ fromChar ' '
+                                 , nbuild
+                                 , fromChar '='
+                                 , fromChar '"'
+                                 , dqEscape v
+                                 , fromChar '"'
+                                 ]
+  where
+    nbuild = Utf.fromHtmlEscapedText n
+
+    sqSubst c = Utf.fromChar c
+
+    sqEscape = escape sqPred sqSubst
+    sqPred c = c == '&'
+
+    dqEscape = escape dqPred dqSubst
+
+    dqSubst '\"' = fromByteString "&quot;"
+    dqSubst c    = Utf.fromChar c
+
+    dqPred c = c == '"' || c == '&'
+
+    escape p subst = go mempty
+      where
+        go bl t = let (a,b) = T.break p t
+                      bl'   = bl `mappend` Utf.fromText a
+                      r     = T.uncons b
+                  in case r of
+                       Nothing -> mempty
+                       Just ('&',ss) ->
+                           let str = T.unpack b
+                           in if ambiguousAmpersand str
+                                then go (bl' `mappend`
+                                             fromByteString "&amp;") ss
+                                else go (bl `mappend`
+                                            fromWord8 0x26) ss
+                       Just (c, ss) -> go (bl' `mappend` subst c) ss
+
+------------------------------------------------------------------------------
+-- UTF-16 render code follows; TODO: optimize
+
+ambiguousAmpersand :: String -> Bool
+ambiguousAmpersand [] = False
+ambiguousAmpersand ('&':s) = ambig2 s
+  where
+    ambig2 []       = False
+    ambig2 ('#':xs) = ambigCharRefStart xs
+    ambig2 (x:xs)
+        | P.isNameStartChar x = ambigEntity xs
+        | otherwise           = False
+
+    ambigCharRefStart [] = False
+    ambigCharRefStart (x:xs)
+        | isDigit x            = ambigCharRef xs
+        | x == 'x' || x == 'X' = ambigHexCharRef xs
+        | otherwise            = False
+
+    ambigCharRef [] = False
+    ambigCharRef (x:xs)
+        | x == ';'  = True
+        | isDigit x = ambigCharRef xs
+        | otherwise = False
+
+    ambigHexCharRef [] = False
+    ambigHexCharRef (x:xs)
+        | x == ';'     = True
+        | isHexDigit x = ambigCharRef xs
+        | otherwise    = False
+
+    ambigEntity [] = False
+    ambigEntity (x:xs)
+        | x == ';'       = True
+        | P.isNameChar x = ambigEntity xs
+        | otherwise      = False
+ambiguousAmpersand _ = False
+
+
+
+------------------------------------------------------------------------------
 escaped :: [Char] -> Encoding -> Text -> Builder
 escaped _   _ "" = mempty
 escaped bad e t  =
@@ -116,52 +233,35 @@ escaped bad e t  =
     in  fromText e p `mappend` case r of
             Nothing
                 -> mempty
-            Just ('&',ss) | isLeft (parseText ambigAmp "" s)
+            Just ('&',ss) | ambiguousAmpersand $ T.unpack s
                 -> fromText e "&" `mappend` escaped bad e ss
             Just (c,ss)
                 -> entity e c `mappend` escaped bad e ss
-  where isLeft   = either (const True) (const False)
-        ambigAmp = PP.char '&' *>
-            (P.finishCharRef *> return () <|> P.finishEntityRef *> return ())
 
-
--- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
-node :: Encoding -> Node -> Builder
-node e (TextNode t)                        = escaped "<>&" e t
-node e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
-                   | "-"  `T.isSuffixOf` t = error "Invalid comment"
-                   | otherwise             = fromText e "<!--"
-                                             `mappend` fromText e t
-                                             `mappend` fromText e "-->"
-node e (Element t a c)                     =
+utf16Node :: Encoding -> Node -> Builder
+utf16Node e (TextNode t)                        = escaped "<>&" e t
+utf16Node e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
+                        | "-"  `T.isSuffixOf` t = error "Invalid comment"
+                        | otherwise             = fromText e "<!--"
+                                                  `mappend` fromText e t
+                                                  `mappend` fromText e "-->"
+utf16Node e (Element t a c)                     =
     let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
-    in  element e t tbase a c
-
-
-------------------------------------------------------------------------------
--- | Process the first node differently to encode leading whitespace.  This
--- lets us be sure that @parseHTML@ is a left inverse to @render@.
-firstNode :: Encoding -> Node -> Builder
-firstNode e (Comment t)     = node e (Comment t)
-firstNode e (Element t a c) = node e (Element t a c)
-firstNode _ (TextNode "")   = mempty
-firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
-                              in escaped "<>& \t\r\n" e (T.singleton c)
-                                 `mappend` node e (TextNode t')
+    in  utf16Element e t tbase a c
 
 
 ------------------------------------------------------------------------------
 -- XXX: Should do something to avoid concatting large CDATA sections before
 -- writing them to the output.
-element :: Encoding -> Text -> Text -> [(Text, Text)] -> [Node] -> Builder
-element e t tb a c
+utf16Element :: Encoding -> Text -> Text -> [(Text, Text)] -> [Node]
+             -> Builder
+utf16Element e t tb a c
     | tb `S.member` voidTags && null c         =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (utf16Attribute e) a)
         `mappend` fromText e " />"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
@@ -171,7 +271,7 @@ element e t tb a c
       not ("</" `T.append` t `T.isInfixOf` s) =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (utf16Attribute e) a)
         `mappend` fromText e ">"
         `mappend` fromText e s
         `mappend` fromText e "</"
@@ -185,17 +285,17 @@ element e t tb a c
     | otherwise =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (utf16Attribute e) a)
         `mappend` fromText e ">"
-        `mappend` (mconcat $ map (node e) c)
+        `mappend` (mconcat $ map (utf16Node e) c)
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"
 
 
 ------------------------------------------------------------------------------
-attribute :: Encoding -> (Text, Text) -> Builder
-attribute e (n,v)
+utf16Attribute :: Encoding -> (Text, Text) -> Builder
+utf16Attribute e (n,v)
     | v == ""                    =
         fromText e " "
         `mappend` fromText e n
@@ -211,4 +311,3 @@ attribute e (n,v)
         `mappend` fromText e "=\""
         `mappend` escaped "&\"" e v
         `mappend` fromText e "\""
-
