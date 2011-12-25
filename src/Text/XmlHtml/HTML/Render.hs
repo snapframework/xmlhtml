@@ -9,6 +9,7 @@ import           Blaze.ByteString.Builder.Char8 (fromChar)
 import qualified Blaze.ByteString.Builder.Html.Utf8 as Utf
 import           Blaze.ByteString.Builder.Internal
 import           Data.Char
+import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import           Text.XmlHtml.Common
@@ -55,9 +56,9 @@ utf8Node (TextNode t)    = Utf.fromHtmlEscapedText t
 
 utf8Node (Comment t)
     | commentIsInvalid t = error "invalid comment"
-    | otherwise          = mconcat [ Utf.fromString "<!--"
+    | otherwise          = mconcat [ fromByteString "<!--"
                                    , Utf.fromText t
-                                   , Utf.fromString "-->" ]
+                                   , fromByteString "-->" ]
 
 utf8Node (Element t a c) = utf8Element t tbase a c
   where
@@ -81,6 +82,7 @@ commentIsInvalid t
     | otherwise             = False
 
 
+------------------------------------------------------------------------------
 utf8Element :: Text -> Text -> [(Text, Text)] -> [Node] -> Builder
 utf8Element t tbase a c
     | tbase `S.member` voidTags    = voidTag
@@ -93,16 +95,18 @@ utf8Element t tbase a c
     attributes = foldr (\x b -> utf8Attribute x `mappend` b) mempty a
 
     --------------------------------------------------------------------------
-    voidTag = if null c
+    voidTag = {-# SCC "utf8Element/voidTag" #-}
+              if null c
                 then mconcat [ fromChar '<'
                              , tbuild
                              , attributes
-                             , Utf.fromString " />" ]
+                             , fromByteString " />" ]
 
                 else error $ T.unpack t ++ " must be empty"
 
     --------------------------------------------------------------------------
-    rawTag = if (all isTextNode c) && ok
+    rawTag = {-# SCC "utf8Element/rawTag" #-}
+             if (all isTextNode c) && ok
                then mconcat [ fromChar '<'
                             , tbuild
                             , attributes
@@ -123,7 +127,8 @@ utf8Element t tbase a c
         haystack = LT.fromChunks $ map nodeText c
 
     --------------------------------------------------------------------------
-    normalTag = mconcat [ fromChar '<'
+    normalTag = {-# SCC "utf8Element/normalTag" #-}
+                mconcat [ fromChar '<'
                         , tbuild
                         , attributes
                         , fromChar '>'
@@ -168,7 +173,7 @@ utf8Attribute (n, v) | T.null v = fromChar ' ' `mappend` nbuild
 
     dqPred c = c == '"' || c == '&'
 
-    escape p subst = go mempty
+    escape p subst = {-# SCC "utf8Attribute/escape" #-} go mempty
       where
         go bl t = let (a,b) = T.break p t
                       bl'   = bl `mappend` Utf.fromText a
@@ -183,6 +188,7 @@ utf8Attribute (n, v) | T.null v = fromChar ' ' `mappend` nbuild
                                 else go (bl' `mappend`
                                             fromWord8 0x26) ss
                        Just (c, ss) -> go (bl' `mappend` subst c) ss
+
 
 ------------------------------------------------------------------------------
 -- UTF-16 render code follows; TODO: optimize
@@ -221,7 +227,6 @@ ambiguousAmpersand ('&':s) = ambig2 s
         | P.isNameChar x = ambigEntity xs
         | otherwise      = False
 ambiguousAmpersand _ = False
-
 
 
 ------------------------------------------------------------------------------
