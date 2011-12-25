@@ -174,13 +174,13 @@ utf8Attribute (n, v) | T.null v = fromChar ' ' `mappend` nbuild
                       bl'   = bl `mappend` Utf.fromText a
                       r     = T.uncons b
                   in case r of
-                       Nothing -> mempty
+                       Nothing -> bl'
                        Just ('&',ss) ->
                            let str = T.unpack b
                            in if ambiguousAmpersand str
                                 then go (bl' `mappend`
                                              fromByteString "&amp;") ss
-                                else go (bl `mappend`
+                                else go (bl' `mappend`
                                             fromWord8 0x26) ss
                        Just (c, ss) -> go (bl' `mappend` subst c) ss
 
