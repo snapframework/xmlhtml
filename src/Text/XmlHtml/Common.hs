@@ -36,13 +36,13 @@ data Document = XmlDocument  {
 -- element.  XML processing instructions are intentionally omitted as a
 -- simplification, and CDATA and plain text are both text nodes, since they
 -- ought to be semantically interchangeable.
-data Node = TextNode !Text
-          | Comment  !Text
-          | Element {
+data Node = Element {
                 elementTag      :: !Text,
                 elementAttrs    :: ![(Text, Text)],
                 elementChildren :: ![Node]
             }
+          | TextNode !Text
+          | Comment  !Text
     deriving (Eq, Show)
 
 
