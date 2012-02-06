@@ -2,7 +2,19 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Text.XmlHtml.TextParser where
+module Text.XmlHtml.TextParser
+( guessEncoding
+, parse
+, isValidChar
+, parseText
+, takeWhile0
+, takeWhile1
+, text
+, scanText
+, ScanState(..)
+
+, module Text.Parsec.Text
+) where
 
 import           Control.Applicative
 import           Data.Char
@@ -12,12 +24,11 @@ import           Text.XmlHtml.Common
 import           Data.Text (Text)
 import qualified Data.Text as T
 
-import           Text.Parsec (Parsec)
 import qualified Text.Parsec as P
+import           Text.Parsec.Text
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-
 
 ------------------------------------------------------------------------------
 -- | Get an initial guess at document encoding from the byte order mark.  If
@@ -29,18 +40,6 @@ guessEncoding b
     | B.take 2 b == B.pack [ 0xFE, 0xFF ]       = (UTF16BE, B.drop 2 b)
     | B.take 2 b == B.pack [ 0xFF, 0xFE ]       = (UTF16LE, B.drop 2 b)
     | otherwise                                 = (UTF8,    b)
-
-
-------------------------------------------------------------------------------
--- | Specialized type for the parsers we use here.
-type Parser = Parsec Text ()
-
-
-------------------------------------------------------------------------------
--- An (orphaned) instance for parsing Text with Parsec.
-instance (Monad m) => P.Stream T.Text m Char where
-    uncons = return . T.uncons
-
 
 ------------------------------------------------------------------------------
 parse :: (Encoding -> Parser a) -> String -> ByteString -> Either String a
