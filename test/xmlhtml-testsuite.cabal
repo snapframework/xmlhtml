@@ -9,7 +9,7 @@ Executable testsuite
 
   build-depends:
     HUnit                      == 1.2.*,
-    directory                  == 1.0.*,
+    directory                  >= 1.0   && < 1.2,
     QuickCheck                 >= 2.3.0.2,
     base                       == 4.*,
     blaze-builder              >= 0.2   && < 0.4,

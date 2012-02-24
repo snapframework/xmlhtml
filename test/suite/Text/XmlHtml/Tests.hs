@@ -363,6 +363,7 @@ htmlParsingQuirkTests = [
     testIt   "laxAttrName            " laxAttrName,
     testCase "badAttrName            " badAttrName,
     testIt   "emptyAttr              " emptyAttr,
+    testIt   "emptyAttr2             " emptyAttr2,
     testIt   "unquotedAttr           " unquotedAttr,
     testIt   "laxAttrVal             " laxAttrVal,
     testIt   "ampersandInText        " ampersandInText,
@@ -438,6 +439,10 @@ badAttrName = do
 emptyAttr :: Bool
 emptyAttr     = parseHTML "" "<test attr></test>"
     == Right (HtmlDocument UTF8 Nothing [Element "test" [("attr", "")] []])
+
+emptyAttr2 :: Bool
+emptyAttr2     = parseHTML "" "<div itemscope itemtype=\"type\"></div>"
+    == Right (HtmlDocument UTF8 Nothing [Element "div" [("itemscope", ""), ("itemtype", "type")] []])
 
 unquotedAttr :: Bool
 unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"
