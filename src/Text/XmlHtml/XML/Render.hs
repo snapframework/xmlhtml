@@ -24,6 +24,11 @@ render e dt ns = byteOrder
                 | otherwise = firstNode e (head ns)
                     `mappend` (mconcat $ map (node e) (tail ns))
 
+------------------------------------------------------------------------------
+renderFragment :: Encoding -> [Node] -> Builder
+renderFragment _ []     = mempty
+renderFragment e (n:ns) = firstNode e n `mappend` (mconcat $ map (node e) ns)
+
 
 ------------------------------------------------------------------------------
 xmlDecl :: Encoding -> Builder
