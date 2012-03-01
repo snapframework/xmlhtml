@@ -727,6 +727,7 @@ Extra-source-files:
              test/resources/oasis/p46pass1.xml,
              test/resources/oasis/p02fail3.xml,
              test/resources/oasis/p44fail3.xml,
+             test/resources/oasis/p44fail3.xml.html.correct,
              test/resources/oasis/p14pass1.xml,
              test/resources/oasis/p03fail24.xml,
              test/resources/oasis/p10pass1.xml,
