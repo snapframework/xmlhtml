@@ -57,7 +57,8 @@ module Text.XmlHtml (
 
     -- * Rendering
     render,
-    XML.renderFragment
+    XML.renderXmlFragment,
+    HTML.renderHtmlFragment
     ) where
 
 ------------------------------------------------------------------------------
