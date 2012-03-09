@@ -17,11 +17,11 @@ Executable testsuite
     bytestring                 == 0.9.*,
     containers                 >= 0.3   && < 0.5,
     parsec                     >= 3.1.2 && < 3.2,
-    test-framework             >= 0.3.1 && < 0.4,
+    test-framework             >= 0.3.1 && < 0.5,
     test-framework-hunit       >= 0.2.5 && < 0.3,
     test-framework-quickcheck2 >= 0.2.6 && < 0.3,
     text                       >= 0.11  && < 0.12,
-    unordered-containers       >= 0.1.4 && < 0.2
+    unordered-containers       >= 0.1.4 && < 0.3
 
   ghc-options: -O2 -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
