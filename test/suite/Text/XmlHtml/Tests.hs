@@ -14,8 +14,10 @@ import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze
+import           Text.Blaze.Html
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Blaze.Internal as H
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
 import           Text.XmlHtml.CursorTests
