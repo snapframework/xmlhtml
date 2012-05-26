@@ -233,10 +233,16 @@ ambiguousAmpersand _ = False
 -- | Function for rendering HTML nodes without the overhead of creating a
 -- Document structure.
 renderHtmlFragment :: Encoding -> [Node] -> Builder
-renderHtmlFragment _ []     = mempty
-renderHtmlFragment e (n:ns) =
-    firstNode e n `mappend` (mconcat $ map (node e) ns)
+renderHtmlFragment e =
+    case e of
+      UTF8 -> goUtf8
+      _    -> goUtf16
 
+  where
+    goUtf8 = foldr (mappend . utf8Node) mempty
+
+    goUtf16 = foldr (mappend . utf16Node e) mempty
+{-# INLINE renderHtmlFragment #-}
 
 ------------------------------------------------------------------------------
 -- | HTML allows & so long as it is not "ambiguous" (i.e., looks like an
