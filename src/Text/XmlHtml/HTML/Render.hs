@@ -230,6 +230,17 @@ ambiguousAmpersand _ = False
 
 
 ------------------------------------------------------------------------------
+-- | Function for rendering HTML nodes without the overhead of creating a
+-- Document structure.
+renderHtmlFragment :: Encoding -> [Node] -> Builder
+renderHtmlFragment _ []     = mempty
+renderHtmlFragment e (n:ns) =
+    firstNode e n `mappend` (mconcat $ map (node e) ns)
+
+
+------------------------------------------------------------------------------
+-- | HTML allows & so long as it is not "ambiguous" (i.e., looks like an
+-- entity).  So we have a special case for that.
 escaped :: [Char] -> Encoding -> Text -> Builder
 escaped _   _ "" = mempty
 escaped bad e t  =

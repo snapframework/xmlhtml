@@ -3,15 +3,14 @@
 --
 -- Warning: because this renderer doesn't directly create the output, but
 -- rather an XML tree representation, it is impossible to render pre-escaped
--- text. This means that @preEscapedString@ will produce the same output as
--- @string@. This also applies to the functions @preEscapedText@,
--- @preEscapedTextValue@...
+-- text.
 --
 module Text.Blaze.Renderer.XmlHtml (renderHtml, renderHtmlNodes) where
 
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import           Text.Blaze.Html
 import           Text.Blaze.Internal
 import           Text.XmlHtml
 
@@ -52,14 +51,18 @@ fromChoiceString EmptyChoiceString = id
 renderNodes :: Html -> [Node] -> [Node]
 renderNodes = go []
   where
-    go :: [(Text, Text)] -> HtmlM b -> [Node] -> [Node]
+    go :: [(Text, Text)] -> MarkupM a -> [Node] -> [Node]
     go attrs (Parent tag _ _ content) =
         (Element (getText tag) attrs (go [] content []) :)
+    go attrs (CustomParent tag content) =
+        (Element (fromChoiceStringText tag) attrs (go [] content []) :)
     go attrs (Leaf tag _ _) =
         (Element (getText tag) attrs [] :)
+    go attrs (CustomLeaf tag _) =
+        (Element (fromChoiceStringText tag) attrs [] :)
     go attrs (AddAttribute key _ value content) =
         go ((getText key, fromChoiceStringText value) : attrs) content
-    go attrs (AddCustomAttribute key _ value content) =
+    go attrs (AddCustomAttribute key value content) =
         go ((fromChoiceStringText key, fromChoiceStringText value) : attrs)
            content
     go _ (Content content) = fromChoiceString content

@@ -26,6 +26,15 @@ render e dt ns = byteOrder
 
 
 ------------------------------------------------------------------------------
+-- | Function for rendering XML nodes without the overhead of creating a
+-- Document structure.
+renderXmlFragment :: Encoding -> [Node] -> Builder
+renderXmlFragment _ []     = mempty
+renderXmlFragment e (n:ns) =
+    firstNode e n `mappend` (mconcat $ map (node e) ns)
+
+
+------------------------------------------------------------------------------
 xmlDecl :: Encoding -> Builder
 xmlDecl e = fromText e "<?xml version=\"1.0\" encoding=\""
             `mappend` fromText e (encodingName e)

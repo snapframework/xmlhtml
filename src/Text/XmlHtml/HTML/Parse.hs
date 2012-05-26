@@ -239,9 +239,10 @@ attrValue = quotedAttrValue <|> unquotedAttrValue
 attribute :: Parser (Text, Text)
 attribute = do
     n <- attrName
-    _ <- optional XML.whiteSpace
     v <- optional $ do
-        _ <- P.char '='
+        _ <- P.try $ do
+            _ <- optional XML.whiteSpace
+            P.char '='
         _ <- optional XML.whiteSpace
         attrValue
     return $ maybe (n,"") (n,) v

@@ -14,8 +14,10 @@ import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze
+import           Text.Blaze.Html
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Text.Blaze.Internal as H
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
 import           Text.XmlHtml.CursorTests
@@ -363,6 +365,7 @@ htmlParsingQuirkTests = [
     testIt   "laxAttrName            " laxAttrName,
     testCase "badAttrName            " badAttrName,
     testIt   "emptyAttr              " emptyAttr,
+    testIt   "emptyAttr2             " emptyAttr2,
     testIt   "unquotedAttr           " unquotedAttr,
     testIt   "laxAttrVal             " laxAttrVal,
     testIt   "ampersandInText        " ampersandInText,
@@ -438,6 +441,10 @@ badAttrName = do
 emptyAttr :: Bool
 emptyAttr     = parseHTML "" "<test attr></test>"
     == Right (HtmlDocument UTF8 Nothing [Element "test" [("attr", "")] []])
+
+emptyAttr2 :: Bool
+emptyAttr2     = parseHTML "" "<div itemscope itemtype=\"type\"></div>"
+    == Right (HtmlDocument UTF8 Nothing [Element "div" [("itemscope", ""), ("itemtype", "type")] []])
 
 unquotedAttr :: Bool
 unquotedAttr  = parseHTML "" "<test attr=you&amp;me></test>"

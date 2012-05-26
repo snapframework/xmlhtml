@@ -1,8 +1,8 @@
 Name:                xmlhtml
-Version:             0.2.0.0
+Version:             0.2.0.1
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
-                     document fragments, which share data structures wo that
+                     document fragments, which share data structures so that
                      it's easy to work with both.  Document fragments are bits
                      of documents, which are not constrained by some of the
                      high-level structure rules (in particular, they may
@@ -727,6 +727,7 @@ Extra-source-files:
              test/resources/oasis/p46pass1.xml,
              test/resources/oasis/p02fail3.xml,
              test/resources/oasis/p44fail3.xml,
+             test/resources/oasis/p44fail3.xml.html.correct,
              test/resources/oasis/p14pass1.xml,
              test/resources/oasis/p03fail24.xml,
              test/resources/oasis/p10pass1.xml,
@@ -821,12 +822,13 @@ Library
   Build-depends:       base                 >= 4     && < 5,
                        attoparsec           >= 0.10  && < 0.11,
                        blaze-builder        >= 0.2   && < 0.4,
-                       blaze-html           >= 0.3.2 && < 0.5,
+                       blaze-html           >= 0.5   && < 0.6,
+                       blaze-markup         >= 0.5   && < 0.6,
                        bytestring           >= 0.9   && < 0.10,
                        containers           >= 0.3   && < 0.5,
-                       parsec               >= 3.0   && < 3.2,
+                       parsec               >= 3.1.2 && < 3.2,
                        text                 >= 0.11  && < 0.12,
-                       unordered-containers >= 0.1.4 && < 0.2
+                       unordered-containers >= 0.1.4 && < 0.3
 
   extensions:
     OverloadedStrings,
