@@ -146,7 +146,7 @@ getChild :: Int -> Cursor -> Maybe Cursor
 getChild i (Cursor n ls rs ps) =
     case n of
       Element t a cs -> let (lls, rest) = splitAt i cs in
-          if i >= length cs
+          if i >= length cs || i < 0
             then Nothing
             else Just $ Cursor (head rest)
                                (reverse lls)
