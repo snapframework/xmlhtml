@@ -118,6 +118,7 @@ cursorNavigation = do
     assertBool "parent of root" $ isNothing (parent r)
 
     assertBool "getChild bounds" $ isNothing (getChild 3 r)
+    assertBool "getChild negative bounds" $ isNothing (getChild (-1) r)
     assertBool "firstChild"      $
         getAttribute "name" (current e1) == Just "alice"
     assertBool "childAt 1 "      $
