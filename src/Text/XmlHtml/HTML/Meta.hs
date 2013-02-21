@@ -32,9 +32,7 @@ voidTags = S.fromList [
 ------------------------------------------------------------------------------
 -- | Elements that XmlHtml treats as raw text.  Raw text elements are not
 -- allowed to have any other tags in them.  This is necessary to support the
--- Javascript less than operator inside a script tag, for example.  Here we
--- deviate a little from the spec because Heist users expect to be able to use
--- splices inside the title tag.
+-- Javascript less than operator inside a script tag, for example.
 {-# NOINLINE rawTextTags #-}
 rawTextTags :: HashSet Text
 rawTextTags = S.fromList [ "script", "style" ]
