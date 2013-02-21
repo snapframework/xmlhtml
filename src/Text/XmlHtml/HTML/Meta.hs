@@ -20,6 +20,8 @@ import           Data.Text (Text)
 -- Metadata used for HTML5 quirks mode.                                     --
 ------------------------------------------------------------------------------
 
+------------------------------------------------------------------------------
+-- | Void elements as defined by the HTML5 spec.
 {-# NOINLINE voidTags #-}
 voidTags :: HashSet Text
 voidTags = S.fromList [
@@ -27,6 +29,12 @@ voidTags = S.fromList [
     "keygen", "link", "meta", "param", "source", "track", "wbr"
     ]
 
+------------------------------------------------------------------------------
+-- | Elements that XmlHtml treats as raw text.  Raw text elements are not
+-- allowed to have any other tags in them.  This is necessary to support the
+-- Javascript less than operator inside a script tag, for example.  Here we
+-- deviate a little from the spec because Heist users expect to be able to use
+-- splices inside the title tag.
 {-# NOINLINE rawTextTags #-}
 rawTextTags :: HashSet Text
 rawTextTags = S.fromList [ "script", "style" ]
@@ -75,6 +83,8 @@ endOmittableNext = M.fromList [
     ("tr",       S.fromList ["tr"])
     ]
 
+------------------------------------------------------------------------------
+-- | Predefined character entity references as defined by the HTML5 spec.
 {-# NOINLINE predefinedRefs #-}
 predefinedRefs :: HashMap Text Text
 predefinedRefs = mconcat $ map M.fromList [
