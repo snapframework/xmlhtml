@@ -38,16 +38,19 @@ rawTextTags :: HashSet Text
 rawTextTags = S.fromList [ "script", "style" ]
 
 ------------------------------------------------------------------------------
--- | Tags which can be implicitly ended in case they are the last element in
--- their parent.  This list actually includes all of the elements that have
--- any kind of omittable end tag, since in general when an element with an
--- omittable end tag isn't specified to be omittable in this way, it's just
--- because in a complete document it isn't expected to ever be the last thing
--- in its parent.  We aren't interested in enforcing element structure rules,
--- so we'll allow it anyway.
+-- | List of elements with omittable end tags.
 {-# NOINLINE endOmittableLast #-}
 endOmittableLast :: HashSet Text
 endOmittableLast = S.fromList [
+
+    -- Tags which can be implicitly ended in case they are the last element in
+    -- their parent.  This list actually includes all of the elements that
+    -- have any kind of omittable end tag, since in general when an element
+    -- with an omittable end tag isn't specified to be omittable in this way,
+    -- it's just because in a complete document it isn't expected to ever be
+    -- the last thing in its parent.  We aren't interested in enforcing
+    -- element structure rules, so we'll allow it anyway.
+
     "body", "colgroup", "dd", "dt", "head", "html", "li", "optgroup",
     "option", "p", "rp", "rt", "tbody", "td", "tfoot", "th", "thead", "tr"
     ]
