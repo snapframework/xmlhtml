@@ -1,7 +1,13 @@
 {-# OPTIONS_GHC -O0 -fno-case-merge -fno-strictness -fno-cse #-}
 {-# LANGUAGE OverloadedStrings           #-}
 
-module Text.XmlHtml.HTML.Meta where
+module Text.XmlHtml.HTML.Meta
+  ( voidTags
+  , rawTextTags
+  , endOmittableLast
+  , endOmittableNext
+  , predefinedRefs
+  ) where
 
 import           Data.Monoid
 import           Data.HashMap.Strict (HashMap)

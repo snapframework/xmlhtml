@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.2.0.3
+Version:             0.2.1
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures so that
@@ -809,13 +809,13 @@ Library
 
   Exposed-modules:     Text.XmlHtml,
                        Text.XmlHtml.Cursor,
+                       Text.XmlHtml.HTML.Meta,
                        Text.Blaze.Renderer.XmlHtml
 
   Other-modules:       Text.XmlHtml.Common,
                        Text.XmlHtml.TextParser,
                        Text.XmlHtml.XML.Parse,
                        Text.XmlHtml.XML.Render,
-                       Text.XmlHtml.HTML.Meta,
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
 
