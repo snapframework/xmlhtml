@@ -4,6 +4,7 @@
 module Text.XmlHtml.HTML.Meta
   ( voidTags
   , rawTextTags
+  , isRawText
   , endOmittableLast
   , endOmittableNext
   , predefinedRefs
@@ -33,9 +34,26 @@ voidTags = S.fromList [
 -- | Elements that XmlHtml treats as raw text.  Raw text elements are not
 -- allowed to have any other tags in them.  This is necessary to support the
 -- Javascript less than operator inside a script tag, for example.
+--
+-- Note that script tags are in this list, but only considered raw text if
+-- they have the type="text/javascript" attribute.  This is so things like
+-- <script type="text/x-handlebars"> (used by ember.js) will work.
 {-# NOINLINE rawTextTags #-}
 rawTextTags :: HashSet Text
 rawTextTags = S.fromList [ "script", "style" ]
+
+------------------------------------------------------------------------------
+-- | Determine whether a tag should be treated as raw text.  Raw text elements
+-- are not allowed to have any other tags in them.  This is necessary to
+-- support the Javascript less than operator inside a script tag, for example.
+-- This is the function that is actually used in the parser and renderer.
+-- 'rawTextTags' is not used any more, but is still provided for backwards
+-- compatibility.
+{-# NOINLINE isRawText #-}
+isRawText :: Text -> [(Text, Text)] -> Bool
+isRawText "style" _ = True
+isRawText "script" as = ("type", "text/javascript") `elem` as
+isRawText _ _ = False
 
 ------------------------------------------------------------------------------
 -- | List of elements with omittable end tags.

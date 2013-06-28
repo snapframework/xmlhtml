@@ -64,7 +64,7 @@ xmlParsingTests = [
     testIt   "emptyElement           " emptyElement,
     testIt   "emptyElement2          " emptyElement2,
     testIt   "elemWithText           " elemWithText,
-    testIt   "xmlDecl                " xmlDecl,
+    testIt   "xmlDeclXML             " xmlDeclXML,
     testIt   "procInst               " procInst,
     testIt   "badDoctype1            " badDoctype1,
     testIt   "badDoctype2            " badDoctype2,
@@ -181,8 +181,8 @@ elemWithText :: Bool
 elemWithText  = parseXML "" "<myElement>text</myElement>"
     == Right (XmlDocument UTF8 Nothing [Element "myElement" [] [TextNode "text"]])
 
-xmlDecl :: Bool
-xmlDecl       = parseXML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
+xmlDeclXML :: Bool
+xmlDeclXML    = parseXML "" "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
     == Right (XmlDocument UTF8 Nothing [])
 
 procInst :: Bool
@@ -408,8 +408,8 @@ voidEmptyElem = parseHTML "" "<img/>"
     == Right (HtmlDocument UTF8 Nothing [Element "img" [] []])
 
 rawTextElem :: Bool
-rawTextElem   = parseHTML "" "<script>This<is'\"a]]>test&amp;</script>"
-    == Right (HtmlDocument UTF8 Nothing [Element "script" [] [
+rawTextElem   = parseHTML "" "<script type=\"text/javascript\">This<is'\"a]]>test&amp;</script>"
+    == Right (HtmlDocument UTF8 Nothing [Element "script" [("type", "text/javascript")] [
                     TextNode "This<is'\"a]]>test&amp;"]
                     ])
 

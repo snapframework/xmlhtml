@@ -57,8 +57,10 @@ module Text.XmlHtml (
 
     -- * Rendering
     render,
-    XML.renderXmlFragment,
-    HTML.renderHtmlFragment
+    XMLR.renderXmlFragment,
+    HTML.renderHtmlFragment,
+    XMLR.xmlDecl,
+    XMLR.docTypeDecl
     ) where
 
 ------------------------------------------------------------------------------
@@ -69,7 +71,7 @@ import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
 
 import qualified Text.XmlHtml.XML.Parse as XML
-import qualified Text.XmlHtml.XML.Render as XML
+import qualified Text.XmlHtml.XML.Render as XMLR
 
 import qualified Text.XmlHtml.HTML.Parse as HTML
 import qualified Text.XmlHtml.HTML.Render as HTML
@@ -101,6 +103,6 @@ parseHTML = parse HTML.docFragment
 ------------------------------------------------------------------------------
 -- | Renders a 'Document'.
 render :: Document -> Builder
-render (XmlDocument  e dt ns) = XML.render  e dt ns
+render (XmlDocument  e dt ns) = XMLR.render  e dt ns
 render (HtmlDocument e dt ns) = HTML.render e dt ns
 

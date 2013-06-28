@@ -158,7 +158,7 @@ finishElement t tbase a b = do
          else nonEmptyElem
   where
     nonEmptyElem
-        | tbase `S.member` rawTextTags = do
+        | isRawText tbase a = do
             c <- XML.cdata  "<"  $ P.try (endTag t)
             return (Element t a [c], Matched)
         | tbase `S.member` endOmittableLast = tagContents optional

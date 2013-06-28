@@ -98,7 +98,7 @@ element e t tb a c
         `mappend` fromText e " />"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
-    | tb `S.member` rawTextTags,
+    | isRawText tb a,
       all isTextNode c,
       let s = T.concat (map nodeText c),
       not ("</" `T.append` t `T.isInfixOf` s) =
@@ -110,10 +110,10 @@ element e t tb a c
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"
-    | tb `S.member` rawTextTags,
+    | isRawText tb a,
       [ TextNode _ ] <- c                     =
         error $ T.unpack t ++ " cannot contain text looking like its end tag"
-    | tb `S.member` rawTextTags                =
+    | isRawText tb a                           =
         error $ T.unpack t ++ " cannot contain child elements or comments"
     | otherwise =
         fromText e "<"
