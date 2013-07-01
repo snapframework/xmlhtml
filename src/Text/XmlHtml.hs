@@ -59,8 +59,6 @@ module Text.XmlHtml (
     render,
     XMLR.renderXmlFragment,
     HTML.renderHtmlFragment,
-    XMLR.xmlDecl,
-    XMLR.docTypeDecl
     ) where
 
 ------------------------------------------------------------------------------
