@@ -24,5 +24,5 @@ Executable testsuite
     text                       >= 0.11     && <0.12,
     unordered-containers       >= 0.1.4    && <0.3
 
-  ghc-options: -O2 -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
+  ghc-options: -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
