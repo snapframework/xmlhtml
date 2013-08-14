@@ -31,13 +31,13 @@ voidTags = S.fromList [
     ]
 
 ------------------------------------------------------------------------------
--- | Elements that XmlHtml treats as raw text.  Raw text elements are not
--- allowed to have any other tags in them.  This is necessary to support the
--- Javascript less than operator inside a script tag, for example.
+-- | Elements that XmlHtml treats as raw text by default.  Raw text elements
+-- are not allowed to have any other tags in them.  This is necessary to
+-- support the Javascript less than operator inside a script tag, for example.
 --
--- Note that script tags are in this list, but only considered raw text if
--- they have the type="text/javascript" attribute.  This is so things like
--- <script type="text/x-handlebars"> (used by ember.js) will work.
+-- The library uses the 'isRawText' function everywhere instead of checking
+-- this set directly because that gives us an escape hatch to avoid the
+-- default behavior if necessary.
 {-# NOINLINE rawTextTags #-}
 rawTextTags :: HashSet Text
 rawTextTags = S.fromList [ "script", "style" ]
@@ -46,14 +46,21 @@ rawTextTags = S.fromList [ "script", "style" ]
 -- | Determine whether a tag should be treated as raw text.  Raw text elements
 -- are not allowed to have any other tags in them.  This is necessary to
 -- support the Javascript less than operator inside a script tag, for example.
+--
+-- If a tag is in the 'rawTextTags' set, this function allows you to override
+-- that behavior by adding the @xmlhtmlNotRaw@ attribute.  Conversely, if a
+-- tag is not in the 'rawTextTags' set, this function allows you to override
+-- that by adding the @xmlhtmlRaw@ attribute to the tag.
+--
 -- This is the function that is actually used in the parser and renderer.
 -- 'rawTextTags' is not used any more, but is still provided for backwards
--- compatibility.
+-- compatibility and to let you see which tags are treated as raw by default.
 {-# NOINLINE isRawText #-}
 isRawText :: Text -> [(Text, Text)] -> Bool
-isRawText "style" _ = True
-isRawText "script" as = ("type", "text/javascript") `elem` as
-isRawText _ _ = False
+isRawText tag as =
+  if tag `S.member` rawTextTags
+    then ("xmlhtmlNotRaw", "") `notElem` as
+    else ("xmlhtmlRaw", "") `elem` as
 
 ------------------------------------------------------------------------------
 -- | List of elements with omittable end tags.
