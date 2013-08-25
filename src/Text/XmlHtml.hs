@@ -59,6 +59,7 @@ module Text.XmlHtml (
     render,
     XMLR.renderXmlFragment,
     HTML.renderHtmlFragment,
+    renderDocType
     ) where
 
 ------------------------------------------------------------------------------
@@ -103,4 +104,8 @@ parseHTML = parse HTML.docFragment
 render :: Document -> Builder
 render (XmlDocument  e dt ns) = XMLR.render  e dt ns
 render (HtmlDocument e dt ns) = HTML.render e dt ns
+
+
+renderDocType :: Encoding -> Maybe DocType -> Builder
+renderDocType = XMLR.docTypeDecl
 
