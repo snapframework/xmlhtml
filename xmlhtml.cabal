@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.2.3
+Version:             0.2.3.1
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures so that
@@ -826,7 +826,7 @@ Library
                        bytestring           >= 0.9   && < 0.11,
                        containers           >= 0.3   && < 0.6,
                        parsec               >= 3.1.2 && < 3.2,
-                       text                 >= 0.11  && < 0.12,
+                       text                 >= 0.11  && < 1.2,
                        unordered-containers >= 0.1.4 && < 0.3
 
   extensions:
