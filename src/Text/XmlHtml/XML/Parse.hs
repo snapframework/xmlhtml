@@ -138,7 +138,7 @@ docFragment e = do
 
 ------------------------------------------------------------------------------
 whiteSpace :: Parser ()
-whiteSpace = some (P.satisfy (`elem` " \t\r\n")) *> return ()
+whiteSpace = some (P.satisfy (`elem` [' ','\t','\r','\n'])) *> return ()
 
 
 ------------------------------------------------------------------------------
@@ -186,8 +186,8 @@ name = do
 attrValue :: Parser Text
 attrValue = fmap T.concat (singleQuoted <|> doubleQuoted)
   where
-    singleQuoted = P.char '\'' *> refTill "<&\'" <* P.char '\''
-    doubleQuoted = P.char '\"' *> refTill "<&\"" <* P.char '\"'
+    singleQuoted = P.char '\'' *> refTill ['<','&','\''] <* P.char '\''
+    doubleQuoted = P.char '"'  *> refTill ['<','&','"']  <* P.char '"'
     refTill end = many (takeWhile1 (not . (`elem` end)) <|> reference)
 
 
@@ -228,16 +228,17 @@ isPubIdChar :: Char -> Bool
 isPubIdChar c | c >= 'a' && c <= 'z'                 = True
               | c >= 'A' && c <= 'Z'                 = True
               | c >= '0' && c <= '9'                 = True
-              | c `elem` " \r\n-\'()+,./:=?;!*#@$_%" = True
+              | c `elem` otherChars                  = True
               | otherwise                            = False
-
+  where
+    otherChars = " \r\n-\'()+,./:=?;!*#@$_%" :: [Char]
 
 ------------------------------------------------------------------------------
 -- | The requirement to not contain "]]>" is for SGML compatibility.  We
 -- deliberately choose to not enforce it.  This makes the parser accept
 -- strictly more documents than a standards-compliant parser.
 charData :: Parser Node
-charData = TextNode <$> takeWhile1 (not . (`elem` "<&"))
+charData = TextNode <$> takeWhile1 (not . (`elem` ['<','&']))
 
 
 ------------------------------------------------------------------------------
@@ -595,6 +596,6 @@ encodingDecl = do
     isEnc      c | c >= 'A' && c <= 'Z' = True
                  | c >= 'a' && c <= 'z' = True
                  | c >= '0' && c <= '9' = True
-                 | c `elem` "._-"       = True
+                 | c `elem` ['.','_','-'] = True
                  | otherwise = False
 

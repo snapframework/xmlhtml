@@ -198,7 +198,7 @@ emptyOrStartTag = do
 ------------------------------------------------------------------------------
 attrName :: Parser Text
 attrName = takeWhile1 isAttrName
-  where isAttrName c | c `elem` "\0 \"\'>/=" = False
+  where isAttrName c | c `elem` ['\0',' ','"','\'','>','/','='] = False
                      | isControlChar c       = False
                      | otherwise             = True
 
@@ -216,15 +216,15 @@ isControlChar c | c >= '\x007F' && c <= '\x009F' = True
 quotedAttrValue :: Parser Text
 quotedAttrValue = singleQuoted <|> doubleQuoted
   where
-    singleQuoted = P.char '\'' *> refTill "&\'" <* P.char '\''
-    doubleQuoted = P.char '\"' *> refTill "&\"" <* P.char '\"'
+    singleQuoted = P.char '\'' *> refTill ['&','\''] <* P.char '\''
+    doubleQuoted = P.char '"'  *> refTill ['&','"']  <* P.char '"'
     refTill end = T.concat <$> many
         (takeWhile1 (not . (`elem` end)) <|> reference)
 
 
 ------------------------------------------------------------------------------
 unquotedAttrValue :: Parser Text
-unquotedAttrValue = refTill " \"\'=<>&`"
+unquotedAttrValue = refTill [' ','"','\'','=','<','>','&','`']
   where
     refTill end = T.concat <$> some
         (takeWhile1 (not . (`elem` end)) <|> reference)
