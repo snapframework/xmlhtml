@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards     #-}
 
@@ -6,7 +7,6 @@ module Text.XmlHtml.HTML.Render where
 import           Blaze.ByteString.Builder
 import           Control.Applicative
 import           Data.Maybe
-import           Data.Monoid
 import qualified Text.Parsec as P
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
@@ -18,6 +18,10 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Data.HashSet as S
+
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid
+#endif
 
 ------------------------------------------------------------------------------
 -- | And, the rendering code.

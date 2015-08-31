@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -O0 -fno-case-merge -fno-strictness -fno-cse #-}
+{-# LANGUAGE CPP                         #-}
 {-# LANGUAGE OverloadedStrings           #-}
 
 module Text.XmlHtml.HTML.Meta
@@ -10,7 +11,9 @@ module Text.XmlHtml.HTML.Meta
   , predefinedRefs
   ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
+#endif
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import           Data.HashSet (HashSet)

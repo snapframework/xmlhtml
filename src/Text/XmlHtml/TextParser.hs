@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -16,7 +17,9 @@ module Text.XmlHtml.TextParser
 , module Text.Parsec.Text
 ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
+#endif
 import           Data.Char
 import           Data.Maybe
 import           Text.XmlHtml.Common

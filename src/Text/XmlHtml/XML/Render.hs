@@ -1,3 +1,5 @@
+
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Text.XmlHtml.XML.Render where
@@ -5,11 +7,14 @@ module Text.XmlHtml.XML.Render where
 import           Blaze.ByteString.Builder
 import           Data.Char
 import           Data.Maybe
-import           Data.Monoid
 import           Text.XmlHtml.Common
 
 import           Data.Text (Text)
 import qualified Data.Text as T
+
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid
+#endif
 
 
 ------------------------------------------------------------------------------
