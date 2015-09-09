@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP               #-}
+
 -- | Renderer that supports rendering to xmlhtml forests.  This is a port of
 -- the Hexpat renderer.
 --
@@ -8,11 +10,11 @@
 module Text.Blaze.Renderer.XmlHtml (renderHtml, renderHtmlNodes) where
 
 import           Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
+import qualified Data.Text           as T
+import qualified Data.Text.Encoding  as T
 import           Text.Blaze.Html
-import           Text.Blaze.Internal
-import           Text.XmlHtml
+import           Text.Blaze.Internal as TBI
+import           Text.XmlHtml        as X
 
 
 -- | Render a 'ChoiceString' to Text. This is only meant to be used for
@@ -66,6 +68,10 @@ renderNodes = go []
         go ((fromChoiceStringText key, fromChoiceStringText value) : attrs)
            content
     go _ (Content content) = fromChoiceString content
+#if MIN_VERSION_blaze_markup(0,6,3)
+    go _ (TBI.Comment comment) =
+        (X.Comment (fromChoiceStringText comment) :)
+#endif
     go attrs (Append h1 h2) = go attrs h1 . go attrs h2
     go _ Empty = id
     {-# NOINLINE go #-}

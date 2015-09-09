@@ -26,7 +26,7 @@ Author:              Chris Smith <cdsmith@gmail.com>
 Maintainer:          Chris Smith <cdsmith@gmail.com>
 Category:            Text
 Build-type:          Simple
-Cabal-version:       >=1.6
+Cabal-version:       >=1.8.0.4
 
 Extra-source-files:
              .ghci,
