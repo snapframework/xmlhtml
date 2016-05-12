@@ -87,7 +87,7 @@ oasisHR name = do
 
 getOASIS :: String -> String -> IO [(String, Bool)]
 getOASIS sub name = do
-    testListSrc <- B.readFile ("resources/" ++ name)
+    testListSrc <- B.readFile ("test/resources/" ++ name)
     let Right (XmlDocument _ _ ns) = parseXML name testListSrc
     let Just c = listToMaybe (filter isElement ns)
     oasisTestCases sub name c
@@ -119,7 +119,7 @@ oasisTest sub name t = do
            | otherwise            -> return [(fn, True)]
       else return []
   where
-    file f        = "resources/" ++ toLastSlash name ++ T.unpack f
+    file f        = "test/resources/" ++ toLastSlash name ++ T.unpack f
     toLastSlash s = snd (go s)
         where go []     = (False, [])
               go (c:cs) = let (found, ccs) = go cs

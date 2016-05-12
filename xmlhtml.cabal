@@ -840,3 +840,28 @@ Library
 
   Ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
   ghc-prof-options:    -prof -auto-all
+
+Test-suite testsuite
+  hs-source-dirs: src test/src
+  type: exitcode-stdio-1.0
+  main-is: TestSuite.hs
+
+  build-depends:
+    HUnit                      == 1.2.*,
+    QuickCheck                 >= 2.3.0.2,
+    base,
+    blaze-builder,
+    blaze-html,
+    blaze-markup,
+    bytestring,
+    containers,
+    directory                  >= 1.0      && <1.3,
+    parsec,
+    test-framework             >= 0.8.0.3  && <0.9,
+    test-framework-hunit       >= 0.3      && <0.4,
+    test-framework-quickcheck2 >= 0.3      && <0.4,
+    text,
+    unordered-containers
+
+  ghc-options: -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
+               -fno-warn-unused-do-bind
