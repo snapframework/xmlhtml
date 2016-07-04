@@ -863,5 +863,5 @@ Test-suite testsuite
     text,
     unordered-containers
 
-  ghc-options: -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
+  ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
