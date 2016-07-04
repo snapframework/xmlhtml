@@ -36,8 +36,6 @@ Extra-source-files:
              extra/logo.gif,
              haddock.sh,
              README,
-             test/runTestsAndCoverage.sh,
-             test/xmlhtml-testsuite.cabal,
              test/suite/TestSuite.hs
              test/suite/Text/XmlHtml/CursorTests.hs,
              test/suite/Text/XmlHtml/DocumentTests.hs,
