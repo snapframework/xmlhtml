@@ -86,7 +86,7 @@ firstNode e (Comment t)     = node e (Comment t)
 firstNode e (Element t a c) = node e (Element t a c)
 firstNode _ (TextNode "")   = mempty
 firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
-                              in escaped "<>& \t\r\n" e (T.singleton c)
+                              in escaped "<>& \t\r" e (T.singleton c)
                                  `mappend` node e (TextNode t')
 
 

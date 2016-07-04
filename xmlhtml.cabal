@@ -847,7 +847,7 @@ Test-suite testsuite
   main-is: TestSuite.hs
 
   build-depends:
-    HUnit                      == 1.2.*,
+    HUnit                      >= 1.2      && <1.4,
     QuickCheck                 >= 2.3.0.2,
     base,
     blaze-builder,
