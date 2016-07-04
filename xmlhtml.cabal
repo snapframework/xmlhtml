@@ -36,12 +36,12 @@ Extra-source-files:
              extra/logo.gif,
              haddock.sh,
              README,
-             test/suite/TestSuite.hs
-             test/suite/Text/XmlHtml/CursorTests.hs,
-             test/suite/Text/XmlHtml/DocumentTests.hs,
-             test/suite/Text/XmlHtml/OASISTest.hs,
-             test/suite/Text/XmlHtml/TestCommon.hs,
-             test/suite/Text/XmlHtml/Tests.hs,
+             test/src/TestSuite.hs
+             test/src/Text/XmlHtml/CursorTests.hs,
+             test/src/Text/XmlHtml/DocumentTests.hs,
+             test/src/Text/XmlHtml/OASISTest.hs,
+             test/src/Text/XmlHtml/TestCommon.hs,
+             test/src/Text/XmlHtml/Tests.hs,
              test/resources/ibm/ibm_oasis_invalid.xml,
              test/resources/ibm/ibm_oasis_not-wf.xml,
              test/resources/ibm/ibm_oasis_readme.txt,
