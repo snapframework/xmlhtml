@@ -1,4 +1,7 @@
 xmlhtml - XML and HTML 5 parsing and rendering
+----------------------------------------------
+
+[![Build Status](https://travis-ci.org/snapframework/xmlhtml.svg?branch=master)](https://travis-ci.org/snapframework/xmlhtml)
 
 This library implements both parsers and renderers for XML and HTML 5 document
 fragments.  The two share data structures to represent the document tree, so
