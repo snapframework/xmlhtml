@@ -35,7 +35,7 @@ Extra-source-files:
              extra/hscolour.css,
              extra/logo.gif,
              haddock.sh,
-             README,
+             README.md,
              test/src/TestSuite.hs
              test/src/Text/XmlHtml/CursorTests.hs,
              test/src/Text/XmlHtml/DocumentTests.hs,
