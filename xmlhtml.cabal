@@ -838,8 +838,7 @@ Library
     ScopedTypeVariables,
     ExistentialQuantification
 
-  Ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
-  ghc-prof-options:    -auto-all
+  ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
 
 Test-suite testsuite
   hs-source-dirs: src test/src
