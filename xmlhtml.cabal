@@ -839,7 +839,7 @@ Library
     ExistentialQuantification
 
   Ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
-  ghc-prof-options:    -prof -auto-all
+  ghc-prof-options:    -auto-all
 
 Test-suite testsuite
   hs-source-dirs: src test/src
