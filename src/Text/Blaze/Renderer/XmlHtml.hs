@@ -48,6 +48,14 @@ fromChoiceString EmptyChoiceString = id
 {-# INLINE fromChoiceString #-}
 
 
+-- Blaze-markup-0.8.0 changed some alternatives of MarkupM, adding a parameter
+-- which needs to be included in the pattern matches below.
+#if MIN_VERSION_blaze_markup(0,8,0)
+#define MARKUP_080 _
+#else
+#define MARKUP_080
+#endif
+
 -- | Render some 'Html' to an appending list of nodes
 --
 renderNodes :: Html -> [Node] -> [Node]
@@ -58,22 +66,22 @@ renderNodes = go []
         (Element (getText tag) attrs (go [] content []) :)
     go attrs (CustomParent tag content) =
         (Element (fromChoiceStringText tag) attrs (go [] content []) :)
-    go attrs (Leaf tag _ _) =
+    go attrs (Leaf tag _ _ MARKUP_080) =
         (Element (getText tag) attrs [] :)
-    go attrs (CustomLeaf tag _) =
+    go attrs (CustomLeaf tag _ MARKUP_080) =
         (Element (fromChoiceStringText tag) attrs [] :)
     go attrs (AddAttribute key _ value content) =
         go ((getText key, fromChoiceStringText value) : attrs) content
     go attrs (AddCustomAttribute key value content) =
         go ((fromChoiceStringText key, fromChoiceStringText value) : attrs)
            content
-    go _ (Content content) = fromChoiceString content
+    go _ (Content content MARKUP_080) = fromChoiceString content
 #if MIN_VERSION_blaze_markup(0,6,3)
-    go _ (TBI.Comment comment) =
+    go _ (TBI.Comment comment MARKUP_080) =
         (X.Comment (fromChoiceStringText comment) :)
 #endif
     go attrs (Append h1 h2) = go attrs h1 . go attrs h2
-    go _ Empty = id
+    go _ (Empty MARKUP_080) = id
     {-# NOINLINE go #-}
 {-# INLINE renderNodes #-}
 
