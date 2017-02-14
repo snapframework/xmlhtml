@@ -860,8 +860,3 @@ Test-suite testsuite
 
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
-
-executable Test
-  main-is: test.hs
-  build-depends: bytestring, text, xmlhtml, base
-  default-language: Haskell2010
