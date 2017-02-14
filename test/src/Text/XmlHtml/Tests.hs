@@ -658,7 +658,7 @@ smileyEscapesInLatin =
     toByteString (renderXmlFragment ISO_8859_1 ([
         TextNode "Hello ☺"
         ]))
-    == "Hello &#9786"
+    == "Hello &#9786;"
 
 ------------------------------------------------------------------------------
 -- HTML Repeats of XML Rendering Tests ---------------------------------------

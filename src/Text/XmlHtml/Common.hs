@@ -237,7 +237,8 @@ encodeIso8859 t = T.encodeUtf8 . T.concat . map toLatin1Chunk $
         (uniEscape c) (\esc -> T.concat ["&", esc, ";"])
         (M.lookup (T.singleton c) reversePredefinedRefs)
 
-    uniEscape = T.append "&#" . T.pack . (show :: Int -> String) . fromEnum
+    uniEscape = T.append "&#" . flip T.snoc ';' . T.pack .
+                (show :: Int -> String) . fromEnum
 
 
 ------------------------------------------------------------------------------
