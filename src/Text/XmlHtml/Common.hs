@@ -5,7 +5,7 @@
 module Text.XmlHtml.Common where
 
 import           Blaze.ByteString.Builder
-import           Data.Char (isLatin1)
+import           Data.Char (isAscii)
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe
 
@@ -218,23 +218,23 @@ encoder ISO_8859_1 = encodeIso_8859_1
 -- 'Text.XmlHtml.Meta.references' map are mapped to their escape sequences,
 -- and any other UTF-8 characters are replaced with ascii "?"
 encodeIso_8859_1 :: Text -> ByteString
-encodeIso_8859_1 t = T.encodeUtf8 . T.concat . map toLatin1Chunk $
-                     T.groupBy latinSplits t
+encodeIso_8859_1 t = T.encodeUtf8 . T.concat . map toAsciiChunk $
+                     T.groupBy asciiSplits t
   where
 
     -- Identify long strings of all-acceptable or all-unacceptable characters
     -- Acceptable strings are passed through
     -- Unacceptable strings are mapped to ASCII character by character
-    toLatin1Chunk sub =
-      if T.any isLatin1 sub
+    toAsciiChunk sub =
+      if T.any isAscii sub
       then sub
-      else T.concat . map toLatin1Char $ T.unpack sub
-    latinSplits x y = isLatin1 x == isLatin1 y
+      else T.concat . map toAsciiChar $ T.unpack sub
+    asciiSplits x y = isAscii x == isAscii y
 
     -- A character's mapping to ascii goes through html entity escaping
     -- if that character is in the references table
     -- Otherwise its unicode index is printed to decimal and "&#" is appended
-    toLatin1Char c = maybe
+    toAsciiChar c = maybe
         (uniEscape c) (\esc -> T.concat ["&", esc, ";"])
         (M.lookup (T.singleton c) reversePredefinedRefs)
 
@@ -249,7 +249,7 @@ decoder UTF8       = T.decodeUtf8With    (TE.replace '\xFFFF')
 decoder UTF16BE    = T.decodeUtf16BEWith (TE.replace '\xFFFF')
 decoder UTF16LE    = T.decodeUtf16LEWith (TE.replace '\xFFFF')
 decoder ISO_8859_1 = T.decodeLatin1 .
-                     BS.map (\c -> if isLatin1 c then c else '?')
+                     BS.map (\c -> if isAscii c then c else '?')
 
 
 ------------------------------------------------------------------------------

@@ -563,7 +563,8 @@ xmlRenderingTests = [
     testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
     testIt "bothQuotesInAttr       " bothQuotesInAttr,
     testIt "ndashEscapesInLatin    " ndashEscapesInLatin,
-    testIt "smileyEscapesInLatin   " smileyEscapesInLatin
+    testIt "smileyEscapesInLatin   " smileyEscapesInLatin,
+    testIt "numericalEscapes       " numericalEscapes
     ]
 
 renderByteOrderMark :: Bool
@@ -659,6 +660,13 @@ smileyEscapesInLatin =
         TextNode "Hello ☺"
         ]))
     == "Hello &#9786;"
+
+numericalEscapes :: Bool
+numericalEscapes =
+    ((toByteString . renderXmlFragment ISO_8859_1 . docContent)
+    <$> parseXML "test" "Hello &#174;")
+    == Right "Hello &REG;"
+
 
 ------------------------------------------------------------------------------
 -- HTML Repeats of XML Rendering Tests ---------------------------------------
