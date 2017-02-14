@@ -15,6 +15,7 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as TE
 
 import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as BS
 import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs)
 
 
@@ -247,7 +248,8 @@ decoder :: Encoding -> ByteString -> Text
 decoder UTF8       = T.decodeUtf8With    (TE.replace '\xFFFF')
 decoder UTF16BE    = T.decodeUtf16BEWith (TE.replace '\xFFFF')
 decoder UTF16LE    = T.decodeUtf16LEWith (TE.replace '\xFFFF')
-decoder ISO_8859_1 = T.decodeUtf8With    (TE.replace '\xFFFF')
+decoder ISO_8859_1 = T.decodeLatin1 .
+                     BS.map (\c -> if isLatin1 c then c else '?')
 
 
 ------------------------------------------------------------------------------
