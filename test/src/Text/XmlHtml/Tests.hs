@@ -562,7 +562,8 @@ xmlRenderingTests = [
     testIt "singleQuoteInAttr      " singleQuoteInAttr,
     testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
     testIt "bothQuotesInAttr       " bothQuotesInAttr,
-    testIt "ndashEscapes           " ndashEscapes
+    testIt "ndashEscapesInLatin    " ndashEscapesInLatin,
+    testIt "smileyEscapesInLatin   " smileyEscapesInLatin
     ]
 
 renderByteOrderMark :: Bool
@@ -645,12 +646,19 @@ bothQuotesInAttr =
         ]))
     == utf8Decl `B.append` "<foo bar=\"test\'&quot;ing\"/>"
 
-ndashEscapes :: Bool
-ndashEscapes =
+ndashEscapesInLatin :: Bool
+ndashEscapesInLatin =
     toByteString (renderXmlFragment ISO_8859_1 ([
         TextNode "Hello–world"
         ]))
     == "Hello&ndash;world"
+
+smileyEscapesInLatin :: Bool
+smileyEscapesInLatin =
+    toByteString (renderXmlFragment ISO_8859_1 ([
+        TextNode "Hello ☺"
+        ]))
+    == "Hello &#9786"
 
 ------------------------------------------------------------------------------
 -- HTML Repeats of XML Rendering Tests ---------------------------------------

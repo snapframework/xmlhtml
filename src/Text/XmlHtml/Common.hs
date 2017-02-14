@@ -220,13 +220,24 @@ encodeIso8859 :: Text -> ByteString
 encodeIso8859 t = T.encodeUtf8 . T.concat . map toLatin1Chunk $
                   T.groupBy latinSplits t
   where
-    latinSplits x y = isLatin1 x == isLatin1 y
+
+    -- Identify long strings of all-acceptable or all-unacceptable characters
+    -- Acceptable strings are passed through
+    -- Unacceptable strings are mapped to ASCII character by character
     toLatin1Chunk sub =
       if T.any isLatin1 sub
       then sub
       else T.concat . map toLatin1Char $ T.unpack sub
-    toLatin1Char c = maybe "?" (\esc -> T.concat ["&", esc, ";"])
-                     (M.lookup (T.singleton c) reversePredefinedRefs)
+    latinSplits x y = isLatin1 x == isLatin1 y
+
+    -- A character's mapping to ascii goes through html entity escaping
+    -- if that character is in the references table
+    -- Otherwise its unicode index is printed to decimal and "&#" is appended
+    toLatin1Char c = maybe
+        (uniEscape c) (\esc -> T.concat ["&", esc, ";"])
+        (M.lookup (T.singleton c) reversePredefinedRefs)
+
+    uniEscape = T.append "&#" . T.pack . (show :: Int -> String) . fromEnum
 
 
 ------------------------------------------------------------------------------
