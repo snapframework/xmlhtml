@@ -5,7 +5,7 @@
 module Text.XmlHtml.Common where
 
 import           Blaze.ByteString.Builder
-import           Data.Char (isAscii)
+import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe
 
@@ -249,7 +249,7 @@ decoder UTF8       = T.decodeUtf8With    (TE.replace '\xFFFF')
 decoder UTF16BE    = T.decodeUtf16BEWith (TE.replace '\xFFFF')
 decoder UTF16LE    = T.decodeUtf16LEWith (TE.replace '\xFFFF')
 decoder ISO_8859_1 = T.decodeLatin1 .
-                     BS.map (\c -> if isAscii c then c else '?')
+                     BS.map (\c -> if isLatin1 c then c else '?')
 
 
 ------------------------------------------------------------------------------
