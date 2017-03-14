@@ -5,6 +5,8 @@
 module Text.XmlHtml.Common where
 
 import           Blaze.ByteString.Builder
+import           Data.Char (isAscii, isLatin1)
+import qualified Data.HashMap.Strict as M
 import           Data.Maybe
 
 import           Data.Text (Text)
@@ -13,6 +15,8 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as TE
 
 import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as BS
+import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs)
 
 
 ------------------------------------------------------------------------------
@@ -186,32 +190,66 @@ data InternalSubset = InternalText !Text
 ------------------------------------------------------------------------------
 -- | The character encoding of a document.  Currently only the required
 -- character encodings are implemented.
-data Encoding = UTF8 | UTF16BE | UTF16LE deriving (Eq, Show)
+data Encoding = UTF8 | UTF16BE | UTF16LE | ISO_8859_1 deriving (Eq, Show)
 
 
 ------------------------------------------------------------------------------
 -- | Retrieves the preferred name of a character encoding for embedding in
 -- a document.
 encodingName :: Encoding -> Text
-encodingName UTF8    = "UTF-8"
-encodingName UTF16BE = "UTF-16"
-encodingName UTF16LE = "UTF-16"
+encodingName UTF8       = "UTF-8"
+encodingName UTF16BE    = "UTF-16"
+encodingName UTF16LE    = "UTF-16"
+encodingName ISO_8859_1 = "ISO-8859-1"
 
 
 ------------------------------------------------------------------------------
 -- | Gets the encoding function from 'Text' to 'ByteString' for an encoding.
 encoder :: Encoding -> Text -> ByteString
-encoder UTF8    = T.encodeUtf8
-encoder UTF16BE = T.encodeUtf16BE
-encoder UTF16LE = T.encodeUtf16LE
+encoder UTF8       = T.encodeUtf8
+encoder UTF16BE    = T.encodeUtf16BE
+encoder UTF16LE    = T.encodeUtf16LE
+encoder ISO_8859_1 = encodeIso_8859_1
+
+
+------------------------------------------------------------------------------
+-- | Encodes UTF-8 Text into bytestring with only latin1 characters
+-- UTF-8 characters found in the input and present in the
+-- 'Text.XmlHtml.Meta.references' map are mapped to their escape sequences,
+-- and any other UTF-8 characters are replaced with ascii "?"
+encodeIso_8859_1 :: Text -> ByteString
+encodeIso_8859_1 t = T.encodeUtf8 . T.concat . map toAsciiChunk $
+                     T.groupBy asciiSplits t
+  where
+
+    -- Identify long strings of all-acceptable or all-unacceptable characters
+    -- Acceptable strings are passed through
+    -- Unacceptable strings are mapped to ASCII character by character
+    toAsciiChunk sub =
+      if T.any isAscii sub
+      then sub
+      else T.concat . map toAsciiChar $ T.unpack sub
+    asciiSplits x y = isAscii x == isAscii y
+
+    -- A character's mapping to ascii goes through html entity escaping
+    -- if that character is in the references table
+    -- Otherwise its unicode index is printed to decimal and "&#" is appended
+    toAsciiChar c = maybe
+        (uniEscape c) (\esc -> T.concat ["&", esc, ";"])
+        (M.lookup (T.singleton c) reversePredefinedRefs)
+
+    uniEscape = T.append "&#" . flip T.snoc ';' . T.pack .
+                (show :: Int -> String) . fromEnum
 
 
 ------------------------------------------------------------------------------
 -- | Gets the decoding function from 'ByteString' to 'Text' for an encoding.
 decoder :: Encoding -> ByteString -> Text
-decoder UTF8    = T.decodeUtf8With    (TE.replace '\xFFFF')
-decoder UTF16BE = T.decodeUtf16BEWith (TE.replace '\xFFFF')
-decoder UTF16LE = T.decodeUtf16LEWith (TE.replace '\xFFFF')
+decoder UTF8       = T.decodeUtf8With    (TE.replace '\xFFFF')
+decoder UTF16BE    = T.decodeUtf16BEWith (TE.replace '\xFFFF')
+decoder UTF16LE    = T.decodeUtf16LEWith (TE.replace '\xFFFF')
+decoder ISO_8859_1 = T.decodeLatin1 .
+                     BS.map (\c -> if isLatin1 c then c else '?')
 
 
 ------------------------------------------------------------------------------

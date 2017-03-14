@@ -561,7 +561,10 @@ xmlRenderingTests = [
     testIt "renderEmptyText        " renderEmptyText,
     testIt "singleQuoteInAttr      " singleQuoteInAttr,
     testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
-    testIt "bothQuotesInAttr       " bothQuotesInAttr
+    testIt "bothQuotesInAttr       " bothQuotesInAttr,
+    testIt "ndashEscapesInLatin    " ndashEscapesInLatin,
+    testIt "smileyEscapesInLatin   " smileyEscapesInLatin,
+    testIt "numericalEscapes       " numericalEscapes
     ]
 
 renderByteOrderMark :: Bool
@@ -643,6 +646,26 @@ bothQuotesInAttr =
         Element "foo" [("bar", "test\'\"ing")] []
         ]))
     == utf8Decl `B.append` "<foo bar=\"test\'&quot;ing\"/>"
+
+ndashEscapesInLatin :: Bool
+ndashEscapesInLatin =
+    toByteString (renderXmlFragment ISO_8859_1 ([
+        TextNode "Hello–world"
+        ]))
+    == "Hello&ndash;world"
+
+smileyEscapesInLatin :: Bool
+smileyEscapesInLatin =
+    toByteString (renderXmlFragment ISO_8859_1 ([
+        TextNode "Hello ☺"
+        ]))
+    == "Hello &#9786;"
+
+numericalEscapes :: Bool
+numericalEscapes =
+    ((toByteString . renderXmlFragment ISO_8859_1 . docContent)
+    <$> parseXML "test" "Hello &#174;")
+    == Right "Hello &REG;"
 
 
 ------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ module Text.XmlHtml.HTML.Meta
   , endOmittableLast
   , endOmittableNext
   , predefinedRefs
+  , reversePredefinedRefs
   ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -2533,4 +2534,11 @@ reftab58 =
     ("zscr", "\x1D4CF"),
     ("zwj", "\x0200D"),
     ("zwnj", "\x0200C") ]
+
+
+------------------------------------------------------------------------------
+-- Reverse lookup of Html entities
+reversePredefinedRefs :: HashMap Text Text
+reversePredefinedRefs = M.fromList . map (\(x,y) -> (y,x)) $
+                        M.toList predefinedRefs
 
