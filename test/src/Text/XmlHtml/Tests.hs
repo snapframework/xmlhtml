@@ -663,8 +663,8 @@ smileyEscapesInLatin =
 
 numericalEscapes :: Bool
 numericalEscapes =
-    ((toByteString . renderXmlFragment ISO_8859_1 . docContent)
-    <$> parseXML "test" "Hello &#174;")
+    fmap (toByteString . renderXmlFragment ISO_8859_1 . docContent)
+    (parseXML "test" "Hello &#174;")
     == Right "Hello &REG;"
 
 
