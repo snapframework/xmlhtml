@@ -8,7 +8,7 @@ import           Data.ByteString (ByteString)
 import           Blaze.ByteString.Builder
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Builder as B
-import           Data.Char (isAscii, isLatin1)
+import           Data.Char (chr, isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import qualified Data.Map as Map
@@ -20,6 +20,8 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as TE
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
+
+import           Text.Parsec.Text (Parser)
 
 import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs,
                                          explicitAttributes)
@@ -306,3 +308,11 @@ bmap f   = B.byteString
                . TL.toStrict
                . TL.decodeUtf8
                . B.toLazyByteString
+
+------------------------------------------------------------------------------
+-- Lookup a character code in some monad (usually a parser)
+safeChr :: Int -> Parser Char
+safeChr c =
+    if c > 1114111
+      then fail ("Invalid character code: " ++ show c)
+      else return (chr c)

@@ -251,6 +251,7 @@ htmlXMLParsingTests = do
     testIt "badDoctype3HTML        " badDoctype3HTML
     testIt "badDoctype4HTML        " badDoctype4HTML
     testIt "badDoctype5HTML        " badDoctype5HTML
+    testIt "outOfBoundsChr         " outOfBoundsChr
 
 emptyDocumentHTML :: Bool
 emptyDocumentHTML = parseHTML "" ""
@@ -324,6 +325,8 @@ badDoctype5HTML :: Bool
 badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
                                        `B.append` "PUBLIC \"bar\" \"baz\">")
 
+outOfBoundsChr :: Bool
+outOfBoundsChr = isRight $ parseHTML "" "<p>&#100000000000;</p>"
 
 ------------------------------------------------------------------------------
 -- HTML Quirks Parsing Tests -------------------------------------------------

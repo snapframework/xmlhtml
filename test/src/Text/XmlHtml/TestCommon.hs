@@ -41,3 +41,7 @@ isBottom a = unsafePerformIO $
 isLeft :: Either a b -> Bool
 isLeft = either (const True) (const False)
 
+------------------------------------------------------------------------------
+isRight :: Either a b -> Bool
+isRight = not . isLeft
+
