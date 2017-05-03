@@ -846,7 +846,7 @@ Test-suite testsuite
   main-is: TestSuite.hs
 
   build-depends:
-    HUnit                      >= 1.2      && <1.6,
+    HUnit                      >= 1.2      && <1.7,
     base,
     blaze-builder,
     blaze-html,
