@@ -8,6 +8,7 @@ module Text.XmlHtml.HTML.Meta
   , isRawText
   , endOmittableLast
   , endOmittableNext
+  , explicitAttributes
   , predefinedRefs
   , reversePredefinedRefs
   ) where
@@ -111,6 +112,16 @@ endOmittableNext = M.fromList [
     ("th",       S.fromList ["td", "th"]),
     ("thead",    S.fromList ["tbody", "tfoot", "thead"]),
     ("tr",       S.fromList ["tr"])
+    ]
+
+------------------------------------------------------------------------------
+-- | Tags and attributes which should always be rendered with an explicit
+-- value, even when the value is empty.  This is required by some web browsers
+-- for tags that are typically non-empty.
+{-# NOINLINE explicitAttributes #-}
+explicitAttributes :: HashMap Text (HashSet Text)
+explicitAttributes = M.fromList [
+    ("a", S.fromList ["href"])
     ]
 
 ------------------------------------------------------------------------------

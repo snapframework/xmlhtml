@@ -772,6 +772,8 @@ htmlRenderingQuirkTests = [
     testIt "renderHTMLRaw2         " renderHTMLRaw2,
     testIt "renderHTMLRaw3         " renderHTMLRaw3,
     testIt "renderHTMLRaw4         " renderHTMLRaw4,
+    testIt "renderHTMLEmptyAttr    " renderHTMLEmptyAttr,
+    testIt "renderHTMLEmptyAttr2   " renderHTMLEmptyAttr2,
     testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
     testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2,
     testIt "renderHTMLAmpAttr3     " renderHTMLAmpAttr3,
@@ -840,6 +842,20 @@ renderHTMLRaw4 = isBottom $
             TextNode "pt>"
             ]
         ]))
+
+renderHTMLEmptyAttr :: Bool
+renderHTMLEmptyAttr =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "input" [("checked", "")] []
+        ]))
+    == "<input checked />"
+
+renderHTMLEmptyAttr2 :: Bool
+renderHTMLEmptyAttr2 =
+    toByteString (render (HtmlDocument UTF8 Nothing [
+        Element "a" [("href", "")] []
+        ]))
+    == "<a href=\"\"></a>"
 
 renderHTMLAmpAttr1 :: Bool
 renderHTMLAmpAttr1 =

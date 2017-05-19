@@ -18,6 +18,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Data.HashSet as S
+import qualified Data.HashMap.Strict as M
 
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
@@ -98,7 +99,7 @@ element e t tb a c
     | tb `S.member` voidTags && null c         =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (attribute e tb) a)
         `mappend` fromText e " />"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
@@ -108,7 +109,7 @@ element e t tb a c
       not ("</" `T.append` t `T.isInfixOf` s) =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (attribute e tb) a)
         `mappend` fromText e ">"
         `mappend` fromText e s
         `mappend` fromText e "</"
@@ -122,7 +123,7 @@ element e t tb a c
     | otherwise =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (attribute e tb) a)
         `mappend` fromText e ">"
         `mappend` (mconcat $ map (node e) c)
         `mappend` fromText e "</"
@@ -131,21 +132,24 @@ element e t tb a c
 
 
 ------------------------------------------------------------------------------
-attribute :: Encoding -> (Text, Text) -> Builder
-attribute e (n,v)
-    | v == ""                    =
+attribute :: Encoding -> Text -> (Text, Text) -> Builder
+attribute e tb (n,v)
+    | v == "" && not explicit               =
         fromText e " "
         `mappend` fromText e n
-    | not ("\'" `T.isInfixOf` v) =
+    | v /= "" && not ("\'" `T.isInfixOf` v) =
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e "=\'"
         `mappend` escaped "&" e v
         `mappend` fromText e "\'"
-    | otherwise                  =
+    | otherwise                             =
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e "=\""
         `mappend` escaped "&\"" e v
         `mappend` fromText e "\""
-
+  where nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
+        explicit = case M.lookup tb explicitAttributes of
+                     Nothing -> False
+                     Just ns -> nbase `S.member` ns
