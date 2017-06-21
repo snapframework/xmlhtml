@@ -51,6 +51,19 @@ data Node = TextNode !Text
 
 
 ------------------------------------------------------------------------------
+-- | Rendering options. Attritube values may be surrounded by single quotes
+-- (default), or by double quotes
+data RenderOptions = RenderOptions {
+    attributeSurround :: AttributeSurround
+    }
+
+data AttributeSurround = SurroundDoubleQuote | SurroundSingleQuote
+    deriving (Eq, Ord, Show)
+
+defaultRenderOptions :: RenderOptions
+defaultRenderOptions = RenderOptions SurroundSingleQuote
+
+------------------------------------------------------------------------------
 -- | Determines whether the node is text or not.
 isTextNode :: Node -> Bool
 isTextNode (TextNode _) = True
