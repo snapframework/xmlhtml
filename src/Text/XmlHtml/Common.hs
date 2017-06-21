@@ -7,6 +7,7 @@ module Text.XmlHtml.Common where
 import           Blaze.ByteString.Builder
 import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import           Data.Maybe
 
 import           Data.Text (Text)
@@ -16,7 +17,8 @@ import qualified Data.Text.Encoding.Error as TE
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
-import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs)
+import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs,
+                                         explicitAttributes)
 
 
 ------------------------------------------------------------------------------
@@ -54,14 +56,18 @@ data Node = TextNode !Text
 -- | Rendering options. Attritube values may be surrounded by single quotes
 -- (default), or by double quotes
 data RenderOptions = RenderOptions {
-    attributeSurround :: AttributeSurround
+      attributeSurround       :: AttributeSurround
+    , explicitEmptyAttributes :: M.HashMap Text (S.HashSet Text)
     }
 
 data AttributeSurround = SurroundDoubleQuote | SurroundSingleQuote
     deriving (Eq, Ord, Show)
 
 defaultRenderOptions :: RenderOptions
-defaultRenderOptions = RenderOptions SurroundSingleQuote
+defaultRenderOptions = RenderOptions
+    { attributeSurround       = SurroundSingleQuote
+    , explicitEmptyAttributes = explicitAttributes
+    }
 
 ------------------------------------------------------------------------------
 -- | Determines whether the node is text or not.

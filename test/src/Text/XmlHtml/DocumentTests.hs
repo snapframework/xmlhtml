@@ -2,6 +2,7 @@
 
 module Text.XmlHtml.DocumentTests (documentTests) where
 
+import qualified Data.ByteString.Builder as B
 import           Data.Text ()                  -- for string instance
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
@@ -69,9 +70,11 @@ documentTests = [
     testIt   "descElemTagExists      " $ descElemTagExists,
     testIt   "descElemTagDFS         " $ descElemTagDFS,
     testIt   "descElemTagNotExists   " $ descElemTagNotExists,
-    testIt   "descElemTagOther       " $ descElemTagOther
-    ]
+    testIt   "descElemTagOther       " $ descElemTagOther,
 
+    -- Exercise render options
+    testCase "renderDoubleQuoteAttrs " $ useDoubleQuoteAttrs
+    ]
 
 compareExternalIDs :: Bool
 compareExternalIDs = Public "foo" "bar" /= System "bar"
@@ -272,3 +275,15 @@ descElemTagOther :: Bool
 descElemTagOther = descendantElementTag "b" n == Nothing
     where n = TextNode ""
 
+useDoubleQuoteAttrs :: Assertion
+useDoubleQuoteAttrs = do
+    let tmpl1 = "<p div=\"tester\"></p>"  -- Element "p" [("div","tester")] []
+        tmpl2 = "<p div=\"tes'er\"></p>"
+        tmpl3 = "<p div='tes\"er'></p>"
+        rndr  =
+            fmap (B.toLazyByteString . renderWithOptions
+            (defaultRenderOptions { attributeSurround = SurroundDoubleQuote}))
+            . parseHTML "test"
+    assertEqual "plain attr" (rndr tmpl1) (Right "<p div=\"tester\"></p>")
+    assertEqual "plain attr" (rndr tmpl2) (Right "<p div=\"tes'er\"></p>")
+    assertEqual "plain attr" (rndr tmpl3) (Right "<p div='tes&quot;er'></p>")

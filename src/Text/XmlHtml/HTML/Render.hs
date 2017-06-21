@@ -18,6 +18,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 import qualified Data.HashSet as S
+import qualified Data.HashMap.Strict as M
 
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
@@ -100,7 +101,7 @@ element opts e t tb a c
     | tb `S.member` voidTags && null c         =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute opts e) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e " />"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
@@ -110,7 +111,7 @@ element opts e t tb a c
       not ("</" `T.append` t `T.isInfixOf` s) =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute opts e) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e ">"
         `mappend` fromText e s
         `mappend` fromText e "</"
@@ -124,7 +125,7 @@ element opts e t tb a c
     | otherwise =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute opts e) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e ">"
         `mappend` (mconcat $ map (node opts e) c)
         `mappend` fromText e "</"
@@ -133,12 +134,12 @@ element opts e t tb a c
 
 
 ------------------------------------------------------------------------------
-attribute :: RenderOptions -> Encoding -> (Text, Text) -> Builder
-attribute opts e (n,v)
-    | v == ""                    =
+attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
+attribute opts e tb (n,v)
+    | v == "" && not explicit                =
         fromText e " "
         `mappend` fromText e n
-    | not (preferredSurround `T.isInfixOf` v) =
+    | v /= "" && not (preferredSurround `T.isInfixOf` v) =
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e ('=' `T.cons` preferredSurround)
@@ -150,7 +151,12 @@ attribute opts e (n,v)
         `mappend` fromText e ('=' `T.cons` otherSurround)
         `mappend` escaped "&\"" e v
         `mappend` fromText e otherSurround
-    where (preferredSurround, otherSurround) = case attributeSurround opts of
-            SurroundDoubleQuote -> ("\"", "\'")
-            SurroundSingleQuote -> ("\'", "\"")
+  where
+    (preferredSurround, otherSurround) = case attributeSurround opts of
+        SurroundDoubleQuote -> ("\"", "\'")
+        SurroundSingleQuote -> ("\'", "\"")
 
+    nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
+    explicit = case M.lookup tb explicitAttributes of
+        Nothing -> False
+        Just ns -> nbase `S.member` ns

@@ -60,6 +60,7 @@ module Text.XmlHtml (
     -- * Rendering
     render,
     renderWithOptions,
+    defaultRenderOptions,
     XMLR.renderXmlFragment,
     HTML.renderHtmlFragment,
     renderDocType
