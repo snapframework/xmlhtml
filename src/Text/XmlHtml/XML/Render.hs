@@ -18,26 +18,31 @@ import           Data.Monoid
 
 
 ------------------------------------------------------------------------------
-render :: Encoding -> Maybe DocType -> [Node] -> Builder
-render e dt ns = byteOrder
+renderWithOptions :: RenderOptions -> Encoding -> Maybe DocType -> [Node] -> Builder
+renderWithOptions opts e dt ns = byteOrder
        `mappend` xmlDecl e
        `mappend` docTypeDecl e dt
        `mappend` nodes
     where byteOrder | isUTF16 e = fromText e "\xFEFF" -- byte order mark
                     | otherwise = mempty
           nodes | null ns   = mempty
-                | otherwise = firstNode e (head ns)
-                    `mappend` (mconcat $ map (node e) (tail ns))
+                | otherwise = firstNode opts e (head ns)
+                    `mappend` (mconcat $ map (node opts e) (tail ns))
 
+
+render :: Encoding -> Maybe DocType -> [Node] -> Builder
+render = renderWithOptions defaultRenderOptions
 
 ------------------------------------------------------------------------------
 -- | Function for rendering XML nodes without the overhead of creating a
 -- Document structure.
-renderXmlFragment :: Encoding -> [Node] -> Builder
-renderXmlFragment _ []     = mempty
-renderXmlFragment e (n:ns) =
-    firstNode e n `mappend` (mconcat $ map (node e) ns)
+renderXmlFragmentWithOptions :: RenderOptions -> Encoding -> [Node] -> Builder
+renderXmlFragmentWithOptions _    _ []     = mempty
+renderXmlFragmentWithOptions opts e (n:ns) =
+    firstNode opts e n `mappend` (mconcat $ map (node opts e) ns)
 
+renderXmlFragment :: Encoding -> [Node] -> Builder
+renderXmlFragment = renderXmlFragmentWithOptions defaultRenderOptions
 
 ------------------------------------------------------------------------------
 xmlDecl :: Encoding -> Builder
@@ -93,26 +98,26 @@ pubID e sid | not ("\"" `T.isInfixOf` sid) = fromText e "\""
 
 
 ------------------------------------------------------------------------------
-node :: Encoding -> Node -> Builder
-node e (TextNode t)                        = escaped "<>&" e t
-node e (Comment t) | "--" `T.isInfixOf` t  = error "Invalid comment"
-                   | "-" `T.isSuffixOf` t  = error "Invalid comment"
-                   | otherwise             = fromText e "<!--"
-                                             `mappend` fromText e t
-                                             `mappend` fromText e "-->"
-node e (Element t a c)                     = element e t a c
+node :: RenderOptions -> Encoding -> Node -> Builder
+node _    e (TextNode t)                        = escaped "<>&" e t
+node _    e (Comment t) | "--" `T.isInfixOf` t  = error "Invalid comment"
+                        | "-" `T.isSuffixOf` t  = error "Invalid comment"
+                        | otherwise             = fromText e "<!--"
+                                                  `mappend` fromText e t
+                                                  `mappend` fromText e "-->"
+node opts e (Element t a c)                     = element opts e t a c
 
 
 ------------------------------------------------------------------------------
 -- | Process the first node differently to encode leading whitespace.  This
 -- lets us be sure that @parseXML@ is a left inverse to @render@.
-firstNode :: Encoding -> Node -> Builder
-firstNode e (Comment t)     = node e (Comment t)
-firstNode e (Element t a c) = node e (Element t a c)
-firstNode _ (TextNode "")   = mempty
-firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
-                              in escaped "<>& \t\r" e (T.singleton c)
-                                 `mappend` node e (TextNode t')
+firstNode :: RenderOptions -> Encoding -> Node -> Builder
+firstNode opts e (Comment t)     = node opts e (Comment t)
+firstNode opts e (Element t a c) = node opts e (Element t a c)
+firstNode _    _ (TextNode "")   = mempty
+firstNode opts e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
+                                   in escaped "<>& \t\r" e (T.singleton c)
+                                      `mappend` node opts e (TextNode t')
 
 
 ------------------------------------------------------------------------------
@@ -137,31 +142,36 @@ entity e c    = fromText e "&#"
 
 
 ------------------------------------------------------------------------------
-element :: Encoding -> Text -> [(Text, Text)] -> [Node] -> Builder
-element e t a [] = fromText e "<"
+element :: RenderOptions -> Encoding -> Text -> [(Text, Text)] -> [Node] -> Builder
+element opts e t a [] = fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (attribute opts e) a)
         `mappend` fromText e "/>"
-element e t a c = fromText e "<"
+element opts e t a c = fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e) a)
+        `mappend` (mconcat $ map (attribute opts e) a)
         `mappend` fromText e ">"
-        `mappend` (mconcat $ map (node e) c)
+        `mappend` (mconcat $ map (node opts e) c)
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"
 
 
 ------------------------------------------------------------------------------
-attribute :: Encoding -> (Text, Text) -> Builder
-attribute e (n,v) | not ("\'" `T.isInfixOf` v) = fromText e " "
-                                       `mappend` fromText e n
-                                       `mappend` fromText e "=\'"
-                                       `mappend` escaped "<&" e v
-                                       `mappend` fromText e "\'"
-                  | otherwise                  = fromText e " "
-                                       `mappend` fromText e n
-                                       `mappend` fromText e "=\""
-                                       `mappend` escaped "<&\"" e v
-                                       `mappend` fromText e "\""
-
+attribute :: RenderOptions -> Encoding -> (Text, Text) -> Builder
+attribute opts e (n,v)
+    | not (preferredSurround `T.isInfixOf` v) =
+      fromText e " "
+      `mappend` fromText e n
+      `mappend` fromText e (T.cons '=' preferredSurround)
+      `mappend` escaped "<&" e v
+      `mappend` fromText e preferredSurround
+    | otherwise                  =
+      fromText e " "
+      `mappend` fromText e n
+      `mappend` fromText e (T.cons '=' otherSurround)
+      `mappend` escaped "<&\"" e v
+      `mappend` fromText e otherSurround
+    where (preferredSurround, otherSurround) = case attributeSurround opts of
+            SurroundDoubleQuote -> ("\"", "\'")
+            SurroundSingleQuote -> ("\'", "\"")

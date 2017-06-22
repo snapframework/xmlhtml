@@ -32,6 +32,8 @@ module Text.XmlHtml (
     ExternalID(..),
     InternalSubset(..),
     Encoding(..),
+    RenderOptions(..),
+    AttributeSurround(..),
 
     -- * Manipulating documents
     isTextNode,
@@ -57,6 +59,8 @@ module Text.XmlHtml (
 
     -- * Rendering
     render,
+    renderWithOptions,
+    defaultRenderOptions,
     XMLR.renderXmlFragment,
     HTML.renderHtmlFragment,
     renderDocType
@@ -101,9 +105,12 @@ parseHTML = parse HTML.docFragment
 
 ------------------------------------------------------------------------------
 -- | Renders a 'Document'.
+renderWithOptions :: RenderOptions -> Document -> Builder
+renderWithOptions opts (XmlDocument  e dt ns) = XMLR.renderWithOptions opts e dt ns
+renderWithOptions opts (HtmlDocument e dt ns) = HTML.renderWithOptions opts e dt ns
+
 render :: Document -> Builder
-render (XmlDocument  e dt ns) = XMLR.render  e dt ns
-render (HtmlDocument e dt ns) = HTML.render e dt ns
+render doc = renderWithOptions defaultRenderOptions doc
 
 
 renderDocType :: Encoding -> Maybe DocType -> Builder

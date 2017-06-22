@@ -1,5 +1,5 @@
 Name:                xmlhtml
-Version:             0.2.4
+Version:             0.2.5
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures so that
@@ -852,6 +852,7 @@ Test-suite testsuite
     blaze-html,
     blaze-markup,
     bytestring,
+    bytestring-builder,
     directory                  >= 1.0      && <1.4,
     test-framework             >= 0.8.0.3  && <0.9,
     test-framework-hunit       >= 0.3      && <0.4,

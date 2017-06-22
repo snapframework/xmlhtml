@@ -26,24 +26,26 @@ import           Data.Monoid
 
 ------------------------------------------------------------------------------
 -- | And, the rendering code.
-render :: Encoding -> Maybe DocType -> [Node] -> Builder
-render e dt ns = byteOrder
+renderWithOptions :: RenderOptions -> Encoding -> Maybe DocType -> [Node] -> Builder
+renderWithOptions opts e dt ns = byteOrder
        `mappend` docTypeDecl e dt
        `mappend` nodes
     where byteOrder | isUTF16 e = fromText e "\xFEFF" -- byte order mark
                     | otherwise = mempty
           nodes | null ns   = mempty
-                | otherwise = firstNode e (head ns)
-                    `mappend` (mconcat $ map (node e) (tail ns))
+                | otherwise = firstNode opts e (head ns)
+                    `mappend` (mconcat $ map (node opts e) (tail ns))
 
+render :: Encoding -> Maybe DocType -> [Node] -> Builder
+render = renderWithOptions defaultRenderOptions
 
 ------------------------------------------------------------------------------
 -- | Function for rendering HTML nodes without the overhead of creating a
 -- Document structure.
-renderHtmlFragment :: Encoding -> [Node] -> Builder
-renderHtmlFragment _ []     = mempty
-renderHtmlFragment e (n:ns) =
-    firstNode e n `mappend` (mconcat $ map (node e) ns)
+renderHtmlFragment :: RenderOptions -> Encoding -> [Node] -> Builder
+renderHtmlFragment _ _ []     = mempty
+renderHtmlFragment opts e (n:ns) =
+    firstNode opts e n `mappend` (mconcat $ map (node opts e) ns)
 
 
 ------------------------------------------------------------------------------
@@ -67,39 +69,39 @@ escaped bad e t  =
 
 
 ------------------------------------------------------------------------------
-node :: Encoding -> Node -> Builder
-node e (TextNode t)                        = escaped "<>&" e t
-node e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
-                   | "-"  `T.isSuffixOf` t = error "Invalid comment"
-                   | otherwise             = fromText e "<!--"
-                                             `mappend` fromText e t
-                                             `mappend` fromText e "-->"
-node e (Element t a c)                     =
+node :: RenderOptions -> Encoding -> Node -> Builder
+node _ e (TextNode t)                        = escaped "<>&" e t
+node _ e (Comment t) | "--" `T.isInfixOf`  t = error "Invalid comment"
+                     | "-"  `T.isSuffixOf` t = error "Invalid comment"
+                     | otherwise             = fromText e "<!--"
+                                               `mappend` fromText e t
+                                               `mappend` fromText e "-->"
+node opts e (Element t a c)                     =
     let tbase = T.toLower $ snd $ T.breakOnEnd ":" t
-    in  element e t tbase a c
+    in  element opts e t tbase a c
 
 
 ------------------------------------------------------------------------------
 -- | Process the first node differently to encode leading whitespace.  This
 -- lets us be sure that @parseHTML@ is a left inverse to @render@.
-firstNode :: Encoding -> Node -> Builder
-firstNode e (Comment t)     = node e (Comment t)
-firstNode e (Element t a c) = node e (Element t a c)
-firstNode _ (TextNode "")   = mempty
-firstNode e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
-                              in escaped "<>& \t\r" e (T.singleton c)
-                                 `mappend` node e (TextNode t')
+firstNode :: RenderOptions -> Encoding -> Node -> Builder
+firstNode opts e (Comment t)     = node opts e (Comment t)
+firstNode opts e (Element t a c) = node opts e (Element t a c)
+firstNode _    _ (TextNode "")   = mempty
+firstNode opts e (TextNode t)    = let (c,t') = fromJust $ T.uncons t
+                                   in escaped "<>& \t\r" e (T.singleton c)
+                                      `mappend` node opts e (TextNode t')
 
 
 ------------------------------------------------------------------------------
 -- XXX: Should do something to avoid concatting large CDATA sections before
 -- writing them to the output.
-element :: Encoding -> Text -> Text -> [(Text, Text)] -> [Node] -> Builder
-element e t tb a c
+element :: RenderOptions -> Encoding -> Text -> Text -> [(Text, Text)] -> [Node] -> Builder
+element opts e t tb a c
     | tb `S.member` voidTags && null c         =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e tb) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e " />"
     | tb `S.member` voidTags                   =
         error $ T.unpack t ++ " must be empty"
@@ -109,7 +111,7 @@ element e t tb a c
       not ("</" `T.append` t `T.isInfixOf` s) =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e tb) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e ">"
         `mappend` fromText e s
         `mappend` fromText e "</"
@@ -123,33 +125,38 @@ element e t tb a c
     | otherwise =
         fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute e tb) a)
+        `mappend` (mconcat $ map (attribute opts e tb) a)
         `mappend` fromText e ">"
-        `mappend` (mconcat $ map (node e) c)
+        `mappend` (mconcat $ map (node opts e) c)
         `mappend` fromText e "</"
         `mappend` fromText e t
         `mappend` fromText e ">"
 
 
 ------------------------------------------------------------------------------
-attribute :: Encoding -> Text -> (Text, Text) -> Builder
-attribute e tb (n,v)
-    | v == "" && not explicit               =
+attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
+attribute opts e tb (n,v)
+    | v == "" && not explicit                =
         fromText e " "
         `mappend` fromText e n
-    | v /= "" && not ("\'" `T.isInfixOf` v) =
+    | v /= "" && not (preferredSurround `T.isInfixOf` v) =
         fromText e " "
         `mappend` fromText e n
-        `mappend` fromText e "=\'"
+        `mappend` fromText e ('=' `T.cons` preferredSurround)
         `mappend` escaped "&" e v
-        `mappend` fromText e "\'"
-    | otherwise                             =
+        `mappend` fromText e preferredSurround
+    | otherwise                  =
         fromText e " "
         `mappend` fromText e n
-        `mappend` fromText e "=\""
+        `mappend` fromText e ('=' `T.cons` otherSurround)
         `mappend` escaped "&\"" e v
-        `mappend` fromText e "\""
-  where nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
-        explicit = case M.lookup tb explicitAttributes of
-                     Nothing -> False
-                     Just ns -> nbase `S.member` ns
+        `mappend` fromText e otherSurround
+  where
+    (preferredSurround, otherSurround) = case attributeSurround opts of
+        SurroundDoubleQuote -> ("\"", "\'")
+        SurroundSingleQuote -> ("\'", "\"")
+
+    nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
+    explicit = case M.lookup tb explicitAttributes of
+        Nothing -> False
+        Just ns -> nbase `S.member` ns
