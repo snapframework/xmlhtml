@@ -62,7 +62,9 @@ module Text.XmlHtml (
     renderWithOptions,
     defaultRenderOptions,
     XMLR.renderXmlFragment,
+    XMLR.renderXmlFragmentWithOptions,
     HTML.renderHtmlFragment,
+    HTML.renderHtmlFragmentWithOptions,
     renderDocType
     ) where
 

@@ -6,7 +6,11 @@ module Text.XmlHtml.HTML.Render where
 
 import           Blaze.ByteString.Builder
 import           Control.Applicative
+import qualified Data.ByteString.Builder as B
 import           Data.Maybe
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy.Encoding as TL
+import qualified Data.Text.Lazy as TL
 import qualified Text.Parsec as P
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
@@ -36,16 +40,26 @@ renderWithOptions opts e dt ns = byteOrder
                 | otherwise = firstNode opts e (head ns)
                     `mappend` (mconcat $ map (node opts e) (tail ns))
 
+
+------------------------------------------------------------------------------
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render = renderWithOptions defaultRenderOptions
+
 
 ------------------------------------------------------------------------------
 -- | Function for rendering HTML nodes without the overhead of creating a
 -- Document structure.
-renderHtmlFragment :: RenderOptions -> Encoding -> [Node] -> Builder
-renderHtmlFragment _ _ []     = mempty
-renderHtmlFragment opts e (n:ns) =
+renderHtmlFragmentWithOptions :: RenderOptions -> Encoding -> [Node] -> Builder
+renderHtmlFragmentWithOptions _ _ []     = mempty
+renderHtmlFragmentWithOptions opts e (n:ns) =
     firstNode opts e n `mappend` (mconcat $ map (node opts e) ns)
+
+
+------------------------------------------------------------------------------
+-- | Function for rendering HTML nodes without the overhead of creating a
+-- Document structure, using default rendering options
+renderHtmlFragment :: Encoding -> [Node] -> Builder
+renderHtmlFragment = renderHtmlFragmentWithOptions defaultRenderOptions
 
 
 ------------------------------------------------------------------------------
@@ -132,31 +146,31 @@ element opts e t tb a c
         `mappend` fromText e t
         `mappend` fromText e ">"
 
-
 ------------------------------------------------------------------------------
 attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
 attribute opts e tb (n,v)
     | v == "" && not explicit                =
         fromText e " "
         `mappend` fromText e n
-    | v /= "" && not (preferredSurround `T.isInfixOf` v) =
+    | otherwise =
         fromText e " "
         `mappend` fromText e n
-        `mappend` fromText e ('=' `T.cons` preferredSurround)
-        `mappend` escaped "&" e v
-        `mappend` fromText e preferredSurround
-    | otherwise                  =
-        fromText e " "
-        `mappend` fromText e n
-        `mappend` fromText e ('=' `T.cons` otherSurround)
-        `mappend` escaped "&\"" e v
-        `mappend` fromText e otherSurround
+        `mappend` fromText e ('=' `T.cons` surround)
+        `mappend` bmap (T.replace surround escapeTo) (escaped "&" e v)
+        `mappend` fromText e surround
   where
-    (preferredSurround, otherSurround) = case attributeSurround opts of
-        SurroundDoubleQuote -> ("\"", "\'")
-        SurroundSingleQuote -> ("\'", "\"")
+    (surround, escapeTo) = case attributeSurround opts of
+        SurroundDoubleQuote -> ("\"", "&quot;")
+        SurroundSingleQuote -> ("'", "&apos;")
 
     nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
+    bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
+    bmap f   = B.byteString
+               . T.encodeUtf8
+               . f
+               . TL.toStrict
+               . TL.decodeUtf8
+               . B.toLazyByteString
     explicit = case M.lookup tb explicitAttributes of
         Nothing -> False
         Just ns -> nbase `S.member` ns
