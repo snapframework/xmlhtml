@@ -36,16 +36,26 @@ renderWithOptions opts e dt ns = byteOrder
                 | otherwise = firstNode opts e (head ns)
                     `mappend` (mconcat $ map (node opts e) (tail ns))
 
+
+------------------------------------------------------------------------------
 render :: Encoding -> Maybe DocType -> [Node] -> Builder
 render = renderWithOptions defaultRenderOptions
+
 
 ------------------------------------------------------------------------------
 -- | Function for rendering HTML nodes without the overhead of creating a
 -- Document structure.
-renderHtmlFragment :: RenderOptions -> Encoding -> [Node] -> Builder
-renderHtmlFragment _ _ []     = mempty
-renderHtmlFragment opts e (n:ns) =
+renderHtmlFragmentWithOptions :: RenderOptions -> Encoding -> [Node] -> Builder
+renderHtmlFragmentWithOptions _ _ []     = mempty
+renderHtmlFragmentWithOptions opts e (n:ns) =
     firstNode opts e n `mappend` (mconcat $ map (node opts e) ns)
+
+
+------------------------------------------------------------------------------
+-- | Function for rendering HTML nodes without the overhead of creating a
+-- Document structure, using default rendering options
+renderHtmlFragment :: Encoding -> [Node] -> Builder
+renderHtmlFragment = renderHtmlFragmentWithOptions defaultRenderOptions
 
 
 ------------------------------------------------------------------------------
