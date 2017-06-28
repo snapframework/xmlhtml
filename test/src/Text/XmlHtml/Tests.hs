@@ -6,7 +6,7 @@ module Text.XmlHtml.Tests (tests) where
 import           Blaze.ByteString.Builder
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import           Data.Monoid
+import           Data.Monoid (mappend, mempty)
 import           Data.String
 import           Data.Text ()                  -- for string instance
 import qualified Data.Text.Encoding as T
@@ -17,7 +17,6 @@ import           Text.Blaze
 import           Text.Blaze.Html
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
-import qualified Text.Blaze.Internal as H
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
 import           Text.XmlHtml.CursorTests
@@ -742,21 +741,21 @@ hSingleQuoteInAttr =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "foo" [("bar", "test\'ing")] []
         ]))
-    == "<foo bar=\"test\'ing\"></foo>"
+    == "<foo bar='test&apos;ing'></foo>"
 
 hDoubleQuoteInAttr :: Bool
 hDoubleQuoteInAttr =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "foo" [("bar", "test\"ing")] []
         ]))
-    == "<foo bar=\'test\"ing\'></foo>"
+    == "<foo bar='test\"ing'></foo>"
 
 hBothQuotesInAttr :: Bool
 hBothQuotesInAttr =
     toByteString (render (HtmlDocument UTF8 Nothing [
-        Element "foo" [("bar", "test\'\"ing")] []
+        Element "foo" [("bar", "test'\"ing")] []
         ]))
-    == "<foo bar=\"test\'&quot;ing\"></foo>"
+    == "<foo bar='test&apos;\"ing'></foo>"
 
 
 ------------------------------------------------------------------------------
@@ -855,7 +854,7 @@ renderHTMLEmptyAttr2 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "a" [("href", "")] []
         ]))
-    == "<a href=\"\"></a>"
+    == "<a href=''></a>"
 
 renderHTMLAmpAttr1 :: Bool
 renderHTMLAmpAttr1 =
