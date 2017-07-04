@@ -57,15 +57,20 @@ data Node = TextNode !Text
 -- (default), or by double quotes
 data RenderOptions = RenderOptions {
       attributeSurround       :: AttributeSurround
+    , attributeInternal       :: AttributeInternalQuotes
     , explicitEmptyAttributes :: M.HashMap Text (S.HashSet Text)
-    }
+    } deriving (Eq, Show)
 
 data AttributeSurround = SurroundDoubleQuote | SurroundSingleQuote
+    deriving (Eq, Ord, Show)
+
+data AttributeInternalQuotes = AttributeEscapeQuotes | AttributeChangeSurround
     deriving (Eq, Ord, Show)
 
 defaultRenderOptions :: RenderOptions
 defaultRenderOptions = RenderOptions
     { attributeSurround       = SurroundSingleQuote
+    , attributeInternal       = AttributeChangeSurround
     , explicitEmptyAttributes = explicitAttributes
     }
 

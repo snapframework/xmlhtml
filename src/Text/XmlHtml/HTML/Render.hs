@@ -171,6 +171,6 @@ attribute opts e tb (n,v)
                . TL.toStrict
                . TL.decodeUtf8
                . B.toLazyByteString
-    explicit = case M.lookup tb explicitAttributes of
+    explicit = case M.lookup tb (explicitEmptyAttributes opts) of
         Nothing -> False
         Just ns -> nbase `S.member` ns
