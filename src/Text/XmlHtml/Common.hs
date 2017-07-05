@@ -53,25 +53,34 @@ data Node = TextNode !Text
 
 
 ------------------------------------------------------------------------------
--- | Rendering options. Attritube values may be surrounded by single quotes
--- (default), or by double quotes
+-- | Rendering options
 data RenderOptions = RenderOptions {
-      attributeSurround       :: AttributeSurround
-    , attributeInternal       :: AttributeInternalQuotes
-    , explicitEmptyAttributes :: M.HashMap Text (S.HashSet Text)
+      roAttributeSurround :: AttrSurround
+      -- ^ Single or double-quotes used around attribute values
+
+    , roAttributeResolveInternal :: AttrResolveInternalQuotes
+      -- ^ Quotes inside attribute values that conflict with the surround
+      -- are escaped, or the outer quotes are changed to avoid conflicting
+      -- with the internal ones
+
+    , roExplicitEmptyAttrs :: Maybe (M.HashMap Text (S.HashSet Text))
+      -- ^ Attributes in the whitelist with empty values are
+      -- rendered as <div example="">
+      -- 'Nothing' applies this rule to all attributes with empty values
+
     } deriving (Eq, Show)
 
-data AttributeSurround = SurroundDoubleQuote | SurroundSingleQuote
+data AttrSurround = SurroundDoubleQuote | SurroundSingleQuote
     deriving (Eq, Ord, Show)
 
-data AttributeInternalQuotes = AttributeEscapeQuotes | AttributeChangeSurround
+data AttrResolveInternalQuotes = AttrResolveByEscape | AttrResolveAvoidEscape
     deriving (Eq, Ord, Show)
 
 defaultRenderOptions :: RenderOptions
 defaultRenderOptions = RenderOptions
-    { attributeSurround       = SurroundSingleQuote
-    , attributeInternal       = AttributeChangeSurround
-    , explicitEmptyAttributes = explicitAttributes
+    { roAttributeSurround        = SurroundSingleQuote
+    , roAttributeResolveInternal = AttrResolveAvoidEscape
+    , roExplicitEmptyAttrs       = Just explicitAttributes
     }
 
 ------------------------------------------------------------------------------

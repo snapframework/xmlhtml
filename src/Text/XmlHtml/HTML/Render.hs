@@ -171,6 +171,10 @@ attribute opts e tb (n,v)
                . TL.toStrict
                . TL.decodeUtf8
                . B.toLazyByteString
-    explicit = case M.lookup tb (explicitEmptyAttributes opts) of
-        Nothing -> False
-        Just ns -> nbase `S.member` ns
+    explicit = case explicitEmptyAttributes opts of
+        Nothing  -> True
+        -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
+        -- empty attributes
+        Just els -> case M.lookup tb els of
+            Nothing -> False
+            Just ns -> nbase `S.member` ns
