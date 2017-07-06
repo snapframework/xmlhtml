@@ -172,6 +172,6 @@ attribute opts e (n,v)
       `mappend` fromText e (T.cons '=' otherSurround)
       `mappend` escaped "<&\"" e v
       `mappend` fromText e otherSurround
-    where (preferredSurround, otherSurround) = case attributeSurround opts of
+    where (preferredSurround, otherSurround) = case roAttributeSurround opts of
             SurroundDoubleQuote -> ("\"", "\'")
             SurroundSingleQuote -> ("\'", "\"")

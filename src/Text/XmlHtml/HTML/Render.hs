@@ -149,19 +149,27 @@ element opts e t tb a c
 ------------------------------------------------------------------------------
 attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
 attribute opts e tb (n,v)
-    | v == "" && not explicit                =
+    | v == "" && not explicit =
         fromText e " "
         `mappend` fromText e n
+    | roAttributeResolveInternal opts == AttrResolveAvoidEscape
+      && surround `T.isInfixOf` v
+      && not (alternative `T.isInfixOf` v) =
+        fromText e " "
+        `mappend` fromText e n
+        `mappend` fromText e ('=' `T.cons` alternative)
+        `mappend` escaped "&" e v
+        `mappend` fromText e alternative
     | otherwise =
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e ('=' `T.cons` surround)
-        `mappend` bmap (T.replace surround escapeTo) (escaped "&" e v)
+        `mappend` bmap (T.replace surround ent) (escaped "&" e v)
         `mappend` fromText e surround
   where
-    (surround, escapeTo) = case attributeSurround opts of
-        SurroundDoubleQuote -> ("\"", "&quot;")
-        SurroundSingleQuote -> ("'", "&apos;")
+    (ent, surround, alternative) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("&apos;", "'", "\"")
+        SurroundDoubleQuote -> ("&quot;", "\"", "'")
 
     nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
     bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
@@ -171,7 +179,7 @@ attribute opts e tb (n,v)
                . TL.toStrict
                . TL.decodeUtf8
                . B.toLazyByteString
-    explicit = case explicitEmptyAttributes opts of
+    explicit = case roExplicitEmptyAttrs opts of
         Nothing  -> True
         -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
         -- empty attributes

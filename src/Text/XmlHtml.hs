@@ -33,8 +33,8 @@ module Text.XmlHtml (
     InternalSubset(..),
     Encoding(..),
     RenderOptions(..),
-    AttributeSurround(..),
-    AttributeInternalQuotes(..),
+    AttrSurround(..),
+    AttrResolveInternalQuotes(..),
 
     -- * Manipulating documents
     isTextNode,

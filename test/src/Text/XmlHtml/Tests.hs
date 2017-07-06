@@ -8,7 +8,7 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import           Data.Monoid (mappend, mempty)
 import           Data.String
-import           Data.Text ()                  -- for string instance
+import           Data.Text (Text)
 import qualified Data.Text.Encoding as T
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
@@ -583,21 +583,21 @@ utf8Decl = T.encodeUtf8 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 singleQuoteInSysID :: Bool
 singleQuoteInSysID =
     toByteString (render (XmlDocument UTF8
-        (Just (DocType "html" (System "test\'ing") NoInternalSubset))
+        (Just (DocType "html" (System "test'ing") NoInternalSubset))
         []))
-    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \"test\'ing\">\n"
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \"test'ing\">\n"
 
 doubleQuoteInSysID :: Bool
 doubleQuoteInSysID =
     toByteString (render (XmlDocument UTF8
         (Just (DocType "html" (System "test\"ing") NoInternalSubset))
         []))
-    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM \'test\"ing\'>\n"
+    == utf8Decl `B.append` "<!DOCTYPE html SYSTEM 'test\"ing'>\n"
 
 bothQuotesInSysID :: Bool
 bothQuotesInSysID = isBottom $
     toByteString (render (XmlDocument UTF8
-        (Just (DocType "html" (System "test\"\'ing") NoInternalSubset))
+        (Just (DocType "html" (System "test\"'ing") NoInternalSubset))
         []))
 
 doubleQuoteInPubID :: Bool
@@ -628,23 +628,23 @@ renderEmptyText =
 singleQuoteInAttr :: Bool
 singleQuoteInAttr =
     toByteString (render (XmlDocument UTF8 Nothing [
-        Element "foo" [("bar", "test\'ing")] []
+        Element "foo" [("bar", "test'ing")] []
         ]))
-    == utf8Decl `B.append` "<foo bar=\"test\'ing\"/>"
+    == utf8Decl `B.append` "<foo bar=\"test'ing\"/>"
 
 doubleQuoteInAttr :: Bool
 doubleQuoteInAttr =
     toByteString (render (XmlDocument UTF8 Nothing [
         Element "foo" [("bar", "test\"ing")] []
         ]))
-    == utf8Decl `B.append` "<foo bar=\'test\"ing\'/>"
+    == utf8Decl `B.append` "<foo bar='test\"ing'/>"
 
 bothQuotesInAttr :: Bool
 bothQuotesInAttr =
     toByteString (render (XmlDocument UTF8 Nothing [
-        Element "foo" [("bar", "test\'\"ing")] []
+        Element "foo" [("bar", "test'\"ing")] []
         ]))
-    == utf8Decl `B.append` "<foo bar=\"test\'&quot;ing\"/>"
+    == utf8Decl `B.append` "<foo bar=\"test'&quot;ing\"/>"
 
 ndashEscapesInLatin :: Bool
 ndashEscapesInLatin =
@@ -694,21 +694,21 @@ hRenderByteOrderMark =
 hSingleQuoteInSysID :: Bool
 hSingleQuoteInSysID =
     toByteString (render (HtmlDocument UTF8
-        (Just (DocType "html" (System "test\'ing") NoInternalSubset))
+        (Just (DocType "html" (System "test'ing") NoInternalSubset))
         []))
-    == "<!DOCTYPE html SYSTEM \"test\'ing\">\n"
+    == "<!DOCTYPE html SYSTEM \"test'ing\">\n"
 
 hDoubleQuoteInSysID :: Bool
 hDoubleQuoteInSysID =
     toByteString (render (HtmlDocument UTF8
         (Just (DocType "html" (System "test\"ing") NoInternalSubset))
         []))
-    == "<!DOCTYPE html SYSTEM \'test\"ing\'>\n"
+    == "<!DOCTYPE html SYSTEM 'test\"ing'>\n"
 
 hBothQuotesInSysID :: Bool
 hBothQuotesInSysID = isBottom $
     toByteString (render (HtmlDocument UTF8
-        (Just (DocType "html" (System "test\"\'ing") NoInternalSubset))
+        (Just (DocType "html" (System "test\"'ing") NoInternalSubset))
         []))
 
 hDoubleQuoteInPubID :: Bool
@@ -739,9 +739,9 @@ hRenderEmptyText =
 hSingleQuoteInAttr :: Bool
 hSingleQuoteInAttr =
     toByteString (render (HtmlDocument UTF8 Nothing [
-        Element "foo" [("bar", "test\'ing")] []
+        Element "foo" [("bar", "test'ing")] []
         ]))
-    == "<foo bar='test&apos;ing'></foo>"
+    == "<foo bar=\"test'ing\"></foo>"
 
 hDoubleQuoteInAttr :: Bool
 hDoubleQuoteInAttr =
@@ -782,7 +782,11 @@ htmlRenderingQuirkTests = [
     testIt "renderHTMLQRawMult     " renderHTMLQRawMult,
     testIt "renderHTMLQRaw2        " renderHTMLQRaw2,
     testIt "renderHTMLQRaw3        " renderHTMLQRaw3,
-    testIt "renderHTMLQRaw4        " renderHTMLQRaw4
+    testIt "renderHTMLQRaw4        " renderHTMLQRaw4,
+    testCase "singleAlways           " singleAlways,
+    testCase "doubleAlways           " doubleAlways,
+    testCase "singleAvoidEscaping    " singleAvoidEscaping,
+    testCase "doubleAvoidEscaping    " doubleAvoidEscaping
     ]
 
 renderHTMLVoid :: Bool
@@ -790,7 +794,7 @@ renderHTMLVoid =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "img" [("src", "foo")] []
         ]))
-    == "<img src=\'foo\' />"
+    == "<img src='foo' />"
 
 renderHTMLVoid2 :: Bool
 renderHTMLVoid2 = isBottom $
@@ -805,7 +809,7 @@ renderHTMLRaw =
             TextNode "<testing>/&+</foo>"
             ]
         ]))
-    == "<script type=\'text/javascript\'><testing>/&+</foo></script>"
+    == "<script type='text/javascript'><testing>/&+</foo></script>"
 
 renderHTMLRawMult :: Bool
 renderHTMLRawMult =
@@ -815,7 +819,7 @@ renderHTMLRawMult =
             TextNode "bar"
             ]
         ]))
-    == "<script type=\'text/javascript\'>foobar</script>"
+    == "<script type='text/javascript'>foobar</script>"
 
 renderHTMLRaw2 :: Bool
 renderHTMLRaw2 = isBottom $
@@ -860,26 +864,26 @@ renderHTMLAmpAttr1 :: Bool
 renderHTMLAmpAttr1 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "body" [("foo", "a & b")] [] ]))
-    == "<body foo=\'a & b\'></body>"
+    == "<body foo='a & b'></body>"
 
 renderHTMLAmpAttr2 :: Bool
 renderHTMLAmpAttr2 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "body" [("foo", "a &amp; b")] [] ]))
-    == "<body foo=\'a &amp;amp; b\'></body>"
+    == "<body foo='a &amp;amp; b'></body>"
 
 renderHTMLAmpAttr3 :: Bool
 renderHTMLAmpAttr3 =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "body" [("foo", "a &#x65; b")] [] ]))
-    == "<body foo=\'a &amp;#x65; b\'></body>"
+    == "<body foo='a &amp;#x65; b'></body>"
 
 renderHTMLQVoid :: Bool
 renderHTMLQVoid =
     toByteString (render (HtmlDocument UTF8 Nothing [
         Element "foo:img" [("src", "foo")] []
         ]))
-    == "<foo:img src=\'foo\' />"
+    == "<foo:img src='foo' />"
 
 renderHTMLQVoid2 :: Bool
 renderHTMLQVoid2 = isBottom $
@@ -894,7 +898,7 @@ renderHTMLQRaw =
             TextNode "<testing>/&+</foo>"
             ]
         ]))
-    == "<foo:script type=\'text/javascript\'><testing>/&+</foo></foo:script>"
+    == "<foo:script type='text/javascript'><testing>/&+</foo></foo:script>"
 
 renderHTMLQRawMult :: Bool
 renderHTMLQRawMult =
@@ -904,7 +908,7 @@ renderHTMLQRawMult =
             TextNode "bar"
             ]
         ]))
-    == "<foo:script type=\'text/javascript\'>foobar</foo:script>"
+    == "<foo:script type='text/javascript'>foobar</foo:script>"
 
 renderHTMLQRaw2 :: Bool
 renderHTMLQRaw2 = isBottom $
@@ -930,6 +934,46 @@ renderHTMLQRaw4 = isBottom $
             TextNode "pt>"
             ]
         ]))
+
+renderToByteString :: RenderOptions -> ByteString
+renderToByteString opts = toByteString (renderWithOptions opts document)
+  where
+    attrs :: [(Text, Text)]
+    attrs = [("single", "'"), ("double", "\""), ("both", "'\"")]
+    document :: Document
+    document = HtmlDocument UTF8 Nothing [Element "div" attrs []]
+
+singleAlways :: Assertion
+singleAlways =
+    assertEqual "singleAlways"
+                (renderToByteString (RenderOptions SurroundSingleQuote
+                                                   AttrResolveByEscape
+                                                   Nothing))
+                "<div single='&apos;' double='\"' both='&apos;\"'></div>"
+
+doubleAlways :: Assertion
+doubleAlways =
+    assertEqual "doubleAlways"
+                (renderToByteString (RenderOptions SurroundDoubleQuote
+                                                   AttrResolveByEscape
+                                                   Nothing))
+                "<div single=\"'\" double=\"&quot;\" both=\"'&quot;\"></div>"
+
+singleAvoidEscaping :: Assertion
+singleAvoidEscaping =
+    assertEqual "singleAvoidEscaping"
+                (renderToByteString (RenderOptions SurroundSingleQuote
+                                                   AttrResolveAvoidEscape
+                                                   Nothing))
+                "<div single=\"'\" double='\"' both='&apos;\"'></div>"
+
+doubleAvoidEscaping :: Assertion
+doubleAvoidEscaping =
+    assertEqual "doubleAvoidEscaping"
+                (renderToByteString (RenderOptions SurroundDoubleQuote
+                                                   AttrResolveAvoidEscape
+                                                   Nothing))
+                "<div single=\"'\" double='\"' both=\"'&quot;\"></div>"
 
 
 ------------------------------------------------------------------------------
@@ -996,6 +1040,3 @@ blazeTestEmpty = renderHtmlNodes mempty == []
 
 selectCustom :: Html
 selectCustom = H.select ! H.customAttribute "dojoType" "select" $ (mappend "foo " "bar")
-
-
-
