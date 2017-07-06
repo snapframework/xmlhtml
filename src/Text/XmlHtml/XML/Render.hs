@@ -5,8 +5,14 @@
 module Text.XmlHtml.XML.Render where
 
 import           Blaze.ByteString.Builder
+import qualified Data.ByteString.Builder as B
 import           Data.Char
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import           Data.Maybe
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import           Text.XmlHtml.Common
 
 import           Data.Text (Text)
@@ -145,11 +151,11 @@ entity e c    = fromText e "&#"
 element :: RenderOptions -> Encoding -> Text -> [(Text, Text)] -> [Node] -> Builder
 element opts e t a [] = fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute opts e) a)
+        `mappend` (mconcat $ map (attribute opts e t) a)
         `mappend` fromText e "/>"
 element opts e t a c = fromText e "<"
         `mappend` fromText e t
-        `mappend` (mconcat $ map (attribute opts e) a)
+        `mappend` (mconcat $ map (attribute opts e t) a)
         `mappend` fromText e ">"
         `mappend` (mconcat $ map (node opts e) c)
         `mappend` fromText e "</"
@@ -158,20 +164,43 @@ element opts e t a c = fromText e "<"
 
 
 ------------------------------------------------------------------------------
-attribute :: RenderOptions -> Encoding -> (Text, Text) -> Builder
-attribute opts e (n,v)
-    | not (preferredSurround `T.isInfixOf` v) =
+attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
+attribute opts e tb (n,v)
+    | v == "" && not explicit =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' preferredSurround)
-      `mappend` escaped "<&" e v
-      `mappend` fromText e preferredSurround
+    | roAttributeResolveInternal opts == AttrResolveAvoidEscape
+      && surround `T.isInfixOf` v
+      && not (alternative `T.isInfixOf` v) =
+      fromText e " "
+      `mappend` fromText e n
+      `mappend` fromText e (T.cons '=' alternative)
+      `mappend` escaped "&" e v
+      `mappend` fromText e alternative
     | otherwise                  =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' otherSurround)
-      `mappend` escaped "<&\"" e v
-      `mappend` fromText e otherSurround
-    where (preferredSurround, otherSurround) = case roAttributeSurround opts of
-            SurroundDoubleQuote -> ("\"", "\'")
-            SurroundSingleQuote -> ("\'", "\"")
+      `mappend` fromText e (T.cons '=' surround)
+      -- `mappend` escaped "<&\"" e v
+      `mappend` bmap (T.replace surround ent) (escaped "&" e v)
+      `mappend` fromText e surround
+  where
+    (ent, surround, alternative) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("&apos;", "'", "\"")
+        SurroundDoubleQuote -> ("&quot;", "\"", "'")
+
+    nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
+    bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
+    bmap f   = B.byteString
+               . T.encodeUtf8
+               . f
+               . TL.toStrict
+               . TL.decodeUtf8
+               . B.toLazyByteString
+    explicit = case roExplicitEmptyAttrs opts of
+        Nothing  -> True
+        -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
+        -- empty attributes
+        Just els -> case M.lookup tb els of
+            Nothing -> False
+            Just ns -> nbase `S.member` ns

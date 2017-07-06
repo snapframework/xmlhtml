@@ -7,10 +7,12 @@ module Text.XmlHtml.HTML.Render where
 import           Blaze.ByteString.Builder
 import           Control.Applicative
 import qualified Data.ByteString.Builder as B
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import           Data.Maybe
 import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import qualified Text.Parsec as P
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
@@ -21,8 +23,6 @@ import           Text.XmlHtml.XML.Render (docTypeDecl, entity)
 import           Data.Text (Text)
 import qualified Data.Text as T
 
-import qualified Data.HashSet as S
-import qualified Data.HashMap.Strict as M
 
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid

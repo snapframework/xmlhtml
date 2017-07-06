@@ -644,7 +644,7 @@ bothQuotesInAttr =
     toByteString (render (XmlDocument UTF8 Nothing [
         Element "foo" [("bar", "test'\"ing")] []
         ]))
-    == utf8Decl `B.append` "<foo bar=\"test'&quot;ing\"/>"
+    == utf8Decl `B.append` "<foo bar='test&apos;\"ing'/>"
 
 ndashEscapesInLatin :: Bool
 ndashEscapesInLatin =
