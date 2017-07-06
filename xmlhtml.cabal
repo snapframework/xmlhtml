@@ -854,13 +854,10 @@ Test-suite testsuite
     blaze-markup,
     bytestring,
     bytestring-builder,
-    containers,
     directory                  >= 1.0      && <1.4,
-    parsec,
     test-framework             >= 0.8.0.3  && <0.9,
     test-framework-hunit       >= 0.3      && <0.4,
     text,
-    unordered-containers,
     xmlhtml
 
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -threaded

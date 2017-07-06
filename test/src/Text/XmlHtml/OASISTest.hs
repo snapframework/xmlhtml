@@ -160,7 +160,7 @@ oasisRerender :: String -> Assertion
 oasisRerender name = do
     src         <- B.readFile name
     let Right d  = parseXML "" src
-    let src2     = toStrict' $ toLazyByteString (render d) :: B.ByteString
+    let src2     = toStrict' . toLazyByteString $ render d
     let Right d2 = parseXML "" src2
     assertEqual ("rerender " ++ name) d d2
 
@@ -187,6 +187,6 @@ hOasisRerender :: String -> Assertion
 hOasisRerender name = do
     src         <- B.readFile name
     let Right d  = parseHTML "" src
-    let src2     = toStrict' $ toLazyByteString (render d)
+    let src2     = toStrict' . toLazyByteString $ render d
     let Right d2 = parseHTML "" src2
     assertEqual ("rerender " ++ name) d d2
