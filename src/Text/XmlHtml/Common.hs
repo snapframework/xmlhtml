@@ -4,7 +4,10 @@
 
 module Text.XmlHtml.Common where
 
+import           Data.ByteString (ByteString)
 import           Blaze.ByteString.Builder
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Builder as B
 import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -14,9 +17,9 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as TE
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS
 import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs,
                                          explicitAttributes)
 
@@ -294,3 +297,11 @@ isUTF16 e = e == UTF16BE || e == UTF16LE
 fromText :: Encoding -> Text -> Builder
 fromText e t = fromByteString (encoder e t)
 
+
+bmap :: (Text -> Text) -> B.Builder -> B.Builder
+bmap f   = B.byteString
+               . T.encodeUtf8
+               . f
+               . TL.toStrict
+               . TL.decodeUtf8
+               . B.toLazyByteString

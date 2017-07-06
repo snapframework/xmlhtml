@@ -4,13 +4,9 @@
 
 module Text.XmlHtml.XML.Render where
 
-import qualified Data.ByteString.Builder as B
 import           Blaze.ByteString.Builder
 import           Data.Char
 import           Data.Maybe
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TL
 import           Text.XmlHtml.Common
 
 import           Data.Text (Text)
@@ -165,27 +161,20 @@ element opts e t a c = fromText e "<"
 attribute :: RenderOptions -> Encoding -> (Text, Text) -> Builder
 attribute opts e (n,v)
     | roAttributeResolveInternal opts == AttrResolveAvoidEscape
-      && preferredSurround `T.isInfixOf` v
-      && not (otherSurround `T.isInfixOf` v) =
+      && surround `T.isInfixOf` v
+      && not (alternative `T.isInfixOf` v) =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' otherSurround)
+      `mappend` fromText e (T.cons '=' alternative)
       `mappend` escaped "<&" e v
-      `mappend` fromText e otherSurround
+      `mappend` fromText e alternative
     | otherwise =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' preferredSurround)
-      `mappend` bmap (T.replace preferredSurround ent) (escaped "<&" e v)
-      `mappend` fromText e preferredSurround
+      `mappend` fromText e (T.cons '=' surround)
+      `mappend` bmap (T.replace surround ent) (escaped "<&" e v)
+      `mappend` fromText e surround
   where
-    (preferredSurround, otherSurround, ent) = case roAttributeSurround opts of
-        SurroundSingleQuote -> ("\'", "\"", "&apos;")
-        SurroundDoubleQuote -> ("\"", "\'", "&quot;")
-    bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
-    bmap f   = B.byteString
-               . T.encodeUtf8
-               . f
-               . TL.toStrict
-               . TL.decodeUtf8
-               . B.toLazyByteString
+    (surround, alternative, ent) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("'" , "\"", "&apos;")
+        SurroundDoubleQuote -> ("\"", "'" ,  "&quot;")
