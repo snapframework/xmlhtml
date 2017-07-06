@@ -169,9 +169,9 @@ attribute opts e tb (n,v)
     nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
     explicit = maybe
                True
-               -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
+               -- Nothing 'explicitEmptyAttributes' means: attach '=""' to all
                -- empty attributes
                (maybe False (S.member nbase) . M.lookup tb)
-               -- ^ (Just m) means: attach '=""' only when tag and attr name
+               -- (Just m) means: attach '=""' only when tag and attr name
                -- are in the explicit-empty-attrs map 'm'
                (roExplicitEmptyAttrs opts)
