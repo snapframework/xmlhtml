@@ -4,7 +4,10 @@
 
 module Text.XmlHtml.Common where
 
+import           Data.ByteString (ByteString)
 import           Blaze.ByteString.Builder
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Builder as B
 import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -14,9 +17,9 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as TE
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS
 import           Text.XmlHtml.HTML.Meta (reversePredefinedRefs,
                                          explicitAttributes)
 
@@ -53,20 +56,34 @@ data Node = TextNode !Text
 
 
 ------------------------------------------------------------------------------
--- | Rendering options. Attritube values may be surrounded by single quotes
--- (default), or by double quotes
+-- | Rendering options
 data RenderOptions = RenderOptions {
-      attributeSurround       :: AttributeSurround
-    , explicitEmptyAttributes :: M.HashMap Text (S.HashSet Text)
-    }
+      roAttributeSurround :: AttrSurround
+      -- ^ Single or double-quotes used around attribute values
 
-data AttributeSurround = SurroundDoubleQuote | SurroundSingleQuote
+    , roAttributeResolveInternal :: AttrResolveInternalQuotes
+      -- ^ Quotes inside attribute values that conflict with the surround
+      -- are escaped, or the outer quotes are changed to avoid conflicting
+      -- with the internal ones
+
+    , roExplicitEmptyAttrs :: Maybe (M.HashMap Text (S.HashSet Text))
+      -- ^ Attributes in the whitelist with empty values are
+      -- rendered as <div example="">
+      -- 'Nothing' applies this rule to all attributes with empty values
+
+    } deriving (Eq, Show)
+
+data AttrSurround = SurroundDoubleQuote | SurroundSingleQuote
+    deriving (Eq, Ord, Show)
+
+data AttrResolveInternalQuotes = AttrResolveByEscape | AttrResolveAvoidEscape
     deriving (Eq, Ord, Show)
 
 defaultRenderOptions :: RenderOptions
 defaultRenderOptions = RenderOptions
-    { attributeSurround       = SurroundSingleQuote
-    , explicitEmptyAttributes = explicitAttributes
+    { roAttributeSurround        = SurroundSingleQuote
+    , roAttributeResolveInternal = AttrResolveAvoidEscape
+    , roExplicitEmptyAttrs       = Just explicitAttributes
     }
 
 ------------------------------------------------------------------------------
@@ -280,3 +297,11 @@ isUTF16 e = e == UTF16BE || e == UTF16LE
 fromText :: Encoding -> Text -> Builder
 fromText e t = fromByteString (encoder e t)
 
+
+bmap :: (Text -> Text) -> B.Builder -> B.Builder
+bmap f   = B.byteString
+               . T.encodeUtf8
+               . f
+               . TL.toStrict
+               . TL.decodeUtf8
+               . B.toLazyByteString

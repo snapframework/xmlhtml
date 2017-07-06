@@ -2,11 +2,15 @@
 
 module Text.XmlHtml.OASISTest (testsOASIS) where
 
-import           Blaze.ByteString.Builder
-import           Control.Applicative
-import           Control.Monad
+import           Control.Applicative ((<*>))
+import           Data.ByteString.Builder
+import qualified Data.ByteString.Lazy as BSL
+import           Data.Foldable (forM_)
+import           Data.Functor ((<$>))
+import           Data.Traversable (forM)
 import qualified Data.ByteString as B
 import           Data.Maybe
+import           Data.Monoid (mconcat)
 import qualified Data.Text as T
 import           System.Directory
 import           Test.Framework
@@ -31,6 +35,12 @@ import           Text.XmlHtml
 --
 -- For tests that should succeed as XML but not HTML, or vice versa, files
 -- can be named /filename/@.xml.correct@, and so on (all 4 combinations).
+
+
+-- We need this as long as we support bytestring versions
+-- that don't export BSL.toStrict (ghc-7.4 and older)
+toStrict' :: BSL.ByteString -> B.ByteString
+toStrict' = mconcat . BSL.toChunks
 
 testsOASIS :: [Test]
 testsOASIS = [
@@ -150,7 +160,7 @@ oasisRerender :: String -> Assertion
 oasisRerender name = do
     src         <- B.readFile name
     let Right d  = parseXML "" src
-    let src2     = toByteString (render d)
+    let src2     = toStrict' . toLazyByteString $ render d
     let Right d2 = parseXML "" src2
     assertEqual ("rerender " ++ name) d d2
 
@@ -177,7 +187,6 @@ hOasisRerender :: String -> Assertion
 hOasisRerender name = do
     src         <- B.readFile name
     let Right d  = parseHTML "" src
-    let src2     = toByteString (render d)
+    let src2     = toStrict' . toLazyByteString $ render d
     let Right d2 = parseHTML "" src2
     assertEqual ("rerender " ++ name) d d2
-

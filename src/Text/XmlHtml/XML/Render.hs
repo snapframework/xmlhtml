@@ -160,18 +160,21 @@ element opts e t a c = fromText e "<"
 ------------------------------------------------------------------------------
 attribute :: RenderOptions -> Encoding -> (Text, Text) -> Builder
 attribute opts e (n,v)
-    | not (preferredSurround `T.isInfixOf` v) =
+    | roAttributeResolveInternal opts == AttrResolveAvoidEscape
+      && surround `T.isInfixOf` v
+      && not (alternative `T.isInfixOf` v) =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' preferredSurround)
+      `mappend` fromText e (T.cons '=' alternative)
       `mappend` escaped "<&" e v
-      `mappend` fromText e preferredSurround
-    | otherwise                  =
+      `mappend` fromText e alternative
+    | otherwise =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' otherSurround)
-      `mappend` escaped "<&\"" e v
-      `mappend` fromText e otherSurround
-    where (preferredSurround, otherSurround) = case attributeSurround opts of
-            SurroundDoubleQuote -> ("\"", "\'")
-            SurroundSingleQuote -> ("\'", "\"")
+      `mappend` fromText e (T.cons '=' surround)
+      `mappend` bmap (T.replace surround ent) (escaped "<&" e v)
+      `mappend` fromText e surround
+  where
+    (surround, alternative, ent) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("'" , "\"", "&apos;")
+        SurroundDoubleQuote -> ("\"", "'" ,  "&quot;")

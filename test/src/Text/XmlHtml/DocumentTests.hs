@@ -282,8 +282,8 @@ useDoubleQuoteAttrs = do
         tmpl3 = "<p div='tes\"er'></p>"
         rndr  =
             fmap (B.toLazyByteString . renderWithOptions
-            (defaultRenderOptions { attributeSurround = SurroundDoubleQuote}))
+            (defaultRenderOptions { roAttributeSurround = SurroundDoubleQuote}))
             . parseHTML "test"
     assertEqual "plain attr" (rndr tmpl1) (Right "<p div=\"tester\"></p>")
     assertEqual "plain attr" (rndr tmpl2) (Right "<p div=\"tes'er\"></p>")
-    assertEqual "plain attr" (rndr tmpl3) (Right "<p div='tes&quot;er'></p>")
+    assertEqual "plain attr" (rndr tmpl3) (Right "<p div='tes\"er'></p>")

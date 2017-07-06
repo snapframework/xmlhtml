@@ -6,11 +6,9 @@ module Text.XmlHtml.HTML.Render where
 
 import           Blaze.ByteString.Builder
 import           Control.Applicative
-import qualified Data.ByteString.Builder as B
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import           Data.Maybe
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Lazy.Encoding as TL
-import qualified Data.Text.Lazy as TL
 import qualified Text.Parsec as P
 import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
@@ -21,8 +19,6 @@ import           Text.XmlHtml.XML.Render (docTypeDecl, entity)
 import           Data.Text (Text)
 import qualified Data.Text as T
 
-import qualified Data.HashSet as S
-import qualified Data.HashMap.Strict as M
 
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
@@ -149,28 +145,33 @@ element opts e t tb a c
 ------------------------------------------------------------------------------
 attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
 attribute opts e tb (n,v)
-    | v == "" && not explicit                =
+    | v == "" && not explicit =
         fromText e " "
         `mappend` fromText e n
+    | roAttributeResolveInternal opts == AttrResolveAvoidEscape
+      && surround `T.isInfixOf` v
+      && not (alternative `T.isInfixOf` v) =
+        fromText e " "
+        `mappend` fromText e n
+        `mappend` fromText e ('=' `T.cons` alternative)
+        `mappend` escaped "&" e v
+        `mappend` fromText e alternative
     | otherwise =
         fromText e " "
         `mappend` fromText e n
         `mappend` fromText e ('=' `T.cons` surround)
-        `mappend` bmap (T.replace surround escapeTo) (escaped "&" e v)
+        `mappend` bmap (T.replace surround ent) (escaped "&" e v)
         `mappend` fromText e surround
   where
-    (surround, escapeTo) = case attributeSurround opts of
-        SurroundDoubleQuote -> ("\"", "&quot;")
-        SurroundSingleQuote -> ("'", "&apos;")
-
+    (surround, alternative, ent) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("'" , "\"", "&apos;")
+        SurroundDoubleQuote -> ("\"", "'" , "&quot;")
     nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
-    bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
-    bmap f   = B.byteString
-               . T.encodeUtf8
-               . f
-               . TL.toStrict
-               . TL.decodeUtf8
-               . B.toLazyByteString
-    explicit = case M.lookup tb explicitAttributes of
-        Nothing -> False
-        Just ns -> nbase `S.member` ns
+    explicit = maybe
+               True
+               -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
+               -- empty attributes
+               (maybe False (S.member nbase) . M.lookup tb)
+               -- ^ (Just m) means: attach '=""' only when tag and attr name
+               -- are in the explicit-empty-attrs map 'm'
+               (roExplicitEmptyAttrs opts)
