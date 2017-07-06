@@ -4,8 +4,8 @@
 
 module Text.XmlHtml.XML.Render where
 
-import           Blaze.ByteString.Builder
 import qualified Data.ByteString.Builder as B
+import           Blaze.ByteString.Builder
 import           Data.Char
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -166,29 +166,34 @@ element opts e t a c = fromText e "<"
 ------------------------------------------------------------------------------
 attribute :: RenderOptions -> Encoding -> Text -> (Text, Text) -> Builder
 attribute opts e tb (n,v)
-    | v == "" && not explicit =
+    | v == "" && not explicit && False =
+      -- TODO this logic breaks at least one of the oasis tests,
+      -- so we are disabling it until we can look into it further
       fromText e " "
       `mappend` fromText e n
-    | roAttributeResolveInternal opts == AttrResolveAvoidEscape
-      && surround `T.isInfixOf` v
-      && not (alternative `T.isInfixOf` v) =
+    | not (preferredSurround `T.isInfixOf` v) =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' alternative)
-      `mappend` escaped "&" e v
-      `mappend` fromText e alternative
+      `mappend` fromText e (T.cons '=' preferredSurround)
+      `mappend` escaped "<&" e v
+      `mappend` fromText e preferredSurround
+    | preferredSurround `T.isInfixOf` v
+      && otherSurround `T.isInfixOf` v =
+      fromText e " "
+      `mappend` fromText e n
+      `mappend` fromText e (T.cons '=' preferredSurround)
+      `mappend` bmap (T.replace preferredSurround ent) (escaped "<&" e v)
+      `mappend` fromText e preferredSurround
     | otherwise                  =
       fromText e " "
       `mappend` fromText e n
-      `mappend` fromText e (T.cons '=' surround)
-      -- `mappend` escaped "<&\"" e v
-      `mappend` bmap (T.replace surround ent) (escaped "&" e v)
-      `mappend` fromText e surround
+      `mappend` fromText e (T.cons '=' otherSurround)
+      `mappend` escaped "<&\"" e v
+      `mappend` fromText e otherSurround
   where
-    (ent, surround, alternative) = case roAttributeSurround opts of
-        SurroundSingleQuote -> ("&apos;", "'", "\"")
-        SurroundDoubleQuote -> ("&quot;", "\"", "'")
-
+    (preferredSurround, otherSurround, ent) = case roAttributeSurround opts of
+        SurroundSingleQuote -> ("\'", "\"", "&apos;")
+        SurroundDoubleQuote -> ("\"", "\'", "&quot;")
     nbase    = T.toLower $ snd $ T.breakOnEnd ":" n
     bmap :: (T.Text -> T.Text) -> B.Builder -> B.Builder
     bmap f   = B.byteString
@@ -197,6 +202,7 @@ attribute opts e tb (n,v)
                . TL.toStrict
                . TL.decodeUtf8
                . B.toLazyByteString
+
     explicit = case roExplicitEmptyAttrs opts of
         Nothing  -> True
         -- ^ Nothing 'explicitEmptyAttributes' means: attach '=""' to all
