@@ -4,8 +4,7 @@ module Text.XmlHtml.DocumentTests (documentTests) where
 
 import qualified Data.ByteString.Builder as B
 import           Data.Text ()                  -- for string instance
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
+import           Test.Hspec
 import           Test.HUnit hiding (Node, Test)
 import           Text.XmlHtml
 import           Text.XmlHtml.TestCommon
@@ -15,66 +14,65 @@ import           Text.XmlHtml.TestCommon
 -- Tests of manipulating the Node tree and Document --------------------------
 ------------------------------------------------------------------------------
 
-documentTests :: [Test]
-documentTests = [
+documentTests :: Spec
+documentTests = do
     -- Exercise the (/=) operators; (==) is done plenty of places.
-    testIt   "compareExternalIDs     " $ compareExternalIDs,
-    testIt   "compareInternalSubs    " $ compareInternalSubs,
-    testIt   "compareDoctypes        " $ compareDoctypes,
-    testIt   "compareNodes           " $ compareNodes,
-    testIt   "compareDocuments       " $ compareDocuments,
-    testIt   "compareEncodings       " $ compareEncodings,
+    testIt   "compareExternalIDs     " $ compareExternalIDs
+    testIt   "compareInternalSubs    " $ compareInternalSubs
+    testIt   "compareDoctypes        " $ compareDoctypes
+    testIt   "compareNodes           " $ compareNodes
+    testIt   "compareDocuments       " $ compareDocuments
+    testIt   "compareEncodings       " $ compareEncodings
 
     -- Silly tests just to exercise the Show instances on types.
-    testCase "exerciseShows          " $ exerciseShows,
+    it       "exerciseShows          " $ exerciseShows
 
     -- Exercise the accessors for Document and Node
-    testCase "docNodeAccessors       " $ docNodeAccessors,
+    it       "docNodeAccessors       " $ docNodeAccessors
 
-    testIt   "isTextNodeYes          " $ isTextNode someTextNode,
-    testIt   "isTextNodeNo           " $ not $ isTextNode someComment,
-    testIt   "isTextNodeNo2          " $ not $ isTextNode someElement,
-    testIt   "isCommentYes           " $ isComment someComment,
-    testIt   "isCommentNo            " $ not $ isComment someTextNode,
-    testIt   "isCommentNo2           " $ not $ isComment someElement,
-    testIt   "isElementYes           " $ isElement someElement,
-    testIt   "isElementNo            " $ not $ isElement someTextNode,
-    testIt   "isElementNo2           " $ not $ isElement someComment,
-    testIt   "tagNameElement         " $ tagName someElement == Just "baz",
-    testIt   "tagNameText            " $ tagName someTextNode == Nothing,
-    testIt   "tagNameComment         " $ tagName someComment == Nothing,
+    testIt   "isTextNodeYes          " $ isTextNode someTextNode
+    testIt   "isTextNodeNo           " $ not $ isTextNode someComment
+    testIt   "isTextNodeNo2          " $ not $ isTextNode someElement
+    testIt   "isCommentYes           " $ isComment someComment
+    testIt   "isCommentNo            " $ not $ isComment someTextNode
+    testIt   "isCommentNo2           " $ not $ isComment someElement
+    testIt   "isElementYes           " $ isElement someElement
+    testIt   "isElementNo            " $ not $ isElement someTextNode
+    testIt   "isElementNo2           " $ not $ isElement someComment
+    testIt   "tagNameElement         " $ tagName someElement == Just "baz"
+    testIt   "tagNameText            " $ tagName someTextNode == Nothing
+    testIt   "tagNameComment         " $ tagName someComment == Nothing
     testIt   "getAttributePresent    " $ getAttribute "fiz" someElement
-                                            == Just "buzz",
+                                            == Just "buzz"
     testIt   "getAttributeMissing    " $ getAttribute "baz" someElement
-                                            == Nothing,
+                                            == Nothing
     testIt   "getAttributeWrongType  " $ getAttribute "fix" someTextNode
-                                            == Nothing,
-    testIt   "hasAttributePresent    " $ hasAttribute "fiz" someElement,
-    testIt   "hasAttributeMissing    " $ not $ hasAttribute "baz" someElement,
-    testIt   "hasAttributeWrongType  " $ not $ hasAttribute "fix" someTextNode,
-    testIt   "setAttributeNew        " $ setAttributeNew,
-    testIt   "setAttributeReplace    " $ setAttributeReplace,
-    testIt   "setAttributeWrongType  " $ setAttributeWrongType,
-    testIt   "nestedNodeText         " $ nestedNodeText,
-    testIt   "childNodesElem         " $ childNodesElem,
-    testIt   "childNodesOther        " $ childNodesOther,
-    testIt   "childElemsTest         " $ childElemsTest,
-    testIt   "childElemsTagTest      " $ childElemsTagTest,
-    testIt   "childElemTagExists     " $ childElemTagExists,
-    testIt   "childElemTagNotExists  " $ childElemTagNotExists,
-    testIt   "childElemTagOther      " $ childElemTagOther,
-    testIt   "descNodesElem          " $ descNodesElem,
-    testIt   "descNodesOther         " $ descNodesOther,
-    testIt   "descElemsTest          " $ descElemsTest,
-    testIt   "descElemsTagTest       " $ descElemsTagTest,
-    testIt   "descElemTagExists      " $ descElemTagExists,
-    testIt   "descElemTagDFS         " $ descElemTagDFS,
-    testIt   "descElemTagNotExists   " $ descElemTagNotExists,
-    testIt   "descElemTagOther       " $ descElemTagOther,
+                                            == Nothing
+    testIt   "hasAttributePresent    " $ hasAttribute "fiz" someElement
+    testIt   "hasAttributeMissing    " $ not $ hasAttribute "baz" someElement
+    testIt   "hasAttributeWrongType  " $ not $ hasAttribute "fix" someTextNode
+    testIt   "setAttributeNew        " $ setAttributeNew
+    testIt   "setAttributeReplace    " $ setAttributeReplace
+    testIt   "setAttributeWrongType  " $ setAttributeWrongType
+    testIt   "nestedNodeText         " $ nestedNodeText
+    testIt   "childNodesElem         " $ childNodesElem
+    testIt   "childNodesOther        " $ childNodesOther
+    testIt   "childElemsTest         " $ childElemsTest
+    testIt   "childElemsTagTest      " $ childElemsTagTest
+    testIt   "childElemTagExists     " $ childElemTagExists
+    testIt   "childElemTagNotExists  " $ childElemTagNotExists
+    testIt   "childElemTagOther      " $ childElemTagOther
+    testIt   "descNodesElem          " $ descNodesElem
+    testIt   "descNodesOther         " $ descNodesOther
+    testIt   "descElemsTest          " $ descElemsTest
+    testIt   "descElemsTagTest       " $ descElemsTagTest
+    testIt   "descElemTagExists      " $ descElemTagExists
+    testIt   "descElemTagDFS         " $ descElemTagDFS
+    testIt   "descElemTagNotExists   " $ descElemTagNotExists
+    testIt   "descElemTagOther       " $ descElemTagOther
 
     -- Exercise render options
-    testCase "renderDoubleQuoteAttrs " $ useDoubleQuoteAttrs
-    ]
+    it       "renderDoubleQuoteAttrs " $ useDoubleQuoteAttrs
 
 compareExternalIDs :: Bool
 compareExternalIDs = Public "foo" "bar" /= System "bar"

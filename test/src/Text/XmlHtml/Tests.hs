@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 
-module Text.XmlHtml.Tests (tests) where
+module Text.XmlHtml.Tests where
 
 import           Blaze.ByteString.Builder
 import           Data.ByteString (ByteString)
@@ -10,8 +10,7 @@ import           Data.Monoid (mappend, mempty)
 import           Data.String
 import           Data.Text (Text)
 import qualified Data.Text.Encoding as T
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
+import           Test.Hspec
 import           Test.HUnit hiding (Test, Node)
 import           Text.Blaze
 import           Text.Blaze.Html
@@ -19,59 +18,38 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import           Text.Blaze.Renderer.XmlHtml
 import           Text.XmlHtml
-import           Text.XmlHtml.CursorTests
-import           Text.XmlHtml.DocumentTests
 import           Text.XmlHtml.TestCommon
-import           Text.XmlHtml.OASISTest
-
-
-------------------------------------------------------------------------------
--- The master list of tests to run. ------------------------------------------
-------------------------------------------------------------------------------
-
-tests :: [Test]
-tests = xmlParsingTests
-     ++ htmlXMLParsingTests
-     ++ htmlParsingQuirkTests
-     ++ xmlRenderingTests
-     ++ htmlXMLRenderingTests
-     ++ htmlRenderingQuirkTests
-     ++ documentTests
-     ++ cursorTests
-     ++ blazeRenderTests
-     ++ testsOASIS
 
 
 ------------------------------------------------------------------------------
 -- XML Parsing Tests ---------------------------------------------------------
 ------------------------------------------------------------------------------
 
-xmlParsingTests :: [Test]
-xmlParsingTests = [
-    testCase "byteOrderMark          " byteOrderMark,
-    testIt   "emptyDocument          " emptyDocument,
-    testIt   "publicDocType          " publicDocType,
-    testIt   "systemDocType          " systemDocType,
-    testIt   "emptyDocType           " emptyDocType,
-    testCase "dtdInternalScan        " dtdInternalScan,
-    testIt   "textOnly               " textOnly,
-    testIt   "textWithRefs           " textWithRefs,
-    testIt   "untermRef              " untermRef,
-    testIt   "textWithCDATA          " textWithCDATA,
-    testIt   "cdataOnly              " cdataOnly,
-    testIt   "commentOnly            " commentOnly,
-    testIt   "emptyElement           " emptyElement,
-    testIt   "emptyElement2          " emptyElement2,
-    testIt   "elemWithText           " elemWithText,
-    testIt   "xmlDeclXML             " xmlDeclXML,
-    testIt   "procInst               " procInst,
-    testIt   "badDoctype1            " badDoctype1,
-    testIt   "badDoctype2            " badDoctype2,
-    testIt   "badDoctype3            " badDoctype3,
-    testIt   "badDoctype4            " badDoctype4,
-    testIt   "badDoctype5            " badDoctype5,
-    testCase "tagNames               " tagNames
-    ]
+xmlParsingTests :: Spec
+xmlParsingTests = do
+    it       "byteOrderMark          " byteOrderMark
+    testIt   "emptyDocument          " emptyDocument
+    testIt   "publicDocType          " publicDocType
+    testIt   "systemDocType          " systemDocType
+    testIt   "emptyDocType           " emptyDocType
+    it       "dtdInternalScan        " dtdInternalScan
+    testIt   "textOnly               " textOnly
+    testIt   "textWithRefs           " textWithRefs
+    testIt   "untermRef              " untermRef
+    testIt   "textWithCDATA          " textWithCDATA
+    testIt   "cdataOnly              " cdataOnly
+    testIt   "commentOnly            " commentOnly
+    testIt   "emptyElement           " emptyElement
+    testIt   "emptyElement2          " emptyElement2
+    testIt   "elemWithText           " elemWithText
+    testIt   "xmlDeclXML             " xmlDeclXML
+    testIt   "procInst               " procInst
+    testIt   "badDoctype1            " badDoctype1
+    testIt   "badDoctype2            " badDoctype2
+    testIt   "badDoctype3            " badDoctype3
+    testIt   "badDoctype4            " badDoctype4
+    testIt   "badDoctype5            " badDoctype5
+    it       "tagNames               " tagNames
 
 byteOrderMark :: Assertion
 byteOrderMark = do
@@ -252,28 +230,27 @@ tagNames = do
 -- HTML Repetitions of XML Parsing Tests -------------------------------------
 ------------------------------------------------------------------------------
 
-htmlXMLParsingTests :: [Test]
-htmlXMLParsingTests = [
-    testIt "emptyDocumentHTML      " emptyDocumentHTML,
-    testIt "publicDocTypeHTML      " publicDocTypeHTML,
-    testIt "systemDocTypeHTML      " systemDocTypeHTML,
-    testIt "emptyDocTypeHTML       " emptyDocTypeHTML,
-    testIt "textOnlyHTML           " textOnlyHTML,
-    testIt "textWithRefsHTML       " textWithRefsHTML,
-    testIt "textWithCDataHTML      " textWithCDataHTML,
-    testIt "cdataOnlyHTML          " cdataOnlyHTML,
-    testIt "commentOnlyHTML        " commentOnlyHTML,
-    testIt "emptyElementHTML       " emptyElementHTML,
-    testIt "emptyElement2HTML      " emptyElement2HTML,
-    testIt "elemWithTextHTML       " elemWithTextHTML,
-    testIt "xmlDeclHTML            " xmlDeclHTML,
-    testIt "procInstHTML           " procInstHTML,
-    testIt "badDoctype1HTML        " badDoctype1HTML,
-    testIt "badDoctype2HTML        " badDoctype2HTML,
-    testIt "badDoctype3HTML        " badDoctype3HTML,
-    testIt "badDoctype4HTML        " badDoctype4HTML,
+htmlXMLParsingTests :: Spec
+htmlXMLParsingTests = do
+    testIt "emptyDocumentHTML      " emptyDocumentHTML
+    testIt "publicDocTypeHTML      " publicDocTypeHTML
+    testIt "systemDocTypeHTML      " systemDocTypeHTML
+    testIt "emptyDocTypeHTML       " emptyDocTypeHTML
+    testIt "textOnlyHTML           " textOnlyHTML
+    testIt "textWithRefsHTML       " textWithRefsHTML
+    testIt "textWithCDataHTML      " textWithCDataHTML
+    testIt "cdataOnlyHTML          " cdataOnlyHTML
+    testIt "commentOnlyHTML        " commentOnlyHTML
+    testIt "emptyElementHTML       " emptyElementHTML
+    testIt "emptyElement2HTML      " emptyElement2HTML
+    testIt "elemWithTextHTML       " elemWithTextHTML
+    testIt "xmlDeclHTML            " xmlDeclHTML
+    testIt "procInstHTML           " procInstHTML
+    testIt "badDoctype1HTML        " badDoctype1HTML
+    testIt "badDoctype2HTML        " badDoctype2HTML
+    testIt "badDoctype3HTML        " badDoctype3HTML
+    testIt "badDoctype4HTML        " badDoctype4HTML
     testIt "badDoctype5HTML        " badDoctype5HTML
-    ]
 
 emptyDocumentHTML :: Bool
 emptyDocumentHTML = parseHTML "" ""
@@ -352,43 +329,42 @@ badDoctype5HTML    = isLeft $ parseHTML "" ("<!DOCTYPE html SYSTEM \"foo\" "
 -- HTML Quirks Parsing Tests -------------------------------------------------
 ------------------------------------------------------------------------------
 
-htmlParsingQuirkTests :: [Test]
-htmlParsingQuirkTests = [
-    testIt   "voidElem               " voidElem,
-    testIt   "caseInsDoctype1        " caseInsDoctype1,
-    testIt   "caseInsDoctype2        " caseInsDoctype2,
-    testIt   "voidEmptyElem          " voidEmptyElem,
-    testIt   "rawTextElem            " rawTextElem,
-    testIt   "endTagCase             " endTagCase,
-    testIt   "hexEntityCap           " hexEntityCap,
-    testIt   "laxAttrName            " laxAttrName,
-    testCase "badAttrName            " badAttrName,
-    testIt   "emptyAttr              " emptyAttr,
-    testIt   "emptyAttr2             " emptyAttr2,
-    testIt   "unquotedAttr           " unquotedAttr,
-    testIt   "laxAttrVal             " laxAttrVal,
-    testIt   "ampersandInText        " ampersandInText,
-    testIt   "omitOptionalEnds       " omitOptionalEnds,
-    testIt   "omitEndHEAD            " omitEndHEAD,
-    testIt   "omitEndLI              " omitEndLI,
-    testIt   "omitEndDT              " omitEndDT,
-    testIt   "omitEndDD              " omitEndDD,
-    testIt   "omitEndP               " omitEndP,
-    testIt   "omitEndRT              " omitEndRT,
-    testIt   "omitEndRP              " omitEndRP,
-    testIt   "omitEndOPTGRP          " omitEndOPTGRP,
-    testIt   "omitEndOPTION          " omitEndOPTION,
-    testIt   "omitEndCOLGRP          " omitEndCOLGRP,
-    testIt   "omitEndTHEAD           " omitEndTHEAD,
-    testIt   "omitEndTBODY           " omitEndTBODY,
-    testIt   "omitEndTFOOT           " omitEndTFOOT,
-    testIt   "omitEndTR              " omitEndTR,
-    testIt   "omitEndTD              " omitEndTD,
-    testIt   "omitEndTH              " omitEndTH,
-    testIt   "testNewRefs            " testNewRefs,
-    testIt   "errorImplicitClose     " errorImplicitClose,
+htmlParsingQuirkTests :: Spec
+htmlParsingQuirkTests = do
+    testIt   "voidElem               " voidElem
+    testIt   "caseInsDoctype1        " caseInsDoctype1
+    testIt   "caseInsDoctype2        " caseInsDoctype2
+    testIt   "voidEmptyElem          " voidEmptyElem
+    testIt   "rawTextElem            " rawTextElem
+    testIt   "endTagCase             " endTagCase
+    testIt   "hexEntityCap           " hexEntityCap
+    testIt   "laxAttrName            " laxAttrName
+    it       "badAttrName            " badAttrName
+    testIt   "emptyAttr              " emptyAttr
+    testIt   "emptyAttr2             " emptyAttr2
+    testIt   "unquotedAttr           " unquotedAttr
+    testIt   "laxAttrVal             " laxAttrVal
+    testIt   "ampersandInText        " ampersandInText
+    testIt   "omitOptionalEnds       " omitOptionalEnds
+    testIt   "omitEndHEAD            " omitEndHEAD
+    testIt   "omitEndLI              " omitEndLI
+    testIt   "omitEndDT              " omitEndDT
+    testIt   "omitEndDD              " omitEndDD
+    testIt   "omitEndP               " omitEndP
+    testIt   "omitEndRT              " omitEndRT
+    testIt   "omitEndRP              " omitEndRP
+    testIt   "omitEndOPTGRP          " omitEndOPTGRP
+    testIt   "omitEndOPTION          " omitEndOPTION
+    testIt   "omitEndCOLGRP          " omitEndCOLGRP
+    testIt   "omitEndTHEAD           " omitEndTHEAD
+    testIt   "omitEndTBODY           " omitEndTBODY
+    testIt   "omitEndTFOOT           " omitEndTFOOT
+    testIt   "omitEndTR              " omitEndTR
+    testIt   "omitEndTD              " omitEndTD
+    testIt   "omitEndTH              " omitEndTH
+    testIt   "testNewRefs            " testNewRefs
+    testIt   "errorImplicitClose     " errorImplicitClose
     testIt   "weirdScriptThing       " weirdScriptThing
-    ]
 
 caseInsDoctype1 :: Bool
 caseInsDoctype1 = parseHTML "" "<!dOcTyPe html SyStEm 'foo'>"
@@ -547,24 +523,23 @@ weirdScriptThing = parseHTML "" "<div><script type=\"text/javascript\">selector.
 -- XML Rendering Tests -------------------------------------------------------
 ------------------------------------------------------------------------------
 
-xmlRenderingTests :: [Test]
-xmlRenderingTests = [
-    testIt "renderByteOrderMark    " renderByteOrderMark,
-    testIt "renderByteOrderMarkLE  " renderByteOrderMarkLE,
-    testIt "singleQuoteInSysID     " singleQuoteInSysID,
-    testIt "doubleQuoteInSysID     " doubleQuoteInSysID,
-    testIt "bothQuotesInSysID      " bothQuotesInSysID,
-    testIt "doubleQuoteInPubID     " doubleQuoteInPubID,
-    testIt "doubleDashInComment    " doubleDashInComment,
-    testIt "trailingDashInComment  " trailingDashInComment,
-    testIt "renderEmptyText        " renderEmptyText,
-    testIt "singleQuoteInAttr      " singleQuoteInAttr,
-    testIt "doubleQuoteInAttr      " doubleQuoteInAttr,
-    testIt "bothQuotesInAttr       " bothQuotesInAttr,
-    testIt "ndashEscapesInLatin    " ndashEscapesInLatin,
-    testIt "smileyEscapesInLatin   " smileyEscapesInLatin,
+xmlRenderingTests :: Spec
+xmlRenderingTests = do
+    testIt "renderByteOrderMark    " renderByteOrderMark
+    testIt "renderByteOrderMarkLE  " renderByteOrderMarkLE
+    testIt "singleQuoteInSysID     " singleQuoteInSysID
+    testIt "doubleQuoteInSysID     " doubleQuoteInSysID
+    testIt "bothQuotesInSysID      " bothQuotesInSysID
+    testIt "doubleQuoteInPubID     " doubleQuoteInPubID
+    testIt "doubleDashInComment    " doubleDashInComment
+    testIt "trailingDashInComment  " trailingDashInComment
+    testIt "renderEmptyText        " renderEmptyText
+    testIt "singleQuoteInAttr      " singleQuoteInAttr
+    testIt "doubleQuoteInAttr      " doubleQuoteInAttr
+    testIt "bothQuotesInAttr       " bothQuotesInAttr
+    testIt "ndashEscapesInLatin    " ndashEscapesInLatin
+    testIt "smileyEscapesInLatin   " smileyEscapesInLatin
     testIt "numericalEscapes       " numericalEscapes
-    ]
 
 renderByteOrderMark :: Bool
 renderByteOrderMark =
@@ -671,20 +646,19 @@ numericalEscapes =
 -- HTML Repeats of XML Rendering Tests ---------------------------------------
 ------------------------------------------------------------------------------
 
-htmlXMLRenderingTests :: [Test]
-htmlXMLRenderingTests = [
-    testIt "hRenderByteOrderMark   " hRenderByteOrderMark,
-    testIt "hSingleQuoteInSysID    " hSingleQuoteInSysID,
-    testIt "hDoubleQuoteInSysID    " hDoubleQuoteInSysID,
-    testIt "hBothQuotesInSysID     " hBothQuotesInSysID,
-    testIt "hDoubleQuoteInPubID    " hDoubleQuoteInPubID,
-    testIt "hDoubleDashInComment   " hDoubleDashInComment,
-    testIt "hTrailingDashInComment " hTrailingDashInComment,
-    testIt "hRenderEmptyText       " hRenderEmptyText,
-    testIt "hSingleQuoteInAttr     " hSingleQuoteInAttr,
-    testIt "hDoubleQuoteInAttr     " hDoubleQuoteInAttr,
+htmlXMLRenderingTests :: Spec
+htmlXMLRenderingTests = do
+    testIt "hRenderByteOrderMark   " hRenderByteOrderMark
+    testIt "hSingleQuoteInSysID    " hSingleQuoteInSysID
+    testIt "hDoubleQuoteInSysID    " hDoubleQuoteInSysID
+    testIt "hBothQuotesInSysID     " hBothQuotesInSysID
+    testIt "hDoubleQuoteInPubID    " hDoubleQuoteInPubID
+    testIt "hDoubleDashInComment   " hDoubleDashInComment
+    testIt "hTrailingDashInComment " hTrailingDashInComment
+    testIt "hRenderEmptyText       " hRenderEmptyText
+    testIt "hSingleQuoteInAttr     " hSingleQuoteInAttr
+    testIt "hDoubleQuoteInAttr     " hDoubleQuoteInAttr
     testIt "hBothQuotesInAttr      " hBothQuotesInAttr
-    ]
 
 hRenderByteOrderMark :: Bool
 hRenderByteOrderMark =
@@ -762,32 +736,31 @@ hBothQuotesInAttr =
 -- HTML Quirks Rendering Tests -----------------------------------------------
 ------------------------------------------------------------------------------
 
-htmlRenderingQuirkTests :: [Test]
-htmlRenderingQuirkTests = [
-    testIt "renderHTMLVoid         " renderHTMLVoid,
-    testIt "renderHTMLVoid2        " renderHTMLVoid2,
-    testIt "renderHTMLRaw          " renderHTMLRaw,
-    testIt "renderHTMLRawMult      " renderHTMLRawMult,
-    testIt "renderHTMLRaw2         " renderHTMLRaw2,
-    testIt "renderHTMLRaw3         " renderHTMLRaw3,
-    testIt "renderHTMLRaw4         " renderHTMLRaw4,
-    testIt "renderHTMLEmptyAttr    " renderHTMLEmptyAttr,
-    testIt "renderHTMLEmptyAttr2   " renderHTMLEmptyAttr2,
-    testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1,
-    testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2,
-    testIt "renderHTMLAmpAttr3     " renderHTMLAmpAttr3,
-    testIt "renderHTMLQVoid        " renderHTMLQVoid,
-    testIt "renderHTMLQVoid2       " renderHTMLQVoid2,
-    testIt "renderHTMLQRaw         " renderHTMLQRaw,
-    testIt "renderHTMLQRawMult     " renderHTMLQRawMult,
-    testIt "renderHTMLQRaw2        " renderHTMLQRaw2,
-    testIt "renderHTMLQRaw3        " renderHTMLQRaw3,
-    testIt "renderHTMLQRaw4        " renderHTMLQRaw4,
-    testCase "singleAlways           " singleAlways,
-    testCase "doubleAlways           " doubleAlways,
-    testCase "singleAvoidEscaping    " singleAvoidEscaping,
-    testCase "doubleAvoidEscaping    " doubleAvoidEscaping
-    ]
+htmlRenderingQuirkTests :: Spec
+htmlRenderingQuirkTests = do
+    testIt "renderHTMLVoid         " renderHTMLVoid
+    testIt "renderHTMLVoid2        " renderHTMLVoid2
+    testIt "renderHTMLRaw          " renderHTMLRaw
+    testIt "renderHTMLRawMult      " renderHTMLRawMult
+    testIt "renderHTMLRaw2         " renderHTMLRaw2
+    testIt "renderHTMLRaw3         " renderHTMLRaw3
+    testIt "renderHTMLRaw4         " renderHTMLRaw4
+    testIt "renderHTMLEmptyAttr    " renderHTMLEmptyAttr
+    testIt "renderHTMLEmptyAttr2   " renderHTMLEmptyAttr2
+    testIt "renderHTMLAmpAttr1     " renderHTMLAmpAttr1
+    testIt "renderHTMLAmpAttr2     " renderHTMLAmpAttr2
+    testIt "renderHTMLAmpAttr3     " renderHTMLAmpAttr3
+    testIt "renderHTMLQVoid        " renderHTMLQVoid
+    testIt "renderHTMLQVoid2       " renderHTMLQVoid2
+    testIt "renderHTMLQRaw         " renderHTMLQRaw
+    testIt "renderHTMLQRawMult     " renderHTMLQRawMult
+    testIt "renderHTMLQRaw2        " renderHTMLQRaw2
+    testIt "renderHTMLQRaw3        " renderHTMLQRaw3
+    testIt "renderHTMLQRaw4        " renderHTMLQRaw4
+    it     "singleAlways           " singleAlways
+    it     "doubleAlways           " doubleAlways
+    it     "singleAvoidEscaping    " singleAvoidEscaping
+    it     "doubleAvoidEscaping    " doubleAvoidEscaping
 
 renderHTMLVoid :: Bool
 renderHTMLVoid =
@@ -980,17 +953,16 @@ doubleAvoidEscaping =
 -- Tests of rendering from the blaze-html package ----------------------------
 ------------------------------------------------------------------------------
 
-blazeRenderTests :: [Test]
-blazeRenderTests = [
-    testIt   "blazeTestString        " blazeTestString,
-    testIt   "blazeTestText          " blazeTestText,
-    testIt   "blazeTestBS            " blazeTestBS,
-    testIt   "blazeTestPre           " blazeTestPre,
-    testIt   "blazeTestExternal      " blazeTestExternal,
-    testIt   "blazeTestCustom        " blazeTestCustom,
-    testIt   "blazeTestMulti         " blazeTestMulti,
+blazeRenderTests :: Spec
+blazeRenderTests = do
+    testIt   "blazeTestString        " blazeTestString
+    testIt   "blazeTestText          " blazeTestText
+    testIt   "blazeTestBS            " blazeTestBS
+    testIt   "blazeTestPre           " blazeTestPre
+    testIt   "blazeTestExternal      " blazeTestExternal
+    testIt   "blazeTestCustom        " blazeTestCustom
+    testIt   "blazeTestMulti         " blazeTestMulti
     testIt   "blazeTestEmpty         " blazeTestEmpty
-    ]
 
 blazeTestIsString :: (IsString t1, IsString t) =>
      (t -> AttributeValue) -> (t1 -> Html) -> Bool

@@ -4,14 +4,13 @@ module Text.XmlHtml.TestCommon where
 
 import           Control.Exception as E
 import           System.IO.Unsafe
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
+import           Test.Hspec
 import           Test.HUnit hiding (Test, Node)
 
 ------------------------------------------------------------------------------
 -- | Tests a simple Bool property.
-testIt :: TestName -> Bool -> Test
-testIt name b = testCase name $ assertBool name b
+testIt :: String -> Bool -> Spec
+testIt name b = it name $ assertBool name b
 
 ------------------------------------------------------------------------------
 -- Code adapted from ChasingBottoms.

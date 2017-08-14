@@ -13,8 +13,7 @@ import           Data.Maybe
 import           Data.Monoid (mconcat)
 import qualified Data.Text as T
 import           System.Directory
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
+import           Test.Hspec
 import           Test.HUnit hiding (Test, Node)
 import           Text.XmlHtml
 
@@ -42,25 +41,24 @@ import           Text.XmlHtml
 toStrict' :: BSL.ByteString -> B.ByteString
 toStrict' = mconcat . BSL.toChunks
 
-testsOASIS :: [Test]
-testsOASIS = [
-    testCase "xmlhtml/ibm-not-wf     " $ oasisP  "ibm/ibm_oasis_not-wf.xml",
-    testCase "xmlhtml/ibm-invalid    " $ oasisP  "ibm/ibm_oasis_invalid.xml",
-    testCase "xmlhtml/ibm-valid      " $ oasisP  "ibm/ibm_oasis_valid.xml",
-    testCase "xmlhtml/oasis          " $ oasisP  "oasis/oasis.xml",
-    testCase "xmlhtml/r-ibm-not-wf   " $ oasisR  "ibm/ibm_oasis_not-wf.xml",
-    testCase "xmlhtml/r-ibm-invalid  " $ oasisR  "ibm/ibm_oasis_invalid.xml",
-    testCase "xmlhtml/r-ibm-valid    " $ oasisR  "ibm/ibm_oasis_valid.xml",
-    testCase "xmlhtml/r-oasis        " $ oasisR  "oasis/oasis.xml",
-    testCase "xmlhtml/h-ibm-not-wf   " $ oasisHP "ibm/ibm_oasis_not-wf.xml",
-    testCase "xmlhtml/h-ibm-invalid  " $ oasisHP "ibm/ibm_oasis_invalid.xml",
-    testCase "xmlhtml/h-ibm-valid    " $ oasisHP "ibm/ibm_oasis_valid.xml",
-    testCase "xmlhtml/h-oasis        " $ oasisHP "oasis/oasis.xml",
-    testCase "xmlhtml/hr-ibm-not-wf  " $ oasisHR "ibm/ibm_oasis_not-wf.xml",
-    testCase "xmlhtml/hr-ibm-invalid " $ oasisHR "ibm/ibm_oasis_invalid.xml",
-    testCase "xmlhtml/hr-ibm-valid   " $ oasisHR "ibm/ibm_oasis_valid.xml",
-    testCase "xmlhtml/hr-oasis       " $ oasisHR "oasis/oasis.xml"
-    ]
+testsOASIS :: Spec
+testsOASIS = do
+    it "xmlhtml/ibm-not-wf     " $ oasisP  "ibm/ibm_oasis_not-wf.xml"
+    it "xmlhtml/ibm-invalid    " $ oasisP  "ibm/ibm_oasis_invalid.xml"
+    it "xmlhtml/ibm-valid      " $ oasisP  "ibm/ibm_oasis_valid.xml"
+    it "xmlhtml/oasis          " $ oasisP  "oasis/oasis.xml"
+    it "xmlhtml/r-ibm-not-wf   " $ oasisR  "ibm/ibm_oasis_not-wf.xml"
+    it "xmlhtml/r-ibm-invalid  " $ oasisR  "ibm/ibm_oasis_invalid.xml"
+    it "xmlhtml/r-ibm-valid    " $ oasisR  "ibm/ibm_oasis_valid.xml"
+    it "xmlhtml/r-oasis        " $ oasisR  "oasis/oasis.xml"
+    it "xmlhtml/h-ibm-not-wf   " $ oasisHP "ibm/ibm_oasis_not-wf.xml"
+    it "xmlhtml/h-ibm-invalid  " $ oasisHP "ibm/ibm_oasis_invalid.xml"
+    it "xmlhtml/h-ibm-valid    " $ oasisHP "ibm/ibm_oasis_valid.xml"
+    it "xmlhtml/h-oasis        " $ oasisHP "oasis/oasis.xml"
+    it "xmlhtml/hr-ibm-not-wf  " $ oasisHR "ibm/ibm_oasis_not-wf.xml"
+    it "xmlhtml/hr-ibm-invalid " $ oasisHR "ibm/ibm_oasis_invalid.xml"
+    it "xmlhtml/hr-ibm-valid   " $ oasisHR "ibm/ibm_oasis_valid.xml"
+    it "xmlhtml/hr-oasis       " $ oasisHR "oasis/oasis.xml"
 
 
 oasisP :: String -> Assertion

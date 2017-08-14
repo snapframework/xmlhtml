@@ -3,8 +3,7 @@
 module Text.XmlHtml.CursorTests (cursorTests) where
 
 import           Data.Maybe
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
+import           Test.Hspec
 import           Test.HUnit hiding (Test, Node)
 import           Text.XmlHtml
 import           Text.XmlHtml.Cursor
@@ -14,19 +13,18 @@ import           Text.XmlHtml.TestCommon
 -- Tests of navigating with the Cursor type ----------------------------------
 ------------------------------------------------------------------------------
 
-cursorTests :: [Test]
-cursorTests = [
-    testIt   "fromNodeAndCurrent     " $ fromNodeAndCurrent,
-    testIt   "fromNodesAndSiblings   " $ fromNodesAndSiblings,
-    testIt   "leftSiblings           " $ leftSiblings,
-    testIt   "emptyFromNodes         " $ emptyFromNodes,
-    testIt   "cursorNEQ              " $ cursorNEQ,
-    testCase "cursorNavigation       " $ cursorNavigation,
-    testCase "cursorSearch           " $ cursorSearch,
-    testCase "cursorMutation         " $ cursorMutation,
-    testCase "cursorInsertion        " $ cursorInsertion,
-    testCase "cursorDeletion         " $ cursorDeletion
-    ]
+cursorTests :: Spec
+cursorTests = do
+    testIt   "fromNodeAndCurrent     " $ fromNodeAndCurrent
+    testIt   "fromNodesAndSiblings   " $ fromNodesAndSiblings
+    testIt   "leftSiblings           " $ leftSiblings
+    testIt   "emptyFromNodes         " $ emptyFromNodes
+    testIt   "cursorNEQ              " $ cursorNEQ
+    it       "cursorNavigation       " $ cursorNavigation
+    it       "cursorSearch           " $ cursorSearch
+    it       "cursorMutation         " $ cursorMutation
+    it       "cursorInsertion        " $ cursorInsertion
+    it       "cursorDeletion         " $ cursorDeletion
 
 fromNodeAndCurrent :: Bool
 fromNodeAndCurrent = all (\n -> n == current (fromNode n)) ns

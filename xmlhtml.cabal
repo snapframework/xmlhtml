@@ -855,8 +855,7 @@ Test-suite testsuite
     bytestring,
     bytestring-builder,
     directory                  >= 1.0      && <1.4,
-    test-framework             >= 0.8.0.3  && <0.9,
-    test-framework-hunit       >= 0.3      && <0.4,
+    hspec                      >= 2.4      && <2.5,
     text,
     xmlhtml
 
