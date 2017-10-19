@@ -539,7 +539,7 @@ xmlRenderingTests = do
     testIt "bothQuotesInAttr       " bothQuotesInAttr
     testIt "ndashEscapesInLatin    " ndashEscapesInLatin
     testIt "smileyEscapesInLatin   " smileyEscapesInLatin
-    testIt "numericalEscapes       " numericalEscapes
+    numericalEscapes
 
 renderByteOrderMark :: Bool
 renderByteOrderMark =
@@ -635,11 +635,11 @@ smileyEscapesInLatin =
         ]))
     == "Hello &#9786;"
 
-numericalEscapes :: Bool
-numericalEscapes =
-    fmap (toByteString . renderXmlFragment ISO_8859_1 . docContent)
-    (parseXML "test" "Hello &#174;")
-    == Right "Hello &REG;"
+numericalEscapes :: Spec
+numericalEscapes = testEqual "numericalEscapes" (Right "Hello &reg;") actual
+  where
+    actual = toByteString . renderXmlFragment ISO_8859_1 . docContent
+               <$> parseXML "test" "Hello &#174;"
 
 
 ------------------------------------------------------------------------------

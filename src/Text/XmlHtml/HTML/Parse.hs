@@ -17,6 +17,7 @@ import qualified Text.Parsec as P
 
 import qualified Data.HashSet as S
 import qualified Data.HashMap.Strict as M
+import qualified Data.Map.Strict as Map
 
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -331,7 +332,7 @@ reference = do
             when (not (isValidChar c)) $ fail $
                 "Reference is not a valid character"
             return (T.singleton c)
-        Right nm -> case M.lookup nm predefinedRefs of
+        Right nm -> case Map.lookup nm predefinedRefs of
             Nothing -> fail $ "Unknown entity reference: " ++ T.unpack nm
             Just t  -> return t
 

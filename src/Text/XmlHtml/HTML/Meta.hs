@@ -20,6 +20,8 @@ import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as S
+import           Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import           Data.Text (Text)
 
 ------------------------------------------------------------------------------
@@ -127,8 +129,8 @@ explicitAttributes = M.fromList [
 ------------------------------------------------------------------------------
 -- | Predefined character entity references as defined by the HTML5 spec.
 {-# NOINLINE predefinedRefs #-}
-predefinedRefs :: HashMap Text Text
-predefinedRefs = mconcat $ map M.fromList [
+predefinedRefs :: Map Text Text
+predefinedRefs = mconcat $ map Map.fromList [
       reftab1
     , reftab2
     , reftab3
@@ -2549,7 +2551,7 @@ reftab58 =
 
 ------------------------------------------------------------------------------
 -- Reverse lookup of Html entities
-reversePredefinedRefs :: HashMap Text Text
-reversePredefinedRefs = M.fromList . map (\(x,y) -> (y,x)) $
-                        M.toList predefinedRefs
+reversePredefinedRefs :: Map Text Text
+reversePredefinedRefs = Map.fromList . map (\(x,y) -> (y,x)) $
+                        Map.toList predefinedRefs
 

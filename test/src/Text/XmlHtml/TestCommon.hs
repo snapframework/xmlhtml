@@ -13,6 +13,12 @@ testIt :: String -> Bool -> Spec
 testIt name b = it name $ assertBool name b
 
 ------------------------------------------------------------------------------
+-- | Tests with assertEqual which gives more useful information to the user on
+-- failure.  We should probably stop using testIt.  :/
+testEqual :: (Eq a, Show a) => String -> a -> a -> Spec
+testEqual name expected actual = it name $ assertEqual name expected actual
+
+------------------------------------------------------------------------------
 -- Code adapted from ChasingBottoms.
 --
 -- Adding an actual dependency isn't possible because Cabal refuses to build

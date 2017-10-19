@@ -11,6 +11,7 @@ import qualified Data.ByteString.Builder as B
 import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
 
 import           Data.Text (Text)
@@ -272,7 +273,7 @@ encodeIso_8859_1 t = T.encodeUtf8 . T.concat . map toAsciiChunk $
     -- Otherwise its unicode index is printed to decimal and "&#" is appended
     toAsciiChar c = maybe
         (uniEscape c) (\esc -> T.concat ["&", esc, ";"])
-        (M.lookup (T.singleton c) reversePredefinedRefs)
+        (Map.lookup (T.singleton c) reversePredefinedRefs)
 
     uniEscape = T.append "&#" . flip T.snoc ';' . T.pack .
                 (show :: Int -> String) . fromEnum
