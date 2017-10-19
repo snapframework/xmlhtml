@@ -638,8 +638,8 @@ smileyEscapesInLatin =
 numericalEscapes :: Spec
 numericalEscapes = testEqual "numericalEscapes" (Right "Hello &reg;") actual
   where
-    actual = toByteString . renderXmlFragment ISO_8859_1 . docContent
-               <$> parseXML "test" "Hello &#174;"
+    actual = fmap (toByteString . renderXmlFragment ISO_8859_1 . docContent)
+               (parseXML "test" "Hello &#174;")
 
 
 ------------------------------------------------------------------------------
