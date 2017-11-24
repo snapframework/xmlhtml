@@ -20,8 +20,8 @@ import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import           Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import           Data.Text (Text)
 
 ------------------------------------------------------------------------------

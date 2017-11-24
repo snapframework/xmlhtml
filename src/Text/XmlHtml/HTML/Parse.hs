@@ -17,7 +17,7 @@ import qualified Text.Parsec as P
 
 import qualified Data.HashSet as S
 import qualified Data.HashMap.Strict as M
-import qualified Data.Map.Strict as Map
+import qualified Data.Map as Map
 
 import           Data.Text (Text)
 import qualified Data.Text as T

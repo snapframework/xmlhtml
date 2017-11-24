@@ -11,7 +11,7 @@ import qualified Data.ByteString.Builder as B
 import           Data.Char (isAscii, isLatin1)
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import qualified Data.Map.Strict as Map
+import qualified Data.Map as Map
 import           Data.Maybe
 
 import           Data.Text (Text)
