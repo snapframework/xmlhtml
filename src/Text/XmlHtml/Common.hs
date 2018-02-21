@@ -246,7 +246,7 @@ encoder :: Encoding -> Text -> ByteString
 encoder UTF8       = T.encodeUtf8
 encoder UTF16BE    = T.encodeUtf16BE
 encoder UTF16LE    = T.encodeUtf16LE
-encoder ISO_8859_1 = encodeIso_8859_1
+encoder ISO_8859_1 = encodeAscii
 
 
 ------------------------------------------------------------------------------
@@ -254,9 +254,9 @@ encoder ISO_8859_1 = encodeIso_8859_1
 -- UTF-8 characters found in the input and present in the
 -- 'Text.XmlHtml.Meta.references' map are mapped to their escape sequences,
 -- and any other UTF-8 characters are replaced with ascii "?"
-encodeIso_8859_1 :: Text -> ByteString
-encodeIso_8859_1 t = T.encodeUtf8 . T.concat . map toAsciiChunk $
-                     T.groupBy asciiSplits t
+encodeAscii :: Text -> ByteString
+encodeAscii t = T.encodeUtf8 . T.concat . map toAsciiChunk $
+                T.groupBy asciiSplits t
   where
 
     -- Identify long strings of all-acceptable or all-unacceptable characters
