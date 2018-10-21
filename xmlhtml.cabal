@@ -29,7 +29,7 @@ Category:            Text, XML
 Build-type:          Simple
 Cabal-version:       >=1.8.0.4
 Tested-With:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
-                     GHC == 8.0.1, GHC == 8.2.1, GHC == 8.4.2
+                     GHC == 8.0.1, GHC == 8.2.1, GHC == 8.4.3, GHC == 8.6.1
 
 Extra-source-files:
              .ghci,
@@ -821,13 +821,13 @@ Library
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
 
-  Build-depends:       base                 >= 4     && < 5,
+  Build-depends:       base                 >= 4     && < 4.13,
                        blaze-builder        >= 0.2   && < 0.5,
                        blaze-html           >= 0.9   && < 0.10,
                        blaze-markup         >= 0.8   && < 0.9,
                        bytestring           >= 0.9   && < 0.11,
                        bytestring-builder   >= 0.10.4.0.2 && < 0.11,
-                       containers           >= 0.3   && < 0.6,
+                       containers           >= 0.3   && < 0.7,
                        parsec               >= 3.1.2 && < 3.2,
                        text                 >= 0.11  && < 1.3,
                        unordered-containers >= 0.1.4 && < 0.3
