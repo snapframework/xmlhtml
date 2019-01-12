@@ -1,5 +1,6 @@
 *~
 dist/
+dist-newstyle/
 *.tix
 .hpc
 *.prof
@@ -12,3 +13,4 @@ dist/
 **/.DS_Store
 docs/out
 cabal.sandbox.config
+.ghc.environment*
