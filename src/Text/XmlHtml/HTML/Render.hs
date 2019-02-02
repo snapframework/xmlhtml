@@ -14,6 +14,7 @@ import           Text.XmlHtml.Common
 import           Text.XmlHtml.TextParser
 import           Text.XmlHtml.HTML.Meta
 import qualified Text.XmlHtml.HTML.Parse as P
+import qualified Text.XmlHtml.XML.Parse as XML
 import           Text.XmlHtml.XML.Render (docTypeDecl, entity)
 
 import           Data.Text (Text)
@@ -75,7 +76,7 @@ escaped bad e t  =
                 -> entity e c `mappend` escaped bad e ss
   where isLeft   = either (const True) (const False)
         ambigAmp = P.char '&' *>
-            (P.finishCharRef *> return () <|> P.finishEntityRef *> return ())
+            (P.finishCharRef *> return () <|> XML.name *> return ())
 
 
 ------------------------------------------------------------------------------
