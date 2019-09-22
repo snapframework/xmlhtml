@@ -858,7 +858,7 @@ Test-suite testsuite
     bytestring-builder,
     containers,
     directory                  >= 1.0      && <1.4,
-    hspec                      >= 2.4      && <2.6,
+    hspec                      >= 2.4      && <2.8,
     text,
     unordered-containers,
     xmlhtml
