@@ -822,7 +822,7 @@ Library
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
 
-  Build-depends:       base                 >= 4     && < 4.13,
+  Build-depends:       base                 >= 4     && < 4.16,
                        blaze-builder        >= 0.2   && < 0.5,
                        blaze-html           >= 0.9   && < 0.10,
                        blaze-markup         >= 0.8   && < 0.9,
