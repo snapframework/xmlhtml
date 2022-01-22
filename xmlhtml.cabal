@@ -29,7 +29,8 @@ Category:            Text, XML
 Build-type:          Simple
 Cabal-version:       >=1.8.0.4
 Tested-With:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
-                     GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.3
+                     GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
+                     GHC == 8.8.4, GHC == 8.10.7, GHC == 9.0.1, GHC == 9.2.1
 
 Extra-source-files:
              .ghci,
@@ -821,11 +822,11 @@ Library
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
 
-  Build-depends:       base                 >= 4     && < 4.13,
+  Build-depends:       base                 >= 4     && < 4.17,
                        blaze-builder        >= 0.2   && < 0.5,
                        blaze-html           >= 0.9   && < 0.10,
                        blaze-markup         >= 0.8   && < 0.9,
-                       bytestring           >= 0.9   && < 0.11,
+                       bytestring           >= 0.9   && < 0.12,
                        bytestring-builder   >= 0.10.4.0.2 && < 0.11,
                        containers           >= 0.3   && < 0.7,
                        parsec               >= 3.1.2 && < 3.2,
@@ -858,10 +859,16 @@ Test-suite testsuite
     bytestring-builder,
     containers,
     directory                  >= 1.0      && <1.4,
-    hspec                      >= 2.4      && <2.8,
+    hspec                      >= 2.4      && <2.10,
     text,
     unordered-containers,
     xmlhtml
+
+  Other-modules:               Text.XmlHtml.CursorTests,
+                               Text.XmlHtml.DocumentTests,
+                               Text.XmlHtml.OASISTest,
+                               Text.XmlHtml.TestCommon,
+                               Text.XmlHtml.Tests
 
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
