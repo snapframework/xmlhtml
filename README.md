@@ -1,7 +1,7 @@
 xmlhtml - XML and HTML 5 parsing and rendering
 ----------------------------------------------
 
-[![Build Status](https://travis-ci.org/snapframework/xmlhtml.svg?branch=master)](https://travis-ci.org/snapframework/xmlhtml)
+[![Haskell-CI](https://github.com/snapframework/xmlhtml/actions/workflows/haskell-ci.yml/badge.svg)](https://github.com/snapframework/xmlhtml/actions/workflows/haskell-ci.yml)
 
 This library implements both parsers and renderers for XML and HTML 5 document
 fragments.  The two share data structures to represent the document tree, so
@@ -54,4 +54,3 @@ TO DO Items:
 
 3. Ensure that rendering always gives an error rather than writing an invalid
    document. (Is this a good idea?  It does limit rendering speed.)
-
