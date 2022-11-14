@@ -1,6 +1,7 @@
 # 0.2.5.3
 
-* Bump dependency bounds for ghc 9.2.1.
+* Bump dependency bounds for 9.4.2.
+* Fixed escaping of legacy entities (#38)
 
 # 0.2.5
 
