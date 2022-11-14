@@ -24,14 +24,10 @@ jobs:
     name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
 
-    env:
-      CI_CABAL: "3.8.1.0"
-      CI_GHC: "9.4.3"
-
     strategy:
       matrix:
         os: [ubuntu-latest]
-        cabal: ["${{ env.CI_CABAL }}"]
+        cabal: ["3.8.1.0"]
         ghc:
           - "8.6.5"
           - "8.8.4"
@@ -40,8 +36,8 @@ jobs:
           - "9.2.5"
           - "9.4.3"
         include:
-          - { os: macOS-latest,   ghc: "${{ env.CI_GHC }}", cabal: "${{ env.CI_CABAL }}" }
-          - { os: windows-latest, ghc: "${{ env.CI_GHC }}", cabal: "${{ env.CI_CABAL }}" }
+          - { os: macOS-latest,   ghc: "9.4.3", cabal: "3.8.1.0" }
+          - { os: windows-latest, ghc: "9.4.3", cabal: "3.8.1.0" }
 
     steps:
       - uses: actions/checkout@v3
