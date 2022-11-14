@@ -1,3 +1,4 @@
+cabal-version:       2.2
 Name:                xmlhtml
 Version:             0.2.5.3
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
@@ -20,14 +21,13 @@ Description:         Contains renderers and parsers for both XML and HTML 5
                      structure.  For example, omitted start tags are not
                      inserted (and so, their corresponding end tags must also be
                      omitted).
-License:             BSD3
+License:             BSD-3-Clause
 License-file:        LICENSE
 Author:              Chris Smith <cdsmith@gmail.com>
 Maintainer:          Chris Smith <cdsmith@gmail.com>
 homepage:            https://github.com/snapframework/xmlhtml
 Category:            Text, XML
 Build-type:          Simple
-Cabal-version:       1.18
 
 Tested-With:
   GHC == 9.2.2
@@ -818,9 +818,14 @@ Source-repository head
   Type:     git
   Location: https://github.com/snapframework/xmlhtml.git
 
-Library
-  Default-language:    Haskell2010
+common universal
+  default-language: Haskell2010
 
+  build-depends:
+    , base >= 4.5 && < 4.18
+
+Library
+  import:              universal
   Hs-source-dirs:      src
 
   Exposed-modules:     Text.XmlHtml,
@@ -835,7 +840,7 @@ Library
                        Text.XmlHtml.HTML.Parse,
                        Text.XmlHtml.HTML.Render
 
-  Build-depends:       base                 >= 4.5   && < 4.17,
+  build-depends:
                        blaze-builder        >= 0.2   && < 0.5,
                        blaze-html           >= 0.9   && < 0.10,
                        blaze-markup         >= 0.8   && < 0.9,
@@ -858,7 +863,7 @@ Library
   ghc-options:         -Wall -fwarn-tabs -fno-warn-orphans
 
 Test-suite testsuite
-  default-language:    Haskell2010
+  import: universal
   hs-source-dirs: test/src
   type: exitcode-stdio-1.0
   main-is: TestSuite.hs
@@ -873,7 +878,7 @@ Test-suite testsuite
     bytestring-builder,
     containers,
     directory                  >= 1.0      && <1.4,
-    hspec                      >= 2.4      && <2.10,
+    hspec                      >= 2.4      && <2.11,
     text,
     unordered-containers,
     xmlhtml
