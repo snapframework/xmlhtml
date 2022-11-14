@@ -33,11 +33,11 @@ jobs:
           - "8.8.4"
           - "8.10.7"
           - "9.0.2"
-          - "9.2.5"
-          - "9.4.3"
+          - "9.2.4"
+          - "9.4.2"
         include:
-          - { os: macOS-latest,   ghc: "9.4.3", cabal: "3.8.1.0" }
-          - { os: windows-latest, ghc: "9.4.3", cabal: "3.8.1.0" }
+          - { os: macOS-latest,   ghc: "latest", cabal: "3.8.1.0" }
+          - { os: windows-latest, ghc: "latest", cabal: "3.8.1.0" }
 
     steps:
       - uses: actions/checkout@v3
