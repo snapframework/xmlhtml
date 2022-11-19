@@ -310,7 +310,7 @@ bmap f   = B.byteString
                . B.toLazyByteString
 
 ------------------------------------------------------------------------------
--- Lookup a character code in some monad (usually a parser)
+-- Parse a character from its character code, failing if invalid.
 safeChr :: Int -> Parser Char
 safeChr c =
     if c > 1114111
