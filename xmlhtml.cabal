@@ -1,6 +1,6 @@
 cabal-version:       2.2
 Name:                xmlhtml
-Version:             0.2.5.3
+Version:             0.2.5.4
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures so that
