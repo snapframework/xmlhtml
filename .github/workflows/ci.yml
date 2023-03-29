@@ -25,7 +25,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ghc:
@@ -51,7 +50,7 @@ jobs:
 
       - name: Configure
         run: |
-          cabal configure --enable-tests --enable-benchmarks --disable-documentation --test-show-details=direct --write-ghc-environment-files=always
+          cabal configure --enable-tests --enable-benchmarks --enable-documentation --test-show-details=direct --write-ghc-environment-files=always
 
       - name: Freeze
         run: |
@@ -78,6 +77,7 @@ jobs:
           cabal test all
 
       - name: Documentation
+        if: matrix.ghc >= '9.4'
         run: |
           cabal haddock
 
