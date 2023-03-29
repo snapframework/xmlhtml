@@ -25,6 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ghc:
@@ -32,11 +33,12 @@ jobs:
           - "8.8.4"
           - "8.10.7"
           - "9.0.2"
-          - "9.2.5"
+          - "9.2.7"
           - "9.4.4"
+          - "9.6.1"
         include:
-          - { os: macOS-latest,   ghc: "9.4.4" }
-          - { os: windows-latest, ghc: "9.4.4" }
+          - { os: macOS-latest,   ghc: "9.6.1" }
+          - { os: windows-latest, ghc: "9.6.1" }
 
     steps:
       - uses: actions/checkout@v3
@@ -46,11 +48,10 @@ jobs:
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ matrix.ghc }}
-          cabal-version: ${{ matrix.cabal }}
 
       - name: Configure
         run: |
-          cabal configure --enable-tests --enable-benchmarks --enable-documentation --test-show-details=direct --write-ghc-environment-files=always
+          cabal configure --enable-tests --enable-benchmarks --disable-documentation --test-show-details=direct --write-ghc-environment-files=always
 
       - name: Freeze
         run: |
@@ -105,7 +106,7 @@ jobs:
           cat <<EOF > stack.yaml
             packages:
               - '.'
-            resolver: nightly-2022-11-08
+            resolver: nightly-2023-03-28
           EOF
           stack config set system-ghc true --global
           stack config set resolver nightly
