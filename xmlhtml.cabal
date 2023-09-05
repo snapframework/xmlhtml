@@ -1,6 +1,6 @@
 cabal-version:       2.2
 Name:                xmlhtml
-Version:             0.2.5.4
+Version:             0.2.5.5.0
 Synopsis:            XML parser and renderer with HTML 5 quirks mode
 Description:         Contains renderers and parsers for both XML and HTML 5
                      document fragments, which share data structures so that
@@ -34,9 +34,12 @@ Tested-With:
   GHC == 8.8.4
   GHC == 8.10.7
   GHC == 9.0.2
-  GHC == 9.2.7
-  GHC == 9.4.4
-  GHC == 9.6.1
+  GHC == 9.2.8
+  GHC == 9.4.7
+  GHC == 9.6.2
+
+extra-doc-files:
+  CHANGELOG.md
 
 Extra-source-files:
              .ghci,
@@ -45,7 +48,6 @@ Extra-source-files:
              extra/logo.gif,
              haddock.sh,
              README.md,
-             CHANGELOG.md,
              test/src/TestSuite.hs
              test/src/Text/XmlHtml/CursorTests.hs,
              test/src/Text/XmlHtml/DocumentTests.hs,
@@ -843,7 +845,7 @@ Library
                        bytestring-builder   >= 0.10.4.0.2 && < 0.11,
                        containers           >= 0.3   && < 0.7,
                        parsec               >= 3.1.2 && < 3.2,
-                       text                 >= 0.11  && < 2.1,
+                       text                 >= 0.11  && < 2.2,
                        unordered-containers >= 0.1.4 && < 0.3
 
   default-extensions:
