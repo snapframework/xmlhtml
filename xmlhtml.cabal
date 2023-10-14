@@ -36,7 +36,8 @@ Tested-With:
   GHC == 9.0.2
   GHC == 9.2.8
   GHC == 9.4.7
-  GHC == 9.6.2
+  GHC == 9.6.3
+  GHC == 9.8.1
 
 extra-doc-files:
   CHANGELOG.md
@@ -843,7 +844,7 @@ Library
                        blaze-markup         >= 0.8   && < 0.9,
                        bytestring           >= 0.9   && < 0.13,
                        bytestring-builder   >= 0.10.4.0.2 && < 0.11,
-                       containers           >= 0.3   && < 0.7,
+                       containers           >= 0.3   && < 1.0,
                        parsec               >= 3.1.2 && < 3.2,
                        text                 >= 0.11  && < 2.2,
                        unordered-containers >= 0.1.4 && < 0.3
